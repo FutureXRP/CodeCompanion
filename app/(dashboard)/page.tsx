@@ -3,145 +3,186 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 
 const codingFlags = [
-  { patient: 'R. Okonkwo',  billed: '99213', suggested: '99214', delta: '+$68' },
-  { patient: 'D. Patel',    billed: '99213', suggested: '99214', delta: '+$68' },
-  { patient: 'M. Castillo', billed: '99215', suggested: 'G0439', delta: '+$174' },
+  { patient: 'R. Okonkwo',  billed: '99213', suggested: '99214', delta: '+$68',  confidence: 94 },
+  { patient: 'D. Patel',    billed: '99213', suggested: '99214', delta: '+$68',  confidence: 91 },
+  { patient: 'M. Castillo', billed: '99215', suggested: 'G0439', delta: '+$174', confidence: 88 },
 ]
 
 const careGaps = [
-  { patient: 'M. Castillo', type: 'Annual Wellness Visit', code: 'G0439', revenue: '$174',    priority: 'high' as const },
-  { patient: 'R. Okonkwo',  type: 'CCM Enrollment',       code: '99490', revenue: '$62/mo',  priority: 'high' as const },
-  { patient: 'D. Patel',    type: 'HbA1c overdue',        code: 'lab',   revenue: 'recall',  priority: 'medium' as const },
-  { patient: '4 patients',  type: 'Depression screening', code: 'G0444', revenue: '$44 each',priority: 'medium' as const },
+  { patient: 'M. Castillo', type: 'Annual Wellness Visit', code: 'G0439', revenue: '$174',     priority: 'high'   as const },
+  { patient: 'R. Okonkwo',  type: 'CCM Enrollment',       code: '99490', revenue: '+$62/mo',  priority: 'high'   as const },
+  { patient: 'D. Patel',    type: 'HbA1c overdue',        code: 'lab',   revenue: 'recall',   priority: 'medium' as const },
+  { patient: '4 patients',  type: 'Depression screening', code: 'G0444', revenue: '$44 each', priority: 'medium' as const },
 ]
 
 const scheduleRisks = [
-  { time: '10:00a', patient: 'B. Nwosu',     risk: 82, level: 'high' as const },
+  { time: '10:00a', patient: 'B. Nwosu',     risk: 82, level: 'high'  as const },
   { time: '11:30a', patient: 'T. Larsson',   risk: 71, level: 'amber' as const },
-  { time: '2:00p',  patient: 'F. Adeola',    risk: 22, level: 'low' as const },
-  { time: '3:15p',  patient: 'C. Dimitriou', risk: 15, level: 'low' as const },
+  { time: '2:00p',  patient: 'F. Adeola',    risk: 22, level: 'low'   as const },
+  { time: '3:15p',  patient: 'C. Dimitriou', risk: 15, level: 'low'   as const },
 ]
 
-const riskColor = { high: 'bg-red-400', amber: 'bg-amber-400', low: 'bg-green-400' }
+const riskTrack = { high: '#f87171', amber: '#fbbf24', low: '#34d399' }
 const riskBadge = { high: 'red', amber: 'amber', low: 'green' } as const
 
 export default function DashboardPage() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Good morning</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{today} · 6 patients scheduled · Last synced 6:02am</p>
+    <div style={{ padding: '28px 32px', maxWidth: '1100px', margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1e2533', margin: 0, letterSpacing: '-0.02em' }}>
+          Good morning, Dr. Blair
+        </h1>
+        <p style={{ fontSize: '13px', color: '#9aa3b2', margin: '4px 0 0' }}>
+          {today} &nbsp;·&nbsp; 6 patients scheduled &nbsp;·&nbsp;
+          <span style={{ color: '#34d399' }}>●</span> Last synced 6:02am
+        </p>
       </div>
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <StatCard label="Est. revenue today" value="$2,840" delta="+$310 vs avg" deltaType="up" />
-        <StatCard label="Coding leakage" value="$480" delta="3 encounters flagged" deltaType="down" />
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        <StatCard label="Est. revenue today" value="$2,840" delta="↑ $310 vs avg" deltaType="up" />
+        <StatCard label="Coding leakage" value="$480" delta="3 encounters flagged" deltaType="down" accent="warning" />
         <StatCard label="Care gaps open" value="14" delta="$2,100 recoverable" deltaType="neutral" />
-        <StatCard label="No-show risk" value="2 slots" delta="High confidence" deltaType="down" />
+        <StatCard label="No-show risk" value="2 slots" delta="High confidence" deltaType="down" accent="danger" />
       </div>
-      <div className="grid grid-cols-2 gap-5 mb-5">
+
+      {/* Two column */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+
+        {/* Coding suggestions */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">Coding suggestions</h2>
-              <Badge label="3 pending" variant="amber" />
-            </div>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e2533' }}>Coding suggestions</span>
+            <Badge label="3 pending" variant="amber" />
           </CardHeader>
           <CardBody className="p-0">
-            <table className="w-full text-sm">
+            <table style={{ width: '100%', fontSize: '13px' }}>
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Patient</th>
-                  <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Billed</th>
-                  <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Suggested</th>
-                  <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Delta</th>
+                <tr style={{ borderBottom: '1px solid #f1f3f7' }}>
+                  {['Patient', 'Billed', 'Suggested', 'Delta'].map((h, i) => (
+                    <th key={h} style={{
+                      padding: '9px 16px', textAlign: i === 3 ? 'right' : 'left',
+                      fontSize: '11px', fontWeight: '600', color: '#9aa3b2',
+                      letterSpacing: '0.06em', textTransform: 'uppercase',
+                    }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {codingFlags.map((f, i) => (
-                  <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-gray-900">{f.patient}</td>
-                    <td className="px-3 py-3"><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{f.billed}</span></td>
-                    <td className="px-3 py-3"><span className="font-mono text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded">{f.suggested}</span></td>
-                    <td className="px-5 py-3 text-right font-medium text-green-600">{f.delta}</td>
+                  <tr key={i} style={{ borderBottom: i < 2 ? '1px solid #f8f9fb' : 'none' }}>
+                    <td style={{ padding: '11px 16px', fontWeight: '500', color: '#1e2533' }}>{f.patient}</td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', background: '#f1f3f7', color: '#4a5366', padding: '2px 8px', borderRadius: '4px' }}>{f.billed}</span>
+                    </td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', background: '#f0faf4', color: '#1a7a45', padding: '2px 8px', borderRadius: '4px' }}>{f.suggested}</span>
+                    </td>
+                    <td style={{ padding: '11px 16px', textAlign: 'right', fontWeight: '600', color: '#1a7a45' }}>{f.delta}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="px-5 py-3"><a href="/coding" className="text-xs text-blue-600 hover:underline">Review all →</a></div>
+            <div style={{ padding: '10px 16px', borderTop: '1px solid #f1f3f7' }}>
+              <a href="/coding" style={{ fontSize: '12px', color: '#3b6ef8', textDecoration: 'none', fontWeight: '500' }}>
+                Review &amp; approve all →
+              </a>
+            </div>
           </CardBody>
         </Card>
+
+        {/* Schedule risk */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">Schedule risk — today</h2>
-              <Badge label="2 high risk" variant="red" />
-            </div>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e2533' }}>Schedule risk — today</span>
+            <Badge label="2 high risk" variant="red" />
           </CardHeader>
-          <CardBody className="space-y-3">
-            {scheduleRisks.map((s, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 w-12 shrink-0">{s.time}</span>
-                <span className="text-sm text-gray-700 flex-1">{s.patient}</span>
-                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${riskColor[s.level]}`} style={{ width: `${s.risk}%` }} />
+          <CardBody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {scheduleRisks.map((s, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '12px', color: '#9aa3b2', width: '44px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{s.time}</span>
+                  <span style={{ fontSize: '13px', color: '#333d4d', flex: 1 }}>{s.patient}</span>
+                  <div style={{ width: '80px', height: '4px', background: '#f1f3f7', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', background: riskTrack[s.level], borderRadius: '2px', width: `${s.risk}%`, transition: 'width 0.6s ease' }} />
+                  </div>
+                  <Badge label={`${s.risk}%`} variant={riskBadge[s.level]} />
                 </div>
-                <Badge label={`${s.risk}%`} variant={riskBadge[s.level]} />
-              </div>
-            ))}
+              ))}
+            </div>
           </CardBody>
         </Card>
       </div>
-      <Card className="mb-5">
+
+      {/* Care gaps */}
+      <Card style={{ marginBottom: '16px' }}>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">Care gap opportunities</h2>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-green-600">$2,100–$3,400 recoverable</span>
-              <Badge label="14 patients" variant="blue" />
-            </div>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e2533' }}>Care gap opportunities</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#1a7a45' }}>$2,100–$3,400 recoverable</span>
+            <Badge label="14 patients" variant="blue" />
           </div>
         </CardHeader>
         <CardBody className="p-0">
-          <table className="w-full text-sm">
+          <table style={{ width: '100%', fontSize: '13px' }}>
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Patient</th>
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Gap</th>
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Code</th>
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Revenue</th>
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Priority</th>
+              <tr style={{ borderBottom: '1px solid #f1f3f7' }}>
+                {['Patient', 'Gap', 'Code', 'Revenue', 'Priority'].map(h => (
+                  <th key={h} style={{
+                    padding: '9px 16px', textAlign: 'left',
+                    fontSize: '11px', fontWeight: '600', color: '#9aa3b2',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {careGaps.map((g, i) => (
-                <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-5 py-3 font-medium text-gray-900">{g.patient}</td>
-                  <td className="px-5 py-3 text-gray-600">{g.type}</td>
-                  <td className="px-5 py-3"><span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{g.code}</span></td>
-                  <td className="px-5 py-3 font-medium text-green-600">{g.revenue}</td>
-                  <td className="px-5 py-3">
-                    <Badge label={g.priority} variant={g.priority === 'high' ? 'red' : g.priority === 'medium' ? 'amber' : 'gray'} />
+                <tr key={i} style={{ borderBottom: i < careGaps.length - 1 ? '1px solid #f8f9fb' : 'none' }}>
+                  <td style={{ padding: '11px 16px', fontWeight: '500', color: '#1e2533' }}>{g.patient}</td>
+                  <td style={{ padding: '11px 16px', color: '#4a5366' }}>{g.type}</td>
+                  <td style={{ padding: '11px 16px' }}>
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', background: '#f1f3f7', color: '#4a5366', padding: '2px 8px', borderRadius: '4px' }}>{g.code}</span>
+                  </td>
+                  <td style={{ padding: '11px 16px', fontWeight: '600', color: '#1a7a45' }}>{g.revenue}</td>
+                  <td style={{ padding: '11px 16px' }}>
+                    <Badge label={g.priority} variant={g.priority === 'high' ? 'red' : 'amber'} />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="px-5 py-3"><a href="/gaps" className="text-xs text-blue-600 hover:underline">View all care gaps →</a></div>
-        </CardBody>
-      </Card>
-      <Card className="border-red-100 bg-red-50/30">
-        <CardBody>
-          <div className="flex items-start gap-3">
-            <span className="text-red-500 text-lg mt-0.5">⚠</span>
-            <div>
-              <p className="text-sm font-semibold text-red-700">Audit shield — 2 active flags</p>
-              <p className="text-xs text-red-600 mt-0.5">Your 99215 rate (31%) exceeds the RAC threshold (25%). 2 encounter notes missing MDM documentation.</p>
-              <a href="/audit" className="text-xs text-red-600 underline mt-1 inline-block">Review audit risks →</a>
-            </div>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid #f1f3f7' }}>
+            <a href="/gaps" style={{ fontSize: '12px', color: '#3b6ef8', textDecoration: 'none', fontWeight: '500' }}>View all care gaps →</a>
           </div>
         </CardBody>
       </Card>
+
+      {/* Audit alert */}
+      <div style={{
+        background: '#fff5f5', border: '1px solid #ffe0e0',
+        borderRadius: '12px', padding: '14px 18px',
+        display: 'flex', alignItems: 'flex-start', gap: '12px',
+      }}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0, marginTop: '1px' }}>
+          <path d="M9 1L1 16h16L9 1z" stroke="#c9302c" strokeWidth="1.5" strokeLinejoin="round"/>
+          <path d="M9 7v4M9 13.5v.5" stroke="#c9302c" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        <div>
+          <p style={{ fontSize: '13px', fontWeight: '600', color: '#c9302c', margin: '0 0 3px' }}>Audit shield — 2 active flags</p>
+          <p style={{ fontSize: '12px', color: '#a32522', margin: 0, lineHeight: '1.5' }}>
+            Your 99215 rate (31%) exceeds the RAC watch threshold (25%). 2 encounter notes are missing explicit MDM documentation.
+          </p>
+          <a href="/audit" style={{ fontSize: '12px', color: '#c9302c', fontWeight: '500', textDecoration: 'underline', display: 'inline-block', marginTop: '6px' }}>
+            Review audit risks →
+          </a>
+        </div>
+      </div>
+
     </div>
   )
 }
