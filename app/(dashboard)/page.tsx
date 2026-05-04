@@ -290,7 +290,7 @@ export default function DashboardPage() {
         <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '12px', boxShadow: '0 1px 3px rgba(15,21,32,0.04)', padding: '14px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e2533' }}>Monthly revenue</span>
-            <Link href="/analytics" style={{ fontSize: '12px', color: '#3b6ef8', fontWeight: '500', textDecoration: 'none' }}>Full analytics →</Link>
+            <Link href="/analytics" style={{ fontSize: '12px', color: '#3b6ef8', fontWeight: '500', textDecoration: 'none', position: 'relative', zIndex: 10 }}>Full analytics →</Link>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '100px', marginBottom: '10px' }}>
             {weekRevenue.map((w, i) => {
