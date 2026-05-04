@@ -3,19 +3,21 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const nav = [
-  { href: '/',       label: 'Dashboard',      badge: null,
+  { href: '/',           label: 'Dashboard',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/></svg> },
-  { href: '/coding', label: 'Coding',         badge: { count: 3, color: '#b45309', bg: '#fef3d0' },
+  { href: '/coding',     label: 'Coding',         badge: { count: 3, color: '#b45309', bg: '#fef3d0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-  { href: '/gaps',   label: 'Care Gaps',      badge: { count: 8, color: '#4a5366', bg: '#f1f3f7' },
+  { href: '/gaps',       label: 'Care Gaps',      badge: { count: 8, color: '#4a5366', bg: '#f1f3f7' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-  { href: '/audit',  label: 'Audit Shield',   badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
+  { href: '/audit',      label: 'Audit Shield',   badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg> },
-  { href: '/pulse',  label: 'Practice Pulse', badge: { count: 7, color: '#c9302c', bg: '#ffe0e0' },
+  { href: '/pulse',      label: 'Practice Pulse', badge: { count: 7, color: '#c9302c', bg: '#ffe0e0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h2.5l2-5 2 10 2-6 1.5 3H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-  { href: '/schedule', label: 'Schedule',     badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
+  { href: '/analytics',  label: 'Analytics',      badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4 3 3 3-6L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+  { href: '/schedule',   label: 'Schedule',       badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-  { href: '/settings', label: 'Settings',     badge: null,
+  { href: '/settings',   label: 'Settings',       badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1M12.7 12.7l-1.1-1.1M4.4 4.4L3.3 3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
 ]
 
@@ -32,7 +34,6 @@ export function Sidebar() {
         </div>
         <p style={{ fontSize: '11px', color: '#9aa3b2', marginLeft: '36px', marginTop: '0' }}>Revenue Intelligence</p>
       </div>
-
       <nav style={{ flex: 1, padding: '10px' }}>
         {nav.map(item => {
           const active = pathname === item.href
@@ -56,7 +57,6 @@ export function Sidebar() {
           )
         })}
       </nav>
-
       <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f3f7' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
           <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#2d5de8' }}>B</div>
