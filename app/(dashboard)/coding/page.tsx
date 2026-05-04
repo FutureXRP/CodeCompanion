@@ -66,7 +66,7 @@ export default function CodingPage() {
           Coding suggestions
         </h1>
         <p style={{ fontSize: '13px', color: '#9aa3b2', margin: 0 }}>
-          Review AI-suggested codes before claims go out. Approve or edit each encounter.
+          Review AI-suggested codes for each encounter. Accept, edit, or reject — your existing Athena coding workflow handles claim submission.
         </p>
       </div>
 
@@ -186,7 +186,7 @@ export default function CodingPage() {
                   fontSize: '13px', fontWeight: '500', borderRadius: '8px',
                   border: 'none', cursor: 'pointer', letterSpacing: '-0.01em',
                 }}>
-                  Approve &amp; push to Athena
+                  Accept suggestion
                 </button>
                 <button style={{
                   padding: '8px 18px', background: '#fff', color: '#333d4d',
@@ -203,7 +203,7 @@ export default function CodingPage() {
                   Reject
                 </button>
                 <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#9aa3b2' }}>
-                  Will push to Athena encounter {s.encounterId}
+                  Suggestion saved for encounter {s.encounterId}
                 </span>
               </div>
             </CardBody>
