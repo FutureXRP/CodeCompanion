@@ -1,3 +1,12 @@
+#!/bin/bash
+# PracticeCompanion — Phase 8 Setup Script
+# Rebuilt dashboard — full 8-module command center
+# Run from repo root: bash setup-phase8.sh
+
+set -e
+echo "🏗️  Building Phase 8 — Rebuilt Dashboard..."
+
+cat > "app/(dashboard)/page.tsx" << 'EOF'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 
@@ -318,3 +327,20 @@ export default function DashboardPage() {
     </div>
   )
 }
+EOF
+echo "✓ app/(dashboard)/page.tsx"
+
+echo ""
+echo "✅ Phase 8 complete — dashboard rebuilt!"
+echo ""
+echo "npm run dev — refresh browser to see the new dashboard"
+echo ""
+echo "What changed:"
+echo "  · Header: greeting + revenue summary in one line"
+echo "  · Section 1: 4 urgent action cards (coding, pulse, schedule, audit)"
+echo "  · Section 2: 6 module overview cards with live metrics"
+echo "  · Section 3: care gaps + revenue trend side by side"
+echo "  · Everything links to the correct module"
+echo "  · All 8 modules have presence on the dashboard"
+echo ""
+echo "git add . && git commit -m 'Phase 8: rebuilt dashboard for 8-module product'"
