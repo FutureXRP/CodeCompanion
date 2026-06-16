@@ -1,167 +1,99 @@
-# PracticeCompanion — Project Memory
+# CLAUDE.md — PracticeCompanion
+
+Read this file first, every session. Then read `ARCHITECTURE.md` and `DATA-MODEL.md` before writing any code that touches data flow. Read `COMPLIANCE.md` before anything that could touch PHI.
+
+---
 
 ## What this is
-A multi-tenant SaaS AI revenue intelligence and practice management platform for primary
-care practices on Athena EHR. The owner (Matt, Dr. Blair) is a solo primary care physician
-using this for his own practice first, then selling it to other practices. Matt uses it free
-as Practice #1.
 
-## Product name
-PracticeCompanion
+PracticeCompanion is a multi-tenant SaaS platform for primary-care practices that finds and recovers revenue the rest of the billing industry leaves on the table, then expands into full revenue-cycle management and, eventually, instant claim settlement.
 
-## Tagline
-"AI-powered revenue intelligence for independent primary care."
+It is **EHR-agnostic**. It currently has an Athena integration, but Athena is just one *adapter* — the platform core never depends on any specific EHR.
 
-## Current build status
-All 8 modules are built as polished UI with mock data. The path to live requires:
-1. Clerk auth (Phase 8)
-2. Supabase persistence — buttons that actually save (Phase 9)
-3. Inngest background jobs — nightly sync, morning score (Phase 10)
-4. Stripe billing (Phase 11)
-5. Real Athena API swap-in (Phase 12)
-6. Vercel deploy (Phase 13)
+## The long arc (the "ladder")
 
-## Eight modules
-1. **Dashboard** — morning summary: coding flags, care gaps, schedule risk, audit alert
-2. **Coding** — AI reads encounter note, suggests E&M + ICD-10 + CPT, provider approves, pushes to Athena
-3. **Care Gaps** — AWV, CCM enrollment, HCC recapture, overdue labs, quality measures
-4. **Audit Shield** — RAC/OIG risk scoring, documentation gap detection, denial pattern analysis
-5. **Practice Pulse** — AI office manager: billing issues, unreviewed labs, patient balances, recalls, portal messages, unconfirmed appointments
-6. **Schedule** — no-show prediction with risk factors and recommendations
-7. **Analytics** — revenue projections, DAR by payer, operational metrics, YoY comparisons, payer mix
-8. **Settings** — Athena connection, subscription, HIPAA/BAA status, AI configuration
+Build in this order. Each rung produces the data and trust the next rung needs.
 
-## Tech stack
-- **Frontend**: Next.js 16 (App Router) + Tailwind CSS
-- **Backend**: Next.js API routes
-- **Database**: PostgreSQL via Supabase (Matt has project: CodeCompanion on Supabase)
-- **Auth**: Clerk (multi-tenant, practice-level isolation) — NOT YET WIRED
-- **Background jobs**: Inngest — NOT YET WIRED
-- **AI**: Anthropic Claude API (claude-sonnet-4-20250514) for coding suggestions
-- **Payments**: Stripe — NOT YET WIRED
-- **Hosting**: Vercel — NOT YET CONNECTED (dev in GitHub Codespaces)
-- **EHR**: Athena REST API + FHIR R4 — MOCKED (ATHENA_USE_MOCK=true)
+- **Rung 0 — Found money.** Diff what was submitted vs. what was paid vs. what was contracted. Surface underpayments, un-appealed denials, and undercoding. Contingency-priced. This is the current focus.
+- **Rung 1 — Full RCM** at flat, transparent pricing. Displaces the incumbent billing company.
+- **Rung 2 — Predictive adjudication.** Pre-submission scrubber + point-of-care payment prediction, trained on the behavioral corpus.
+- **Rung 3 — Settlement.** Advance the practice cash on day one against predicted adjudication. Fintech, not software. Far future. Do not build until Rung 2 is empirically calibrated.
 
-## Pricing tiers
-- Starter: $299/mo — all modules, 1 provider
-- Professional: $599/mo — everything + audit shield + peer benchmarks (MOST POPULAR)
-- Group: $999/mo — multi-provider + priority support
+Do not skip rungs. Do not build Rung 2/3 scaffolding speculatively unless a task explicitly says so.
 
-## Financial model
-- Claude API cost per practice: ~$8/mo (< $0.01/encounter)
-- Replaces outsourced coding: saves practice $30–40K/yr
-- At 10 paying practices @ Pro: $71,880/yr revenue, ~$600/yr Claude costs
-- Gross margin: ~98%
+## Current repo state
 
-## HIPAA approach
-- We store ZERO raw PHI — no patient names, DOBs, note text
-- Patient references use Athena's opaque patient ID only
-- Note text flows transiently through Claude API — never stored in our DB
-- Supabase BAA required before production
-- Anthropic BAA required before production coding suggester use
+- **Stack:** Next.js 16, Supabase (Postgres + RLS), Anthropic Claude API, Stripe.
+- **Existing modules** (currently bound to an Athena mock): Dashboard, Coding, Care Gaps, Audit Shield, Practice Pulse, Schedule Risk, Revenue Analytics, Settings.
+- **Mock-first:** Athena runs against a mock (`ATHENA_USE_MOCK=true`). No real patient data flows yet. No BAAs signed yet. See `COMPLIANCE.md` — this is a hard gate, not a preference.
+- The refactor goal is to lift Athena out of the modules into `lib/adapters/athena`, introduce the canonical model, add the EDI adapter, and re-point modules at the canonical model.
 
-## Coding suggester workflow
-1. Provider locks encounter note in Athena → webhook fires
-2. App fetches note via GET /encounters/{id}/notes
-3. Note sent to Claude with 2021 AMA E&M guidelines system prompt
-4. Claude returns JSON: { emLevel, icd10Codes[], cptCodes[], modifiers[], confidence, reasoning }
-5. Suggestion stored in coding_suggestions table (codes + reasoning only, NO note text)
-6. Provider reviews in dashboard → approves or edits
-7. App pushes approved codes to Athena via POST endpoints
-8. Claim goes out correctly coded
+---
 
-## Database schema
-### Core tables (001_initial_schema.sql)
-- practices, practice_users, athena_connections, subscriptions, sync_jobs
-- coding_suggestions, encounter_flags, care_gaps, audit_risks, schedule_risks, billing_patterns
+## SACRED BOUNDARIES — do not violate these
 
-### Practice Pulse (002_practice_pulse.sql)
-- practice_pulse_issues
+These two design lines are the entire moat. Breaking either is a stop-the-line event.
 
-### Office Manager (003_office_manager.sql)
-- office_manager_items
+### 1. The adapter boundary
+Nothing above `lib/adapters/` may import an Athena type, an Epic type, an X12 segment name, or any vendor specific. All sources normalize *into* the canonical model (`lib/canonical/`). If module code references a vendor field directly, the abstraction has leaked — fix the adapter, don't pierce it.
 
-## Athena API — CURRENTLY MOCKED
-- ATHENA_USE_MOCK=true in .env.local
-- lib/athena/mock-client.ts — realistic synthetic data
-- lib/athena/client.ts — real client stub (TODO comments)
-- lib/athena/index.ts — exports correct client based on env var
-- Real API credentials: register at docs.athenahealth.com
+### 2. The de-identification gate
+- **Individual claims** are tenant-isolated, PHI-bearing, behind row-level security. A tenant sees only its own data, always.
+- **The behavioral corpus** (`lib/corpus/`) stores only de-identified aggregate payer-behavior statistics. It must be *structurally impossible* for a patient identifier or `tenant_id` to reach a corpus table.
+- The de-id transform is a **one-way gate** with its own tests. Treat any path that could carry PHI into the corpus as a breach, and refuse to write it.
 
-## Key decisions
-- No raw PHI stored ever — note text transient only
-- Anthropic BAA required before production
-- Inngest over BullMQ (serverless, no Redis)
-- Supabase RLS for tenant isolation
-- Mock-first Athena development
-- Build in GitHub Codespaces, Vercel last
-- Name: PracticeCompanion (trademark search clean May 2026)
-- GitHub repo: FutureXRP/CodeCompanion (repo name not yet updated)
+---
 
-## Build phases
-- [x] Phase 1: Project scaffold + foundation files
-- [x] Phase 2: Supabase schema + RLS (3 migrations run)
-- [x] Phase 3: Next.js app shell + design system
-- [x] Phase 4: All module UIs — coding, gaps, audit, schedule, settings
-- [x] Phase 5: Practice Pulse — billing issues, AI denial translation
-- [x] Phase 6: Practice Pulse expanded — labs, balances, recalls, messages, confirmations
-- [x] Phase 7: Revenue Analytics — projections, DAR, benchmarks, YoY trends
-- [ ] Phase 8: Clerk auth + practice onboarding
-- [ ] Phase 9: Supabase persistence — buttons save to DB
-- [ ] Phase 10: Inngest jobs — nightly sync, morning score, coding trigger
-- [ ] Phase 11: Stripe billing
-- [ ] Phase 12: Real Athena API swap-in
-- [ ] Phase 13: Vercel deploy + Athena Marketplace listing
+## Engineering discipline
 
-## File structure
+### Deterministic vs. LLM — never confuse them
+- **Deterministic code** produces every dollar figure and every financial decision: the diff, underpayment math, denial classification, underwriting. Must be auditable and reproducible. No LLM in this path.
+- **Claude API** handles language and judgment only: appeal-letter drafting, prior-auth narratives, denial-reason explanation, coding *suggestions*, plain-English summaries of the diff report. It never invents a number.
+
+### Conventions
+- TypeScript, strict mode. No `any` in canonical or diff code.
+- Money as integer cents, never floats.
+- All tenant-scoped tables carry `tenant_id` and an RLS policy. New table without RLS = incomplete.
+- EDI parsing uses a maintained X12 library. Do not hand-roll the 837/835 grammar.
+- `safeStr()` style guards stay — never render raw nested objects into React.
+
+---
+
+## Working style (how Matt likes to build)
+
+- **One batch commit per session** with complete file replacements. Prefer whole-file rewrites over surgical patches.
+- Matt edits via the GitHub pencil (Option A) and runs npm/git in Codespaces.
+- When a session is done, summarize what changed and what's next in the commit message.
+- If a task is ambiguous, state the assumption inline and proceed; don't stall.
+
+---
+
+## Proposed repo structure
+
 ```
-practicecompanion/
-├── CLAUDE.md
-├── README.md
-├── .env.local.example
-├── package.json
-├── app/
-│   ├── (dashboard)/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx              ← morning dashboard
-│   │   ├── coding/page.tsx       ← coding suggester
-│   │   ├── gaps/page.tsx         ← care gap scanner
-│   │   ├── audit/page.tsx        ← audit shield
-│   │   ├── pulse/page.tsx        ← practice pulse (6 tabs)
-│   │   ├── analytics/page.tsx    ← revenue analytics
-│   │   ├── schedule/page.tsx     ← no-show predictor
-│   │   └── settings/page.tsx
-│   ├── api/
-│   │   ├── inngest/route.ts
-│   │   ├── athena/webhook/route.ts
-│   │   └── stripe/webhook/route.ts
-│   └── layout.tsx
-├── lib/
-│   ├── athena/ (types, mock-client, client, index)
-│   ├── intelligence/ (coding-suggester, coding-audit, care-gaps, audit-shield, no-show)
-│   └── supabase/ (client, server)
-├── inngest/ (client, functions/)
-├── supabase/migrations/ (001, 002, 003)
-└── components/
-    ├── layout/Sidebar.tsx
-    └── ui/ (Badge, Card, StatCard)
+/app                     Next.js routes — existing module UIs
+/lib
+  /adapters
+    /athena              Athena adapter (refactor target — lift existing code here)
+    /edi                 837/835 file ingestion (universal, build first)
+    /fhir                placeholder for CMS Jan-2027 FHIR mandate
+  /canonical             canonical model types (the spine)
+  /diff                  Rung 0 deterministic engine
+  /corpus                de-id transform + behavioral corpus access
+  /predict               Rung 2 (later)
+  /ledger                Rung 3 (later)
+  /ai                    Claude API tasks (appeals, narratives, coding suggestions)
+/db
+  /migrations            Supabase SQL: schema + RLS policies
+CLAUDE.md                this file
+ARCHITECTURE.md          system design + the ladder
+DATA-MODEL.md            canonical schema, RLS, PHI/de-id rules
+ROADMAP.md               phased build plan with concrete deliverables
+COMPLIANCE.md            HIPAA posture + mock-mode gate
 ```
 
-## Environment variables
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
-ANTHROPIC_API_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-INNGEST_EVENT_KEY=
-INNGEST_SIGNING_KEY=
-ATHENA_CLIENT_ID=
-ATHENA_CLIENT_SECRET=
-ATHENA_BASE_URL=https://api.preview.platform.athenahealth.com
-ATHENA_USE_MOCK=true
-```
+---
+
+## What to build now
+
+See `ROADMAP.md` → **Phase 0**. The first deliverable is the thinnest possible vertical slice: parse an 837 + 835, load a fee schedule, diff them, emit a found-money report — single-tenant, no model, no rail. It runs against Matt's own clinic's data. The dollar figure it produces is the proof of the whole thesis. Build that and nothing more until it works.

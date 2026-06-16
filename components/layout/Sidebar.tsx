@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 const nav = [
   { href: '/',           label: 'Dashboard',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/></svg> },
+  { href: '/found-money', label: 'Found Money',    badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 4.3v7.4M9.9 5.9c-.3-.7-1-1.1-1.9-1.1-1 0-1.9.5-1.9 1.4 0 2 3.8 1 3.8 3.1 0 .9-.9 1.5-1.9 1.5-1 0-1.7-.4-2-1.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/coding',     label: 'Coding',         badge: { count: 3, color: '#b45309', bg: '#fef3d0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/gaps',       label: 'Care Gaps',      badge: { count: 8, color: '#4a5366', bg: '#f1f3f7' },
