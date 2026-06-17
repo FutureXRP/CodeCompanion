@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/Badge'
 import { StatCard } from '@/components/ui/StatCard'
+import { AppealButton } from '@/components/found-money/AppealButton'
 import { formatCents, type Finding, type FindingType } from '@/lib/canonical'
 import { runFoundMoney, type FoundMoneyReport } from '@/lib/found-money/run'
 
@@ -108,6 +109,7 @@ export default function FoundMoneyPage() {
               <th style={th}>DOS</th>
               <th style={th}>Status</th>
               <th style={th}>Detail</th>
+              <th style={th}>Appeal</th>
             </tr>
           </thead>
           <tbody>
@@ -124,6 +126,13 @@ export default function FoundMoneyPage() {
                 <td style={{ ...td, whiteSpace: 'nowrap', color: '#6b7280' }}>{finding.dateOfService ?? '—'}</td>
                 <td style={td}>{statusBadge(finding)}</td>
                 <td style={{ ...td, color: '#4a5366', maxWidth: 360 }}>{finding.reason}</td>
+                <td style={td}>
+                  {finding.appealable && (finding.type === 'denial' || finding.type === 'underpayment') ? (
+                    <AppealButton findingId={finding.id} kind={finding.type as 'denial' | 'underpayment'} />
+                  ) : (
+                    <span style={{ color: '#c4cad4' }}>—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

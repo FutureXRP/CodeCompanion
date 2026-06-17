@@ -216,7 +216,7 @@ export default function AnalyticsPage() {
             sub: 'Benchmark: 95.0%',
             accent: 'warning',
           },
-        ].map((kpi, i) => (
+        ].map((kpi: { label: string; value: string; delta: string; deltaType: 'up' | 'down' | 'neutral'; sub: string; accent: string }, i) => (
           <div key={i} style={{
             background: kpi.accent === 'success' ? '#f0faf4' : kpi.accent === 'warning' ? '#fffbf0' : '#fff',
             border: `1px solid ${kpi.accent === 'success' ? '#dcf4e8' : kpi.accent === 'warning' ? '#fef3d0' : '#e4e8ef'}`,
@@ -277,7 +277,7 @@ export default function AnalyticsPage() {
                     {showYOY && m.yoy && (
                       <div style={{ flex: 1, background: '#f1f3f7', borderRadius: '3px 3px 0 0', height: `${yoyH}px`, minHeight: '2px' }} />
                     )}
-                    <div style={{ flex: 1, background: isProjected ? 'transparent' : '#3b6ef8', border: isProjected ? 'none' : 'none', borderRadius: '3px 3px 0 0', height: `${isProjected ? projH : actualH}px`, minHeight: '2px', background: isProjected ? 'repeating-linear-gradient(45deg, #dcf4e8, #dcf4e8 2px, transparent 2px, transparent 6px)' : '#3b6ef8', position: 'relative' }}>
+                    <div style={{ flex: 1, border: isProjected ? 'none' : 'none', borderRadius: '3px 3px 0 0', height: `${isProjected ? projH : actualH}px`, minHeight: '2px', background: isProjected ? 'repeating-linear-gradient(45deg, #dcf4e8, #dcf4e8 2px, transparent 2px, transparent 6px)' : '#3b6ef8', position: 'relative' }}>
                       {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
                     </div>
                   </div>
