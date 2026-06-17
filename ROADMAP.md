@@ -24,8 +24,8 @@ Deliverables:
 **Goal:** Other practices can onboard and see their own found money. Contingency-priced.
 
 Deliverables:
-1. **Settle the auth decision** (Clerk vs. Supabase auth) — this gates RLS. Do this first.
-2. Full schema + RLS migrations per `DATA-MODEL.md`, all tenant-scoped tables locked.
+1. **Auth decision — settled: Supabase Auth** (Clerk is unwired; Supabase binds natively to RLS).
+2. ✅ Full schema + RLS migrations per `DATA-MODEL.md` — `supabase/migrations/005_canonical_model.sql`; all tenant-scoped tables RLS-locked and verified with a two-tenant isolation test (`supabase/tests/`).
 3. Onboarding: a tenant connects a source — EDI file drop first, Athena adapter second.
 4. Refactor existing PracticeCompanion modules off the Athena mock onto the canonical model:
    - Coding → undercoding detector + (later) scrubber feed

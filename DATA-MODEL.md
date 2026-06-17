@@ -177,7 +177,7 @@ alter table <t> enable row level security;
 create policy tenant_isolation on <t>
   using (tenant_id = current_tenant_id());
 ```
-- `current_tenant_id()` resolves from the authenticated session. **Open decision:** auth provider — Clerk is in the repo but unwired; Supabase RLS binds most naturally to Supabase auth. Settle this before writing RLS, because tenancy depends on it. (See ROADMAP Phase 1.)
+- `current_tenant_id()` resolves from the authenticated session. **Settled (2026-06): Supabase Auth.** Implemented in `supabase/migrations/005_canonical_model.sql` as a `SECURITY DEFINER` function that maps `auth.uid()` to a tenant via the `tenant_users` membership table (one tenant per user for now; multi-practice users would move to an active-tenant JWT claim). Tenant isolation is verified by `supabase/tests/rls_isolation_test.sql`.
 - `[CORPUS]` tables have **no** tenant policy because they have no tenant column; read access is granted only to the prediction service role, and only aggregate columns are exposed.
 - Reference views (e.g. `active_*`) should be `security_invoker = true` so they respect the caller's RLS.
 
