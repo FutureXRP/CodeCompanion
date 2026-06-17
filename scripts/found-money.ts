@@ -11,10 +11,23 @@
  * Run from the repository root (paths resolve from process.cwd()).
  */
 import { runFoundMoney } from '../lib/found-money/run'
+import { findingsToCsv, reportToJson } from '../lib/found-money/export'
 import { formatCents } from '../lib/canonical'
 
 function main(): void {
-  const { totals, meta, findings } = runFoundMoney()
+  const report = runFoundMoney()
+
+  // `--csv` / `--json` emit machine-readable output for piping to a file.
+  if (process.argv.includes('--csv')) {
+    process.stdout.write(findingsToCsv(report.findings))
+    return
+  }
+  if (process.argv.includes('--json')) {
+    process.stdout.write(reportToJson(report))
+    return
+  }
+
+  const { totals, meta, findings } = report
 
   const line = '  ' + '─'.repeat(64)
   console.log('')

@@ -88,8 +88,10 @@ function paymentFinding(
   contracted: number | undefined,
   detectedAt: string,
 ): Finding | null {
-  // Denial: the line was not paid at all.
-  if (remitLine.paidCents === 0) {
+  // Denial: the payer paid nothing AND the reason is a payer adjustment, not
+  // pure patient responsibility (an unmet deductible is patient-owed, not a denial).
+  const hasPayerDenial = remitLine.adjustments.some((a) => a.groupCode !== 'PR')
+  if (remitLine.paidCents === 0 && hasPayerDenial) {
     const primary = primaryAdjustment(remitLine)
     const info = primary ? classifyCarc(primary.carcCode) : undefined
     const appealable = info?.appealable ?? true
@@ -109,24 +111,32 @@ function paymentFinding(
     }
   }
 
-  // Underpayment: paid less than our contracted rate.
-  if (contracted !== undefined && remitLine.paidCents < contracted) {
-    const delta = contracted - remitLine.paidCents
-    const co = remitLine.adjustments.find((a) => a.groupCode === 'CO')
-    return {
-      id: `underpayment:${line.id}`,
-      type: 'underpayment',
-      ...common(claim, line, detectedAt),
-      expectedCents: contracted,
-      actualCents: remitLine.paidCents,
-      deltaCents: delta,
-      recoverableCents: delta,
-      appealable: true,
-      status: 'open',
-      carcCode: co?.carcCode,
-      reason: `Paid ${formatCents(remitLine.paidCents)} against a contracted ${formatCents(
-        contracted,
-      )} — recover ${formatCents(delta)}.`,
+  // Underpayment: payer paid less than contracted, after crediting legitimate
+  // patient responsibility (coinsurance/deductible/copay) toward the contract.
+  if (contracted !== undefined) {
+    const shortfall = contracted - remitLine.paidCents - remitLine.patientRespCents
+    if (shortfall > 0) {
+      const co = remitLine.adjustments.find((a) => a.groupCode === 'CO')
+      return {
+        id: `underpayment:${line.id}`,
+        type: 'underpayment',
+        ...common(claim, line, detectedAt),
+        expectedCents: contracted,
+        actualCents: remitLine.paidCents,
+        deltaCents: contracted - remitLine.paidCents,
+        recoverableCents: shortfall,
+        appealable: true,
+        status: 'open',
+        carcCode: co?.carcCode,
+        reason:
+          remitLine.patientRespCents > 0
+            ? `Payer paid ${formatCents(remitLine.paidCents)}, patient owes ${formatCents(
+                remitLine.patientRespCents,
+              )}, vs contracted ${formatCents(contracted)} — recover ${formatCents(shortfall)} from payer.`
+            : `Paid ${formatCents(remitLine.paidCents)} against a contracted ${formatCents(
+                contracted,
+              )} — recover ${formatCents(shortfall)}.`,
+      }
     }
   }
 

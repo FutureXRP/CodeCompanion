@@ -80,6 +80,9 @@ export default function FoundMoneyPage() {
           <p style={{ fontSize: '30px', fontWeight: 700, color: '#1a7a45', margin: 0, letterSpacing: '-0.02em' }}>
             {formatCents(totals.recoverableCents)}
           </p>
+          <a href="/api/found-money/export?format=csv" style={{ display: 'inline-block', marginTop: 8, fontSize: 12, fontWeight: 600, color: '#2d5de8', textDecoration: 'none', border: '1px solid #d7e0f5', background: '#f0f4ff', borderRadius: 8, padding: '5px 11px' }}>
+            ↓ Download CSV worklist
+          </a>
         </div>
       </div>
 
