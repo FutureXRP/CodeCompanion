@@ -9,6 +9,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 4.3v7.4M9.9 5.9c-.3-.7-1-1.1-1.9-1.1-1 0-1.9.5-1.9 1.4 0 2 3.8 1 3.8 3.1 0 .9-.9 1.5-1.9 1.5-1 0-1.7-.4-2-1.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/claims',      label: 'Claims (RCM)',   badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+  { href: '/upload',      label: 'Upload & Test',  badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10.5V2.5M5 5.5L8 2.5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.5 10v2.5a1 1 0 001 1h9a1 1 0 001-1V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
   { href: '/coding',     label: 'Coding',         badge: { count: 3, color: '#b45309', bg: '#fef3d0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/gaps',       label: 'Care Gaps',      badge: { count: 8, color: '#4a5366', bg: '#f1f3f7' },

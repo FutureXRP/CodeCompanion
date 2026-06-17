@@ -1,6 +1,7 @@
 import type { Finding, FindingType } from '../canonical'
 import { loadClaims, loadRemittances } from '../adapters/edi'
-import { loadFeeSchedule } from '../adapters/fee-schedule'
+import { loadFeeSchedule, FeeSchedule } from '../adapters/fee-schedule'
+import type { Claim, Remittance } from '../canonical'
 import { runDiff } from '../diff'
 
 /**
@@ -28,7 +29,7 @@ export interface FoundMoneyReport {
   totals: FoundMoneyTotals
   meta: {
     generatedAt: string
-    source: 'samples' | 'files'
+    source: 'samples' | 'files' | 'upload'
     claimCount: number
     remittanceCount: number
     lineCount: number
@@ -36,10 +37,13 @@ export interface FoundMoneyReport {
   }
 }
 
-export function runFoundMoney(): FoundMoneyReport {
-  const claims = loadClaims()
-  const remittances = loadRemittances()
-  const feeSchedule = loadFeeSchedule()
+/** Core: run the diff over already-loaded canonical data. */
+export function runFoundMoneyFrom(
+  claims: Claim[],
+  remittances: Remittance[],
+  feeSchedule: FeeSchedule,
+  source: FoundMoneyReport['meta']['source'] = 'upload',
+): FoundMoneyReport {
   const findings = runDiff(claims, remittances, feeSchedule)
 
   const byType: Record<FindingType, TypeTotal> = {
@@ -62,11 +66,21 @@ export function runFoundMoney(): FoundMoneyReport {
     totals: { recoverableCents, count: findings.length, byType, appealableDenialCount },
     meta: {
       generatedAt: new Date().toISOString(),
-      source: process.env.EDI_USE_SAMPLE_FILES === 'false' ? 'files' : 'samples',
+      source,
       claimCount: claims.length,
       remittanceCount: remittances.length,
       lineCount: claims.reduce((total, claim) => total + claim.lines.length, 0),
       feeScheduleSize: feeSchedule.size,
     },
   }
+}
+
+/** Default entry: load the configured sample/real files, then diff. */
+export function runFoundMoney(): FoundMoneyReport {
+  return runFoundMoneyFrom(
+    loadClaims(),
+    loadRemittances(),
+    loadFeeSchedule(),
+    process.env.EDI_USE_SAMPLE_FILES === 'false' ? 'files' : 'samples',
+  )
 }
