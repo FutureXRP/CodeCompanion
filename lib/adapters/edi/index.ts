@@ -70,3 +70,4 @@ export function loadRemittances(): Remittance[] {
 }
 
 export { parse837, parse835 }
+export { generate837, type Generate837Options } from './generate-837'
