@@ -100,7 +100,7 @@ amount_cents      bigint
 id                uuid pk
 tenant_id         uuid fk
 claim_line_id     uuid fk -> claim_lines
-type              text          -- 'underpayment' | 'denial' | 'undercoding'
+type              text          -- 'underpayment' | 'denial' | 'undercoding' | 'unadjudicated'
 expected_cents    bigint
 actual_cents      bigint
 delta_cents       bigint

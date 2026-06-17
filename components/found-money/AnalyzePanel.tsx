@@ -6,10 +6,11 @@ import type { AnalyzeResult } from '@/lib/analyze/run'
 import type { ClaimStatus } from '@/lib/rcm/lifecycle'
 import type { FindingType } from '@/lib/canonical'
 
-const TYPE_VARIANT: Record<FindingType, 'blue' | 'red' | 'amber'> = {
+const TYPE_VARIANT: Record<FindingType, 'blue' | 'red' | 'amber' | 'purple'> = {
   underpayment: 'blue',
   denial: 'red',
   undercoding: 'amber',
+  unadjudicated: 'purple',
 }
 const STATUS_VARIANT: Record<ClaimStatus, 'green' | 'red' | 'amber' | 'blue' | 'gray'> = {
   paid: 'green',

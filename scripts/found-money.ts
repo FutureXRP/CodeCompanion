@@ -42,6 +42,7 @@ function main(): void {
   console.log(`    underpayments         ${formatCents(totals.byType.underpayment.recoverableCents).padStart(12)}  (${totals.byType.underpayment.count})`)
   console.log(`    denials (appealable)  ${formatCents(totals.byType.denial.recoverableCents).padStart(12)}  (${totals.byType.denial.count})`)
   console.log(`    undercoding           ${formatCents(totals.byType.undercoding.recoverableCents).padStart(12)}  (${totals.byType.undercoding.count})`)
+  console.log(`    unadjudicated (risk)  ${formatCents(totals.byType.unadjudicated.recoverableCents).padStart(12)}  (${totals.byType.unadjudicated.count})`)
   console.log('')
   console.log('  Ranked findings')
   console.log(line)

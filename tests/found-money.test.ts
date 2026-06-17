@@ -31,7 +31,7 @@ test('CARC classification: appealable vs terminal vs contractual', () => {
 
 test('837 parser maps the sample into canonical claims', () => {
   const claims = loadSampleClaims()
-  assert.equal(claims.length, 3)
+  assert.equal(claims.length, 4)
   const c1 = claims.find((c) => c.controlNumber === 'PATIENT001')
   assert.ok(c1)
   assert.equal(c1.lines.length, 2)
@@ -51,15 +51,18 @@ test('835 parser maps the sample into canonical remittances', () => {
   assert.ok(denied.lines[0].adjustments.some((a) => a.groupCode === 'CO' && a.carcCode === '197'))
 })
 
-test('full pipeline totals are exactly $192.50', () => {
+test('full pipeline totals are exactly $287.50', () => {
   const report = runFoundMoney()
-  assert.equal(report.totals.recoverableCents, 19250)
-  assert.equal(report.totals.count, 6)
+  assert.equal(report.totals.recoverableCents, 28750)
+  assert.equal(report.totals.count, 7)
   assert.equal(report.totals.byType.denial.recoverableCents, 16000)
   assert.equal(report.totals.byType.undercoding.recoverableCents, 2000)
   assert.equal(report.totals.byType.underpayment.recoverableCents, 1250)
+  // PATIENT004: 837 sent, no 835 — contracted 99213 ($95) at timely-filing risk
+  assert.equal(report.totals.byType.unadjudicated.recoverableCents, 9500)
+  assert.equal(report.totals.byType.unadjudicated.count, 1)
   assert.equal(report.totals.appealableDenialCount, 1)
-  // ranked by recoverable dollars
+  // ranked by recoverable dollars — the $160 denial still leads
   assert.equal(report.findings[0].recoverableCents, 16000)
 })
 
@@ -128,6 +131,41 @@ test('an unmet-deductible zero-pay line is patient-owed, not an appealable denia
   const findings = runDiff([claim], [remit], rates, FIXED_NOW)
   assert.equal(findings.filter((f) => f.type === 'denial').length, 0)
   assert.equal(findings.length, 0)
+})
+
+test('a submitted claim with no remittance surfaces as unadjudicated (timely-filing risk)', () => {
+  const claim = { ...lineClaim('99214', 15000), controlNumber: 'C9', dateOfService: '2025-01-01' }
+  const findings = runDiff([claim], [], rates, FIXED_NOW) // no 835 at all
+  assert.equal(findings.length, 1)
+  assert.equal(findings[0].type, 'unadjudicated')
+  assert.equal(findings[0].appealable, false)
+  assert.equal(findings[0].recoverableCents, 11500) // contracted 99214, not the $150 billed
+  assert.match(findings[0].reason, /no remittance/i)
+})
+
+test('a line the payer dropped is unadjudicated even when the rest of the claim paid', () => {
+  const claim: Claim = {
+    controlNumber: 'C2',
+    payer: { externalId: 'P', name: 'Test Payer' },
+    diagnoses: ['E1165'],
+    dateOfService: '2026-03-01',
+    totalBilledCents: 19000,
+    sourceAdapter: 'edi',
+    lines: [
+      { id: 'C2:1', lineNumber: 1, cptHcpcs: '99214', modifiers: [], units: 1, diagnosisPointers: [1], billedCents: 15000 },
+      { id: 'C2:2', lineNumber: 2, cptHcpcs: '93000', modifiers: [], units: 1, diagnosisPointers: [1], billedCents: 4000 },
+    ],
+  }
+  const remit: Remittance = {
+    claimControlNumber: 'C2', payerClaimControlNumber: 'X', payer: { externalId: 'P', name: 'Test Payer' },
+    claimStatusCode: '1', totalBilledCents: 19000, totalPaidCents: 11500, patientRespCents: 0,
+    lines: [{ cptHcpcs: '99214', modifiers: [], units: 1, billedCents: 15000, paidCents: 11500, allowedCents: 11500, patientRespCents: 0, adjustments: [{ groupCode: 'CO', carcCode: '45', amountCents: 3500 }] }],
+  }
+  const findings = runDiff([claim], [remit], rates, FIXED_NOW)
+  const unadj = findings.filter((f) => f.type === 'unadjudicated')
+  assert.equal(unadj.length, 1)
+  assert.equal(unadj[0].cptHcpcs, '93000')
+  assert.equal(unadj[0].recoverableCents, 4000) // no contracted rate for 93000 -> billed
 })
 
 test('CSV export has a header plus one row per finding', () => {

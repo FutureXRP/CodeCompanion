@@ -15,8 +15,8 @@ import { classifyCarc, type CarcInfo } from './carc'
  * DETERMINISTIC. No LLM ever touches this path — every dollar figure here must
  * be auditable and reproducible (CLAUDE.md). It joins, per line:
  *   837 sent  ↔  835 paid  ↔  contracted rate
- * and emits findings: underpayments, denials (classified by CARC), and
- * undercoding flags.
+ * and emits findings: underpayments, denials (classified by CARC), undercoding
+ * flags, and unadjudicated lines (837 sent, no 835 back) at timely-filing risk.
  */
 
 /** The diff depends only on this rate-lookup shape, never on the fee-schedule adapter. */
@@ -33,6 +33,11 @@ const UPCODE_MAP: Record<string, string> = {
 }
 const UNDERCODING_MIN_DIAGNOSES = 4
 const UNDERCODING_MIN_LINES = 2
+
+/** Conservative default filing window; real limits are payer-specific (90–365d). */
+const TIMELY_FILING_LIMIT_DAYS = 365
+const FILING_WARNING_WINDOW_DAYS = 90
+const MS_PER_DAY = 86_400_000
 
 type FindingCommon = Pick<
   Finding,
@@ -60,21 +65,25 @@ export function runDiff(
 
   for (const claim of claims) {
     const remit = remitByClaim.get(claim.controlNumber)
-    if (!remit) continue // nothing adjudicated to diff against yet
-
-    const remitLines = indexRemitLines(remit.lines)
+    const remitLines = remit ? indexRemitLines(remit.lines) : null
 
     for (const line of claim.lines) {
-      const remitLine = remitLines.get(lineKey(line.cptHcpcs, line.modifiers))
       const contracted = rates.rate(claim.payer.externalId, line.cptHcpcs, line.modifiers[0])
+      const remitLine = remitLines?.get(lineKey(line.cptHcpcs, line.modifiers))
 
       if (remitLine) {
         const payment = paymentFinding(claim, line, remitLine, contracted, detectedAt)
         if (payment) findings.push(payment)
-      }
 
-      const undercoding = undercodingFinding(claim, line, rates, detectedAt)
-      if (undercoding) findings.push(undercoding)
+        // Undercoding only applies to a line that was actually adjudicated.
+        const undercoding = undercodingFinding(claim, line, rates, detectedAt)
+        if (undercoding) findings.push(undercoding)
+      } else {
+        // 837 sent, but no 835 line for it — either the whole claim was never
+        // adjudicated, or the payer dropped this line. Money silently at risk of
+        // a timely-filing write-off until someone chases it.
+        findings.push(unadjudicatedFinding(claim, line, contracted, now, detectedAt))
+      }
     }
   }
 
@@ -175,6 +184,54 @@ function undercodingFinding(
       delta,
     )}). Requires chart review before re-coding.`,
   }
+}
+
+/**
+ * Submitted-but-unadjudicated line: an 837 went out and no 835 line came back.
+ * The recoverable figure is contracted (or billed, if no rate is on file) — this
+ * is revenue that ages into a permanent timely-filing write-off if nobody acts.
+ * Date-independent dollars; only the urgency note ages with `now`.
+ */
+function unadjudicatedFinding(
+  claim: Claim,
+  line: ClaimLine,
+  contracted: number | undefined,
+  now: Date,
+  detectedAt: string,
+): Finding {
+  const expected = contracted ?? line.billedCents
+  const risk = filingRisk(claim.dateOfService, now)
+  const aged = risk.days !== null ? ` (${risk.days} days since DOS)` : ''
+  const basis = contracted === undefined ? ' billed; no contracted rate on file' : ' contracted'
+  return {
+    id: `unadjudicated:${line.id}`,
+    type: 'unadjudicated',
+    ...common(claim, line, detectedAt),
+    expectedCents: expected,
+    actualCents: 0,
+    deltaCents: expected,
+    recoverableCents: expected,
+    appealable: false,
+    status: 'open',
+    reason: `837 submitted, no remittance on file${aged}. ${risk.note} Expected ${formatCents(
+      expected,
+    )}${basis}.`,
+  }
+}
+
+/** Deterministic timely-filing aging. Drives the urgency note, never the dollars. */
+function filingRisk(dateOfService: string | undefined, now: Date): { days: number | null; note: string } {
+  if (!dateOfService) {
+    return { days: null, note: 'No service date on file to age against — confirm the payer received it.' }
+  }
+  const days = Math.floor((now.getTime() - new Date(dateOfService).getTime()) / MS_PER_DAY)
+  if (days > TIMELY_FILING_LIMIT_DAYS) {
+    return { days, note: `Past the ${TIMELY_FILING_LIMIT_DAYS}-day timely-filing window — at risk of permanent write-off unless reopened; act now.` }
+  }
+  if (days > TIMELY_FILING_LIMIT_DAYS - FILING_WARNING_WINDOW_DAYS) {
+    return { days, note: `Within ${FILING_WARNING_WINDOW_DAYS} days of the ${TIMELY_FILING_LIMIT_DAYS}-day filing deadline — resubmit before it ages out.` }
+  }
+  return { days, note: 'Awaiting adjudication — follow up so it is not lost.' }
 }
 
 function common(claim: Claim, line: ClaimLine, detectedAt: string): FindingCommon {

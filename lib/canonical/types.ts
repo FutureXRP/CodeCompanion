@@ -86,7 +86,7 @@ export interface FeeScheduleLine {
   contractedCents: Cents
 }
 
-export type FindingType = 'underpayment' | 'denial' | 'undercoding'
+export type FindingType = 'underpayment' | 'denial' | 'undercoding' | 'unadjudicated'
 export type FindingStatus = 'open' | 'appealing' | 'recovered' | 'terminal'
 
 export interface Finding {

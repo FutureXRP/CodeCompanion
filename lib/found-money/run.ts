@@ -50,6 +50,7 @@ export function runFoundMoneyFrom(
     underpayment: { count: 0, recoverableCents: 0 },
     denial: { count: 0, recoverableCents: 0 },
     undercoding: { count: 0, recoverableCents: 0 },
+    unadjudicated: { count: 0, recoverableCents: 0 },
   }
   let recoverableCents = 0
   let appealableDenialCount = 0

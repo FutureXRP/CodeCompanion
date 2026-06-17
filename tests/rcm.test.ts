@@ -41,16 +41,16 @@ test('validateClaim rejects claims a clearinghouse would bounce', () => {
 test('mock clearinghouse accepts valid claims and assigns control numbers', () => {
   const ch = new MockClearinghouse(loadFeeSchedule())
   const acks = ch.submit(generate837(loadSampleClaims()))
-  assert.equal(acks.length, 3)
+  assert.equal(acks.length, 4)
   assert.ok(acks.every((a) => a.status === 'accepted' && a.payerClaimControlNumber))
 })
 
 test('full RCM cycle: submitted, adjudicated, lifecycle + worklist derived', () => {
   const r = runRcmCycle()
-  assert.equal(r.totals.accepted, 3)
+  assert.equal(r.totals.accepted, 4)
   assert.equal(r.totals.rejected, 0)
   assert.equal(r.totals.denied, 1) // 99215 -> simulated prior-auth denial
-  assert.equal(r.totals.paid, 2)
+  assert.equal(r.totals.paid, 3)
   const denied = r.claims.find((c) => c.status === 'denied')
   assert.equal(denied?.claimControlNumber, 'PATIENT002')
   // recovery worklist = appealable denial ($160) + undercoding flag ($20)

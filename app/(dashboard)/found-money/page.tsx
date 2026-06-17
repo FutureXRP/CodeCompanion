@@ -8,15 +8,17 @@ import { runFoundMoney, type FoundMoneyReport } from '@/lib/found-money/run'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const TYPE_BADGE: Record<FindingType, { label: string; variant: 'blue' | 'red' | 'amber' }> = {
+const TYPE_BADGE: Record<FindingType, { label: string; variant: 'blue' | 'red' | 'amber' | 'purple' }> = {
   underpayment: { label: 'Underpayment', variant: 'blue' },
   denial: { label: 'Denial', variant: 'red' },
   undercoding: { label: 'Undercoding', variant: 'amber' },
+  unadjudicated: { label: 'Unadjudicated', variant: 'purple' },
 }
 
 function statusBadge(finding: Finding) {
   if (finding.appealable) return <Badge label="Appealable" variant="green" />
   if (finding.type === 'undercoding') return <Badge label="Chart review" variant="purple" />
+  if (finding.type === 'unadjudicated') return <Badge label="Follow up" variant="amber" />
   if (finding.status === 'terminal') return <Badge label="Terminal" variant="gray" />
   return <Badge label="Open" variant="gray" />
 }
@@ -87,11 +89,12 @@ export default function FoundMoneyPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, margin: '18px 0 22px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, margin: '18px 0 22px' }}>
         <StatCard label="Total recoverable" value={formatCents(totals.recoverableCents)} delta={`${totals.count} findings`} />
         <StatCard label="Underpayments" value={formatCents(totals.byType.underpayment.recoverableCents)} delta={`${totals.byType.underpayment.count} lines`} />
         <StatCard label="Appealable denials" value={formatCents(totals.byType.denial.recoverableCents)} delta={`${totals.appealableDenialCount} claims`} accent="danger" />
         <StatCard label="Undercoding" value={formatCents(totals.byType.undercoding.recoverableCents)} delta={`${totals.byType.undercoding.count} flags`} accent="warning" />
+        <StatCard label="Unadjudicated" value={formatCents(totals.byType.unadjudicated.recoverableCents)} delta={`${totals.byType.unadjudicated.count} at risk`} accent="warning" />
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
