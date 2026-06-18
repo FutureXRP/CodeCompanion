@@ -22,6 +22,7 @@ import type { PayerDirectory } from './payer-directory'
 
 const DEFAULT_BASE_URL = 'https://healthcare.us.stedi.com'
 const DEFAULT_PATHS = {
+  submitJson: '/2024-04-01/change/medicalnetwork/professionalclaims/v3/submission',
   submitRawX12: '/2024-04-01/change/medicalnetwork/professionalclaims/v3/raw-x12-submission',
   claimStatus: '/2024-04-01/change/medicalnetwork/claimstatus/v2',
   listEras: '/2024-04-01/change/medicalnetwork/reports/v2',
@@ -134,6 +135,17 @@ export class StediClearinghouse implements Clearinghouse {
     return { status: res.status, body: res.json, acks: mapSubmissionResponse(res, submitted) }
   }
 
+  /** Submit a structured JSON professional claim — the test-mode-supported path. */
+  async submitJson(payload: unknown): Promise<{ status: number; body: unknown }> {
+    const res = await this.transport({
+      method: 'POST',
+      url: this.baseUrl + this.paths.submitJson,
+      headers: { ...this.headers(), 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(payload),
+    })
+    return { status: res.status, body: res.json }
+  }
+
   async checkStatus(claimControlNumbers: string[]): Promise<ClaimStatusResponse[]> {
     const out: ClaimStatusResponse[] = []
     for (const cn of claimControlNumbers) {
@@ -236,5 +248,84 @@ export function stediFromEnv(payerDirectory?: PayerDirectory): StediConfig {
     sandbox: process.env.STEDI_SANDBOX !== 'false', // must explicitly opt into production
     baseUrl: process.env.STEDI_BASE_URL || undefined,
     payerDirectory,
+  }
+}
+
+/**
+ * A fully-synthetic professional claim for Stedi TEST MODE only. Contains NO real
+ * PHI (fake patient + fake member id). usageIndicator "T" + the Stedi Test Payer
+ * (STEDITEST) mean Stedi simulates adjudication and returns a test 277CA — it is
+ * never routed to a real payer and no money moves.
+ */
+export function buildStediTestClaim(tradingPartnerServiceId = 'STEDITEST'): Record<string, unknown> {
+  return {
+    usageIndicator: 'T',
+    controlNumber: '000000001',
+    tradingPartnerServiceId,
+    submitter: {
+      organizationName: 'CODECOMPANION TEST CLINIC',
+      contactInformation: { name: 'BILLING DEPT', phoneNumber: '5125550100' },
+    },
+    receiver: { organizationName: 'STEDI TEST PAYER' },
+    subscriber: {
+      memberId: 'TEST123456789',
+      paymentResponsibilityLevelCode: 'P',
+      firstName: 'JANE',
+      lastName: 'DOE',
+      gender: 'F',
+      dateOfBirth: '19900101',
+      policyNumber: 'TEST123456789',
+      address: { address1: '123 TEST ST', city: 'AUSTIN', state: 'TX', postalCode: '78701' },
+    },
+    providers: [
+      {
+        providerType: 'BillingProvider',
+        npi: '1234567893',
+        employerId: '742345678',
+        organizationName: 'CODECOMPANION TEST CLINIC',
+        address: { address1: '123 MAIN ST', city: 'AUSTIN', state: 'TX', postalCode: '78701' },
+        contactInformation: { name: 'BILLING DEPT', phoneNumber: '5125550100' },
+      },
+      { providerType: 'RenderingProvider', npi: '1234567893', firstName: 'MATTHEW', lastName: 'BLAIR' },
+    ],
+    claimInformation: {
+      claimFilingCode: 'MB',
+      patientControlNumber: 'TEST0001',
+      claimChargeAmount: '175',
+      placeOfServiceCode: '11',
+      claimFrequencyCode: '1',
+      signatureIndicator: 'Y',
+      planParticipationCode: 'A',
+      benefitsAssignmentCertificationIndicator: 'Y',
+      releaseInformationCode: 'Y',
+      healthCareCodeInformation: [
+        { diagnosisTypeCode: 'ABK', diagnosisCode: 'E1165' },
+        { diagnosisTypeCode: 'ABF', diagnosisCode: 'I10' },
+      ],
+      serviceLines: [
+        {
+          serviceDate: '20260115',
+          professionalService: {
+            procedureIdentifier: 'HC',
+            procedureCode: '99214',
+            lineItemChargeAmount: '150',
+            measurementUnit: 'UN',
+            serviceUnitCount: '1',
+            compositeDiagnosisCodePointers: { diagnosisCodePointers: ['1', '2'] },
+          },
+        },
+        {
+          serviceDate: '20260115',
+          professionalService: {
+            procedureIdentifier: 'HC',
+            procedureCode: '36415',
+            lineItemChargeAmount: '25',
+            measurementUnit: 'UN',
+            serviceUnitCount: '1',
+            compositeDiagnosisCodePointers: { diagnosisCodePointers: ['1'] },
+          },
+        },
+      ],
+    },
   }
 }

@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { loadSampleClaims, generate837 } from '../lib/adapters/edi'
 import {
   StediClearinghouse,
+  buildStediTestClaim,
   mapSubmissionResponse,
   mapClaimStatusResponse,
   mapStatusCategory,
@@ -54,6 +55,25 @@ test('stedi submitRaw: surfaces raw HTTP status + body alongside the acks', asyn
   assert.equal(raw.status, 200)
   assert.deepEqual(raw.body, { transactionId: 'TX-9' })
   assert.ok(raw.acks.every((a) => a.status === 'accepted'))
+})
+
+test('stedi submitJson + buildStediTestClaim: posts a test-mode payload to the JSON endpoint', async () => {
+  const reqs: HttpRequest[] = []
+  const ch = new StediClearinghouse({
+    apiKey: 'k',
+    sandbox: true,
+    transport: transportReturning({ status: 200, json: { claimReference: { correlationId: 'abc' } } }, reqs),
+  })
+  const res = await ch.submitJson(buildStediTestClaim('STEDITEST'))
+  assert.equal(res.status, 200)
+
+  const req = reqs[0]
+  assert.ok(req.url.endsWith('/professionalclaims/v3/submission'))
+  assert.equal(req.headers.Authorization, 'k')
+  const body = JSON.parse(req.body ?? '{}')
+  assert.equal(body.usageIndicator, 'T') // test mode, never production
+  assert.equal(body.tradingPartnerServiceId, 'STEDITEST')
+  assert.ok(Array.isArray(body.claimInformation.serviceLines))
 })
 
 test('stedi submit: per-claim references map accepted vs rejected', () => {

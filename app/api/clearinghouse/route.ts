@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
-import { StediClearinghouse, stediFromEnv } from '@/lib/rcm/stedi-clearinghouse'
-import { generate837, loadSampleClaims } from '@/lib/adapters/edi'
+import { StediClearinghouse, stediFromEnv, buildStediTestClaim } from '@/lib/rcm/stedi-clearinghouse'
+import { loadSampleClaims } from '@/lib/adapters/edi'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,8 +35,13 @@ export async function POST(request: Request) {
     const ch = new StediClearinghouse(stediFromEnv())
 
     if (action === 'submit') {
-      const raw = await ch.submitRaw(generate837(loadSampleClaims()))
-      return NextResponse.json({ action, sandbox, httpStatus: raw.status, acks: raw.acks, raw: raw.body })
+      // Test-mode only: synthetic claim to the Stedi Test Payer, simulated adjudication.
+      if (!sandbox) {
+        return NextResponse.json({ error: 'Sandbox trials run in test mode only. Set STEDI_SANDBOX=true.' }, { status: 400 })
+      }
+      const tradingPartnerServiceId = process.env.STEDI_TEST_PAYER_ID || 'STEDITEST'
+      const res = await ch.submitJson(buildStediTestClaim(tradingPartnerServiceId))
+      return NextResponse.json({ action, sandbox, tradingPartnerServiceId, httpStatus: res.status, raw: res.body })
     }
     if (action === 'status') {
       const statuses = await ch.checkStatus(loadSampleClaims().map((c) => c.controlNumber))
