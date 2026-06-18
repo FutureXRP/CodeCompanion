@@ -25,6 +25,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4 3 3 3-6L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/schedule',   label: 'Schedule',       badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+  { href: '/account',    label: 'Account',        badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2.5 14c0-2.8 2.5-4.6 5.5-4.6s5.5 1.8 5.5 4.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
   { href: '/settings',   label: 'Settings',       badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1M12.7 12.7l-1.1-1.1M4.4 4.4L3.3 3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
 ]
@@ -67,14 +69,17 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
       </nav>
       <div style={{ padding: '14px 16px', borderTop: '1px solid #f1f3f7' }}>
         {authEnabled && userEmail ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#2d5de8', flexShrink: 0, textTransform: 'uppercase' }}>{userEmail.charAt(0)}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '12px', fontWeight: '500', color: '#333d4d', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
-              <form action="/auth/signout" method="post" style={{ margin: 0 }}>
-                <button type="submit" style={{ background: 'none', border: 'none', padding: 0, fontSize: '11px', color: '#9aa3b2', cursor: 'pointer' }}>Sign out</button>
-              </form>
-            </div>
+          <div>
+            <Link href="/account" style={{ display: 'flex', alignItems: 'center', gap: '9px', textDecoration: 'none', marginBottom: '8px' }}>
+              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#2d5de8', flexShrink: 0, textTransform: 'uppercase' }}>{userEmail.charAt(0)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '12px', fontWeight: '500', color: '#333d4d', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
+                <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>View account</p>
+              </div>
+            </Link>
+            <form action="/auth/signout" method="post" style={{ margin: 0 }}>
+              <button type="submit" style={{ width: '100%', fontSize: '12px', fontWeight: '600', color: '#4a5366', background: '#f3f5f9', border: '1px solid #e4e8ef', borderRadius: '8px', padding: '7px 0', cursor: 'pointer' }}>Sign out</button>
+            </form>
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
