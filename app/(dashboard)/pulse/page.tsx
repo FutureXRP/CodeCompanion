@@ -2,6 +2,34 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 
+// ── Palette ───────────────────────────────────────────────────
+const INK   = '#16213a'
+const SUB   = '#5a6473'
+const FAINT = '#9aa3b2'
+const LINE  = '#e9ecf2'
+const GREEN = '#1a7a45'
+const AMBER = '#b45309'
+const RED   = '#c9302c'
+
+const card: React.CSSProperties = {
+  background: '#fff',
+  border: `1px solid ${LINE}`,
+  borderRadius: 14,
+  boxShadow: '0 1px 3px rgba(15,21,32,0.04)',
+}
+
+function SectionLabel({ children, meta }: { children: string; meta?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {children}
+      </span>
+      <div style={{ height: 1, flex: 1, background: LINE }} />
+      {meta && <span style={{ fontSize: 11.5, color: FAINT }}>{meta}</span>}
+    </div>
+  )
+}
+
 // ── Billing issues ────────────────────────────────────────────
 const billingIssues = [
   { id: 1, severity: 'critical' as const, type: 'hold_bucket', title: 'Claim stuck in hold queue — 47 days', patient: 'R. Okonkwo', claimId: 'CLM-28841', payer: 'Medicare', dollarAtRisk: 211, daysInQueue: 47, deadline: 'Jun 15, 2026', denialCode: null, plainEnglish: "This claim was submitted 47 days ago and has not been processed. It is sitting in Athena's hold queue flagged for 'provider not found.' Medicare has a 12-month filing limit.", action: 'Verify NPI number on the claim matches Medicare enrollment. Correct and resubmit via Athena Collector.' },
@@ -104,13 +132,12 @@ const unconfirmed = [
 ]
 
 // ── UI helpers ────────────────────────────────────────────────
-const severityDot: Record<string, string> = { critical: '#ef4444', high: '#f87171', medium: '#fbbf24', low: '#60a5fa' }
 const severityBadge = { critical: 'red', high: 'red', medium: 'amber', low: 'blue' } as const
 
 const statusLabel: Record<string, { label: string; color: string; bg: string }> = {
-  OPEN:   { label: 'Open',   color: '#c9302c', bg: '#ffe0e0' },
-  REVIEW: { label: 'Review', color: '#b45309', bg: '#fef3d0' },
-  HOLD:   { label: 'Hold',   color: '#1e4acc', bg: '#dce6ff' },
+  OPEN:   { label: 'Open',   color: RED,   bg: `${RED}12` },
+  REVIEW: { label: 'Review', color: AMBER, bg: `${AMBER}12` },
+  HOLD:   { label: 'Hold',   color: '#2d5de8', bg: '#dce6ff' },
 }
 
 const blockLabel: Record<string, string> = {
@@ -125,20 +152,19 @@ const blockLabel: Record<string, string> = {
 
 function SectionHeader({ title, count, countVariant, subtitle }: { title: string; count: number; countVariant: 'red'|'amber'|'blue'|'green'|'gray'; subtitle: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '12px' }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
       <div>
-        <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#1e2533', margin: '0 0 2px', letterSpacing: '-0.01em' }}>{title}</h2>
-        <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0 }}>{subtitle}</p>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: INK, margin: '0 0 2px', letterSpacing: '-0.01em' }}>{title}</h2>
+        <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{subtitle}</p>
       </div>
       <Badge label={`${count} items`} variant={countVariant} />
     </div>
   )
 }
 
-function IssueCard({ children, severity }: { children: React.ReactNode; severity: 'critical'|'high'|'medium'|'low' }) {
-  const isUrgent = severity === 'critical' || severity === 'high'
+function IssueCard({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fff', border: `1px solid ${isUrgent ? '#ffe0e0' : '#e4e8ef'}`, borderRadius: '10px', marginBottom: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
+    <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 12, marginBottom: 8, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
       {children}
     </div>
   )
@@ -146,10 +172,10 @@ function IssueCard({ children, severity }: { children: React.ReactNode; severity
 
 function ActionButtons() {
   return (
-    <div style={{ display: 'flex', gap: '7px', marginTop: '12px' }}>
-      <button style={{ padding: '6px 14px', background: '#2d5de8', color: '#fff', fontSize: '12px', fontWeight: '500', borderRadius: '7px', border: 'none', cursor: 'pointer' }}>Mark in progress</button>
-      <button style={{ padding: '6px 14px', background: '#f0faf4', color: '#1a7a45', fontSize: '12px', fontWeight: '500', borderRadius: '7px', border: '1px solid #dcf4e8', cursor: 'pointer' }}>Resolved</button>
-      <button style={{ padding: '6px 14px', background: '#fff', color: '#9aa3b2', fontSize: '12px', borderRadius: '7px', border: '1px solid #e4e8ef', cursor: 'pointer' }}>Dismiss</button>
+    <div style={{ display: 'flex', gap: 7, marginTop: 12 }}>
+      <button style={{ padding: '6px 14px', background: '#2d5de8', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 7, border: 'none', cursor: 'pointer' }}>Mark in progress</button>
+      <button style={{ padding: '6px 14px', background: `${GREEN}12`, color: GREEN, fontSize: 12, fontWeight: 500, borderRadius: 7, border: `1px solid ${GREEN}28`, cursor: 'pointer' }}>Resolved</button>
+      <button style={{ padding: '6px 14px', background: '#fff', color: FAINT, fontSize: 12, borderRadius: 7, border: `1px solid ${LINE}`, cursor: 'pointer' }}>Dismiss</button>
     </div>
   )
 }
@@ -159,13 +185,13 @@ export default function PulsePage() {
   const [activeTab, setActiveTab] = useState<'billing'|'unpostables'|'labs'|'balances'|'recalls'|'messages'|'schedule'>('billing')
 
   const tabs = [
-    { key: 'billing',     label: 'Billing',       count: billingIssues.length,   color: '#c9302c' },
-    { key: 'unpostables', label: 'Unpostables',   count: unpostables.length,     color: '#c9302c' },
-    { key: 'labs',        label: 'Unrev. labs',   count: unreviewedLabs.length,  color: '#c9302c' },
-    { key: 'balances',    label: 'Balances',       count: patientBalances.length, color: '#b45309' },
-    { key: 'recalls',     label: 'Recalls',        count: recallPatients.length,  color: '#b45309' },
-    { key: 'messages',    label: 'Messages',       count: portalMessages.length,  color: '#b45309' },
-    { key: 'schedule',    label: 'Unconfirmed',    count: unconfirmed.filter(u => !u.contacted).length, color: '#c9302c' },
+    { key: 'billing',     label: 'Billing',       count: billingIssues.length,   color: RED },
+    { key: 'unpostables', label: 'Unpostables',   count: unpostables.length,     color: RED },
+    { key: 'labs',        label: 'Unrev. labs',   count: unreviewedLabs.length,  color: RED },
+    { key: 'balances',    label: 'Balances',       count: patientBalances.length, color: AMBER },
+    { key: 'recalls',     label: 'Recalls',        count: recallPatients.length,  color: AMBER },
+    { key: 'messages',    label: 'Messages',       count: portalMessages.length,  color: AMBER },
+    { key: 'schedule',    label: 'Unconfirmed',    count: unconfirmed.filter(u => !u.contacted).length, color: RED },
   ] as const
 
   const totalAtRisk = billingIssues.reduce((s, i) => s + i.dollarAtRisk, 0) +
@@ -180,38 +206,63 @@ export default function PulsePage() {
   const totalIssues = tabs.reduce((s, t) => s + t.count, 0)
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
+      <style>{`
+        .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+      `}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1e2533', margin: 0, letterSpacing: '-0.02em' }}>Practice Pulse</h1>
-          <span style={{ fontSize: '12px', color: '#9aa3b2', background: '#f1f3f7', padding: '2px 10px', borderRadius: '99px' }}>Last scan: 2:04am today</span>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginBottom: 30 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>Practice Pulse</h1>
+            <span style={{ fontSize: 12, color: FAINT, background: '#f3f5f9', padding: '2px 10px', borderRadius: 99 }}>Last scan: 2:04am today</span>
+          </div>
+          <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>AI office manager — nightly scan across billing, unpostables, labs, balances, recalls, messages, and schedule.</p>
         </div>
-        <p style={{ fontSize: '13px', color: '#9aa3b2', margin: 0 }}>AI office manager — nightly scan across billing, unpostables, labs, balances, recalls, messages, and schedule.</p>
       </div>
 
-      {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      {/* Summary KPIs — white cards, color only on numbers/icons */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 34 }}>
         {[
-          { label: 'Total issues', value: `${totalIssues}`, sub: 'Across all categories', accent: 'default' },
-          { label: 'Revenue at risk', value: `$${totalAtRisk.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, sub: 'Billing + unpostables + balances', accent: 'danger' },
-          { label: 'Needs action today', value: `${urgentCount}`, sub: 'Critical + high severity', accent: 'warning' },
+          {
+            label: 'Total issues', value: `${totalIssues}`, sub: 'Across all categories',
+            numColor: INK, accent: '#5a6473',
+            icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h2.5l2-5 2 10 2-6 1.5 3H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+          },
+          {
+            label: 'Revenue at risk', value: `$${totalAtRisk.toLocaleString('en-US', { maximumFractionDigits: 0 })}`, sub: 'Billing + unpostables + balances',
+            numColor: AMBER, accent: AMBER,
+            icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+          },
+          {
+            label: 'Needs action today', value: `${urgentCount}`, sub: 'Critical + high severity',
+            numColor: RED, accent: RED,
+            icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+          },
         ].map((s, i) => (
-          <div key={i} style={{ background: s.accent === 'danger' ? '#fff5f5' : s.accent === 'warning' ? '#fffbf0' : '#fff', border: `1px solid ${s.accent === 'danger' ? '#ffe0e0' : s.accent === 'warning' ? '#fef3d0' : '#e4e8ef'}`, borderRadius: '12px', padding: '16px 18px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)' }}>
-            <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>{s.label}</p>
-            <p style={{ fontSize: '28px', fontWeight: '600', letterSpacing: '-0.02em', margin: '0 0 4px', color: s.accent === 'danger' ? '#c9302c' : s.accent === 'warning' ? '#b45309' : '#1e2533' }}>{s.value}</p>
-            <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0 }}>{s.sub}</p>
+          <div key={i} className="pc-card" style={card}>
+            <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: `${s.accent}14`, color: s.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {s.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>{s.label}</p>
+                <p style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 3px', color: s.numColor, fontVariantNumeric: 'tabular-nums' }}>{s.value}</p>
+                <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{s.sub}</p>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '3px', marginBottom: '20px', background: '#f1f3f7', padding: '4px', borderRadius: '10px', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: '#f3f5f9', padding: 4, borderRadius: 10, overflowX: 'auto' }}>
         {tabs.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ flex: 1, padding: '7px 6px', fontSize: '11.5px', fontWeight: activeTab === tab.key ? '600' : '400', background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#1e2533' : '#6b7585', border: 'none', borderRadius: '7px', cursor: 'pointer', boxShadow: activeTab === tab.key ? '0 1px 3px rgba(15,21,32,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ flex: 1, padding: '7px 6px', fontSize: 11.5, fontWeight: activeTab === tab.key ? 600 : 400, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? INK : SUB, border: 'none', borderRadius: 7, cursor: 'pointer', boxShadow: activeTab === tab.key ? '0 1px 3px rgba(15,21,32,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
             {tab.label}
-            <span style={{ marginLeft: '4px', fontSize: '11px', fontWeight: '600', color: tab.color }}>{tab.count}</span>
+            <span style={{ marginLeft: 4, fontSize: 11, fontWeight: 600, color: tab.color }}>{tab.count}</span>
           </button>
         ))}
       </div>
@@ -221,28 +272,28 @@ export default function PulsePage() {
         <div>
           <SectionHeader title="Billing issues" count={billingIssues.length} countVariant="red" subtitle="Claim holds, denials, eligibility failures, and aged AR" />
           {billingIssues.map(issue => (
-            <IssueCard key={issue.id} severity={issue.severity}>
-              <div style={{ padding: '11px 16px', display: 'flex', alignItems: 'center', gap: '8px', background: issue.severity === 'critical' || issue.severity === 'high' ? '#fff5f5' : '#fafbfc', borderBottom: '1px solid #f1f3f7' }}>
-                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: severityDot[issue.severity], flexShrink: 0 }} />
-                <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e2533', flex: 1 }}>{issue.title}</span>
-                {issue.dollarAtRisk > 0 && <span style={{ fontSize: '13px', fontWeight: '700', color: '#c9302c' }}>${issue.dollarAtRisk}</span>}
+            <IssueCard key={issue.id}>
+              <div style={{ padding: '11px 16px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${LINE}` }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: issue.severity === 'critical' ? RED : issue.severity === 'high' ? AMBER : FAINT, flexShrink: 0 }} />
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: INK, flex: 1 }}>{issue.title}</span>
+                {issue.dollarAtRisk > 0 && <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, fontVariantNumeric: 'tabular-nums' }}>${issue.dollarAtRisk}</span>}
                 <Badge label={issue.severity} variant={severityBadge[issue.severity]} />
               </div>
               <div style={{ padding: '12px 16px' }}>
-                <div style={{ display: 'flex', gap: '14px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '12px', color: '#6b7585' }}>Patient: <strong style={{ color: '#333d4d' }}>{issue.patient}</strong></span>
-                  {issue.claimId && issue.claimId !== 'Pattern' && <span style={{ fontSize: '12px', color: '#6b7585' }}>Claim: <strong style={{ fontFamily: 'DM Mono, monospace', color: '#333d4d' }}>{issue.claimId}</strong></span>}
-                  <span style={{ fontSize: '12px', color: '#6b7585' }}>Payer: <strong style={{ color: '#333d4d' }}>{issue.payer}</strong></span>
-                  {issue.daysInQueue > 0 && <span style={{ fontSize: '12px', color: '#6b7585' }}>Age: <strong style={{ color: issue.daysInQueue > 45 ? '#c9302c' : '#333d4d' }}>{issue.daysInQueue} days</strong></span>}
-                  {issue.denialCode && <span style={{ fontSize: '12px', color: '#6b7585' }}>Code: <strong style={{ fontFamily: 'DM Mono, monospace', color: '#c9302c' }}>{issue.denialCode}</strong></span>}
+                <div style={{ display: 'flex', gap: 14, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, color: FAINT }}>Patient: <strong style={{ color: INK }}>{issue.patient}</strong></span>
+                  {issue.claimId && issue.claimId !== 'Pattern' && <span style={{ fontSize: 12, color: FAINT }}>Claim: <strong style={{ fontFamily: 'DM Mono, monospace', color: INK }}>{issue.claimId}</strong></span>}
+                  <span style={{ fontSize: 12, color: FAINT }}>Payer: <strong style={{ color: INK }}>{issue.payer}</strong></span>
+                  {issue.daysInQueue > 0 && <span style={{ fontSize: 12, color: FAINT }}>Age: <strong style={{ color: issue.daysInQueue > 45 ? AMBER : INK }}>{issue.daysInQueue} days</strong></span>}
+                  {issue.denialCode && <span style={{ fontSize: 12, color: FAINT }}>Code: <strong style={{ fontFamily: 'DM Mono, monospace', color: AMBER }}>{issue.denialCode}</strong></span>}
                 </div>
-                <div style={{ padding: '10px 12px', background: '#f8f9fb', borderRadius: '7px', marginBottom: '8px' }}>
-                  <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>What happened</p>
-                  <p style={{ fontSize: '12.5px', color: '#4a5366', margin: 0, lineHeight: '1.6' }}>{issue.plainEnglish}</p>
+                <div style={{ padding: '10px 12px', background: '#f8f9fb', borderRadius: 8, marginBottom: 8 }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>What happened</p>
+                  <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{issue.plainEnglish}</p>
                 </div>
-                <div style={{ padding: '10px 12px', background: '#f0f4ff', borderRadius: '7px', border: '1px solid #dce6ff' }}>
-                  <p style={{ fontSize: '11px', fontWeight: '600', color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
-                  <p style={{ fontSize: '12.5px', color: '#1e4acc', margin: 0, lineHeight: '1.6' }}>{issue.action}</p>
+                <div style={{ padding: '10px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
+                  <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{issue.action}</p>
                 </div>
                 <ActionButtons />
               </div>
@@ -263,40 +314,40 @@ export default function PulsePage() {
           {unpostables.map(u => {
             const sl = statusLabel[u.status]
             return (
-              <IssueCard key={u.id} severity={u.severity}>
-                <div style={{ padding: '11px 16px', display: 'flex', alignItems: 'center', gap: '8px', background: u.severity === 'high' ? '#fff5f5' : '#fffbf0', borderBottom: '1px solid #f1f3f7' }}>
-                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: severityDot[u.severity], flexShrink: 0 }} />
-                  <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#1e2533', flex: 1 }}>
+              <IssueCard key={u.id}>
+                <div style={{ padding: '11px 16px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${LINE}` }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: u.severity === 'high' ? AMBER : FAINT, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: INK, flex: 1 }}>
                     {u.patient} — {u.encounterType}
                   </span>
-                  <span style={{ fontSize: '11px', fontFamily: 'DM Mono, monospace', background: sl.bg, color: sl.color, padding: '2px 8px', borderRadius: '5px', fontWeight: '600' }}>{sl.label}</span>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#c9302c' }}>${u.dollarAtRisk}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', background: sl.bg, color: sl.color, padding: '2px 8px', borderRadius: 5, fontWeight: 600 }}>{sl.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: AMBER, fontVariantNumeric: 'tabular-nums' }}>${u.dollarAtRisk}</span>
                   <Badge label={`${u.daysOutstanding}d outstanding`} variant={u.daysOutstanding >= 3 ? 'red' : 'amber'} />
                 </div>
                 <div style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', gap: '14px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '12px', color: '#6b7585' }}>Encounter: <strong style={{ fontFamily: 'DM Mono, monospace', color: '#333d4d' }}>{u.encounterId}</strong></span>
-                    <span style={{ fontSize: '12px', color: '#6b7585' }}>Date: <strong style={{ color: '#333d4d' }}>{u.encounterDate}</strong></span>
-                    <span style={{ fontSize: '12px', color: '#6b7585' }}>Payer: <strong style={{ color: '#333d4d' }}>{u.payer}</strong></span>
-                    <span style={{ fontSize: '12px', color: '#6b7585' }}>Block: <strong style={{ color: '#b45309' }}>{blockLabel[u.blockReason]}</strong></span>
-                    <span style={{ fontSize: '12px', color: '#6b7585' }}>Filing deadline: <strong style={{ color: '#333d4d' }}>{u.filingDeadline}</strong></span>
+                  <div style={{ display: 'flex', gap: 14, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12, color: FAINT }}>Encounter: <strong style={{ fontFamily: 'DM Mono, monospace', color: INK }}>{u.encounterId}</strong></span>
+                    <span style={{ fontSize: 12, color: FAINT }}>Date: <strong style={{ color: INK }}>{u.encounterDate}</strong></span>
+                    <span style={{ fontSize: 12, color: FAINT }}>Payer: <strong style={{ color: INK }}>{u.payer}</strong></span>
+                    <span style={{ fontSize: 12, color: FAINT }}>Block: <strong style={{ color: AMBER }}>{blockLabel[u.blockReason]}</strong></span>
+                    <span style={{ fontSize: 12, color: FAINT }}>Filing deadline: <strong style={{ color: INK }}>{u.filingDeadline}</strong></span>
                   </div>
-                  <div style={{ padding: '10px 12px', background: '#f8f9fb', borderRadius: '7px', marginBottom: '8px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Why it's blocked</p>
-                    <p style={{ fontSize: '12.5px', color: '#4a5366', margin: 0, lineHeight: '1.6' }}>{u.plainEnglish}</p>
+                  <div style={{ padding: '10px 12px', background: '#f8f9fb', borderRadius: 8, marginBottom: 8 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Why it's blocked</p>
+                    <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{u.plainEnglish}</p>
                   </div>
-                  <div style={{ padding: '10px 12px', background: '#f0f4ff', borderRadius: '7px', border: '1px solid #dce6ff' }}>
-                    <p style={{ fontSize: '11px', fontWeight: '600', color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
-                    <p style={{ fontSize: '12.5px', color: '#1e4acc', margin: 0, lineHeight: '1.6' }}>{u.action}</p>
+                  <div style={{ padding: '10px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
+                    <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{u.action}</p>
                   </div>
                   <ActionButtons />
                 </div>
               </IssueCard>
             )
           })}
-          <div style={{ marginTop: '14px', padding: '12px 16px', background: '#f0f4ff', borderRadius: '10px', border: '1px solid #dce6ff' }}>
-            <p style={{ fontSize: '12.5px', color: '#2d5de8', margin: 0, lineHeight: '1.5' }}>
-              <strong>How unpostables are detected:</strong> Every night at 2am, PracticeCompanion pulls all encounters with status OPEN, REVIEW, or HOLD from Athena that are more than 24 hours old. Any encounter that should have been billed but hasn't appears here with a specific fix.
+          <div style={{ marginTop: 14, padding: '12px 16px', background: '#f5f8ff', borderRadius: 10, border: '1px solid #dce6ff' }}>
+            <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.5 }}>
+              <strong style={{ color: '#2d5de8' }}>How unpostables are detected:</strong> Every night at 2am, PracticeCompanion pulls all encounters with status OPEN, REVIEW, or HOLD from Athena that are more than 24 hours old. Any encounter that should have been billed but hasn't appears here with a specific fix.
             </p>
           </div>
         </div>
@@ -307,23 +358,23 @@ export default function PulsePage() {
         <div>
           <SectionHeader title="Unreviewed lab results" count={unreviewedLabs.length} countVariant="red" subtitle="Results received but not yet reviewed or communicated to patient" />
           {unreviewedLabs.map(lab => (
-            <IssueCard key={lab.id} severity={lab.severity}>
+            <IssueCard key={lab.id}>
               <div style={{ padding: '14px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <div style={{ padding: '10px 14px', background: lab.flag === 'HIGH' ? '#fff5f5' : '#f0f4ff', borderRadius: '8px', textAlign: 'center', flexShrink: 0, minWidth: '90px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', margin: '0 0 3px', textTransform: 'uppercase' }}>{lab.test}</p>
-                    <p style={{ fontSize: '16px', fontWeight: '700', color: lab.flag === 'HIGH' ? '#c9302c' : '#1e4acc', margin: '0 0 2px' }}>{lab.result}</p>
-                    <span style={{ fontSize: '10px', fontWeight: '600', color: lab.flag === 'HIGH' ? '#c9302c' : '#1e4acc', background: lab.flag === 'HIGH' ? '#ffe0e0' : '#dce6ff', padding: '1px 6px', borderRadius: '99px' }}>{lab.flag}</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ padding: '10px 14px', background: lab.flag === 'HIGH' ? `${AMBER}12` : '#f5f8ff', borderRadius: 10, textAlign: 'center', flexShrink: 0, minWidth: 90, border: `1px solid ${lab.flag === 'HIGH' ? `${AMBER}28` : '#dce6ff'}` }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, margin: '0 0 3px', textTransform: 'uppercase' }}>{lab.test}</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: lab.flag === 'HIGH' ? AMBER : '#2d5de8', margin: '0 0 2px', fontVariantNumeric: 'tabular-nums' }}>{lab.result}</p>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: lab.flag === 'HIGH' ? AMBER : '#2d5de8', background: lab.flag === 'HIGH' ? `${AMBER}12` : '#dce6ff', padding: '1px 6px', borderRadius: 99 }}>{lab.flag}</span>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533' }}>{lab.patient}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{lab.patient}</span>
                       <Badge label={lab.severity} variant={severityBadge[lab.severity]} />
-                      <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#9aa3b2' }}>Resulted {lab.resultedAt}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 12, color: FAINT }}>Resulted {lab.resultedAt}</span>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#6b7585', margin: '0 0 8px' }}>Normal range: <strong style={{ color: '#333d4d' }}>{lab.normalRange}</strong></p>
-                    <div style={{ padding: '8px 12px', background: '#f0f4ff', borderRadius: '7px', border: '1px solid #dce6ff' }}>
-                      <p style={{ fontSize: '12.5px', color: '#1e4acc', margin: 0, lineHeight: '1.5' }}>{lab.action}</p>
+                    <p style={{ fontSize: 12, color: FAINT, margin: '0 0 8px' }}>Normal range: <strong style={{ color: INK }}>{lab.normalRange}</strong></p>
+                    <div style={{ padding: '8px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
+                      <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.5 }}>{lab.action}</p>
                     </div>
                     <ActionButtons />
                   </div>
@@ -338,31 +389,31 @@ export default function PulsePage() {
       {activeTab === 'balances' && (
         <div>
           <SectionHeader title="Patient balances due today" count={patientBalances.length} countVariant="amber" subtitle={`$${patientBalances.reduce((s, b) => s + b.balance, 0).toFixed(0)} total collectible at check-in`} />
-          <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
-            <table style={{ width: '100%', fontSize: '13px' }}>
+          <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
+            <table style={{ width: '100%', fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #f1f3f7', background: '#fafbfc' }}>
+                <tr style={{ borderBottom: `1px solid ${LINE}`, background: '#fafbfd' }}>
                   {['Patient', 'Appt time', 'Balance', 'Days', 'Insurance', 'Action'].map((h, i) => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: i >= 2 && i <= 3 ? 'right' : 'left', fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: i >= 2 && i <= 3 ? 'right' : 'left', fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {patientBalances.sort((a, b) => b.balance - a.balance).map((b, i) => (
-                  <tr key={b.id} style={{ borderBottom: i < patientBalances.length - 1 ? '1px solid #f8f9fb' : 'none' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: '600', color: '#1e2533' }}>{b.patient}</td>
-                    <td style={{ padding: '12px 16px', color: '#4a5366' }}>{b.time}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '700', color: b.balance > 100 ? '#c9302c' : '#1e2533' }}>${b.balance.toFixed(2)}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', color: b.daysOutstanding > 60 ? '#c9302c' : '#b45309' }}>{b.daysOutstanding}d</td>
-                    <td style={{ padding: '12px 16px', color: '#6b7585' }}>{b.insurance}</td>
-                    <td style={{ padding: '12px 16px' }}><button style={{ padding: '4px 12px', background: '#f0f4ff', color: '#2d5de8', fontSize: '12px', fontWeight: '500', borderRadius: '6px', border: '1px solid #dce6ff', cursor: 'pointer' }}>Collect at check-in</button></td>
+                  <tr key={b.id} style={{ borderBottom: i < patientBalances.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: INK }}>{b.patient}</td>
+                    <td style={{ padding: '12px 16px', color: SUB }}>{b.time}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: b.balance > 100 ? AMBER : INK, fontVariantNumeric: 'tabular-nums' }}>${b.balance.toFixed(2)}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', color: b.daysOutstanding > 60 ? AMBER : SUB, fontVariantNumeric: 'tabular-nums' }}>{b.daysOutstanding}d</td>
+                    <td style={{ padding: '12px 16px', color: SUB }}>{b.insurance}</td>
+                    <td style={{ padding: '12px 16px' }}><button style={{ padding: '4px 12px', background: '#f5f8ff', color: '#2d5de8', fontSize: 12, fontWeight: 500, borderRadius: 6, border: '1px solid #dce6ff', cursor: 'pointer' }}>Collect at check-in</button></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ borderTop: '1px solid #e4e8ef', background: '#fafbfc' }}>
-                  <td colSpan={2} style={{ padding: '10px 16px', fontWeight: '600', color: '#1e2533' }}>Total</td>
-                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: '700', color: '#1a7a45' }}>${patientBalances.reduce((s, b) => s + b.balance, 0).toFixed(2)}</td>
+                <tr style={{ borderTop: `1px solid ${LINE}`, background: '#fafbfd' }}>
+                  <td colSpan={2} style={{ padding: '10px 16px', fontWeight: 600, color: INK }}>Total</td>
+                  <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>${patientBalances.reduce((s, b) => s + b.balance, 0).toFixed(2)}</td>
                   <td colSpan={3} />
                 </tr>
               </tfoot>
@@ -376,21 +427,21 @@ export default function PulsePage() {
         <div>
           <SectionHeader title="Overdue recall patients" count={recallPatients.length} countVariant="amber" subtitle="Patients told to follow up who have not yet scheduled" />
           {recallPatients.map(r => (
-            <IssueCard key={r.id} severity={r.severity}>
-              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{ padding: '8px 12px', background: r.daysOverdue > 30 ? '#fff5f5' : '#fffbf0', borderRadius: '8px', textAlign: 'center', flexShrink: 0, minWidth: '70px' }}>
-                  <p style={{ fontSize: '22px', fontWeight: '700', color: r.daysOverdue > 30 ? '#c9302c' : '#b45309', margin: '0 0 2px' }}>{r.daysOverdue}</p>
-                  <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>days over</p>
+            <IssueCard key={r.id}>
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ padding: '8px 12px', background: `${AMBER}12`, borderRadius: 10, textAlign: 'center', flexShrink: 0, minWidth: 70, border: `1px solid ${AMBER}28` }}>
+                  <p style={{ fontSize: 22, fontWeight: 700, color: AMBER, margin: '0 0 2px', fontVariantNumeric: 'tabular-nums' }}>{r.daysOverdue}</p>
+                  <p style={{ fontSize: 11, color: FAINT, margin: 0 }}>days over</p>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533' }}>{r.patient}</span>
-                    <span style={{ fontSize: '12px', color: '#9aa3b2' }}>Age {r.age}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{r.patient}</span>
+                    <span style={{ fontSize: 12, color: FAINT }}>Age {r.age}</span>
                     <Badge label={r.severity} variant={severityBadge[r.severity]} />
                   </div>
-                  <p style={{ fontSize: '13px', fontWeight: '500', color: '#333d4d', margin: '0 0 8px' }}>{r.dueFor}</p>
-                  <div style={{ padding: '8px 12px', background: '#f0f4ff', borderRadius: '7px', border: '1px solid #dce6ff' }}>
-                    <p style={{ fontSize: '12.5px', color: '#1e4acc', margin: 0 }}>{r.action}</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: INK, margin: '0 0 8px' }}>{r.dueFor}</p>
+                  <div style={{ padding: '8px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
+                    <p style={{ fontSize: 12.5, color: SUB, margin: 0 }}>{r.action}</p>
                   </div>
                   <ActionButtons />
                 </div>
@@ -405,22 +456,22 @@ export default function PulsePage() {
         <div>
           <SectionHeader title="Unanswered portal messages" count={portalMessages.length} countVariant="amber" subtitle="Patient messages awaiting provider response" />
           {portalMessages.map(msg => (
-            <IssueCard key={msg.id} severity={msg.severity}>
+            <IssueCard key={msg.id}>
               <div style={{ padding: '14px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '600', color: '#2d5de8', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#2d5de8', flexShrink: 0 }}>
                     {msg.patient.split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533' }}>{msg.patient}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{msg.patient}</span>
                       <Badge label={msg.severity} variant={severityBadge[msg.severity]} />
-                      <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#9aa3b2' }}>{msg.receivedAt}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 12, color: FAINT }}>{msg.receivedAt}</span>
                     </div>
-                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#333d4d', margin: '0 0 4px' }}>{msg.subject}</p>
-                    <p style={{ fontSize: '12.5px', color: '#6b7585', margin: '0 0 10px', fontStyle: 'italic' }}>"{msg.preview}"</p>
-                    <div style={{ padding: '8px 12px', background: msg.severity === 'high' ? '#fff5f5' : '#f0f4ff', borderRadius: '7px', border: `1px solid ${msg.severity === 'high' ? '#ffe0e0' : '#dce6ff'}` }}>
-                      <p style={{ fontSize: '12.5px', color: msg.severity === 'high' ? '#c9302c' : '#1e4acc', margin: 0 }}>{msg.action}</p>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: INK, margin: '0 0 4px' }}>{msg.subject}</p>
+                    <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 10px', fontStyle: 'italic' }}>"{msg.preview}"</p>
+                    <div style={{ padding: '8px 12px', background: msg.severity === 'high' ? `${AMBER}09` : '#f5f8ff', borderRadius: 8, border: `1px solid ${msg.severity === 'high' ? `${AMBER}28` : '#dce6ff'}` }}>
+                      <p style={{ fontSize: 12.5, color: msg.severity === 'high' ? AMBER : SUB, margin: 0 }}>{msg.action}</p>
                     </div>
                     <ActionButtons />
                   </div>
@@ -436,23 +487,23 @@ export default function PulsePage() {
         <div>
           <SectionHeader title="Unconfirmed appointments" count={unconfirmed.filter(u => !u.contacted).length} countVariant="red" subtitle="Patients who have not confirmed today's appointment" />
           {unconfirmed.map(appt => (
-            <IssueCard key={appt.id} severity={appt.severity}>
-              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ textAlign: 'center', width: '60px', flexShrink: 0 }}>
-                  <p style={{ fontSize: '14px', fontWeight: '600', color: '#333d4d', margin: '0 0 2px' }}>{appt.time}</p>
-                  <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>{appt.type}</p>
+            <IssueCard key={appt.id}>
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ textAlign: 'center', width: 60, flexShrink: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: INK, margin: '0 0 2px' }}>{appt.time}</p>
+                  <p style={{ fontSize: 11, color: FAINT, margin: 0 }}>{appt.type}</p>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533' }}>{appt.patient}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{appt.patient}</span>
                     <Badge label={appt.contacted ? 'Confirmed' : 'Not confirmed'} variant={appt.contacted ? 'green' : 'red'} />
                     <Badge label={`${appt.noShowRisk}% no-show risk`} variant={appt.noShowRisk > 60 ? 'red' : appt.noShowRisk > 30 ? 'amber' : 'green'} />
                   </div>
-                  <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0 }}>{appt.contacted ? 'Patient confirmed via portal' : 'No response to automated reminder — manual contact recommended'}</p>
+                  <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{appt.contacted ? 'Patient confirmed via portal' : 'No response to automated reminder — manual contact recommended'}</p>
                 </div>
-                <div style={{ display: 'flex', gap: '7px', flexShrink: 0 }}>
-                  <button style={{ padding: '7px 14px', background: '#2d5de8', color: '#fff', fontSize: '12px', fontWeight: '500', borderRadius: '7px', border: 'none', cursor: 'pointer' }}>Call patient</button>
-                  <button style={{ padding: '7px 14px', background: '#f0faf4', color: '#1a7a45', fontSize: '12px', fontWeight: '500', borderRadius: '7px', border: '1px solid #dcf4e8', cursor: 'pointer' }}>Mark confirmed</button>
+                <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
+                  <button style={{ padding: '7px 14px', background: '#2d5de8', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 7, border: 'none', cursor: 'pointer' }}>Call patient</button>
+                  <button style={{ padding: '7px 14px', background: `${GREEN}12`, color: GREEN, fontSize: 12, fontWeight: 500, borderRadius: 7, border: `1px solid ${GREEN}28`, cursor: 'pointer' }}>Mark confirmed</button>
                 </div>
               </div>
             </IssueCard>
@@ -461,9 +512,9 @@ export default function PulsePage() {
       )}
 
       {/* Footer */}
-      <div style={{ marginTop: '24px', padding: '14px 18px', background: '#f8f9fb', borderRadius: '10px', border: '1px solid #e4e8ef' }}>
-        <p style={{ fontSize: '12px', color: '#9aa3b2', margin: '0 0 3px', fontWeight: '600' }}>How Practice Pulse works</p>
-        <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0, lineHeight: '1.6' }}>
+      <div style={{ marginTop: 24, padding: '14px 18px', background: '#f8f9fb', borderRadius: 12, border: `1px solid ${LINE}` }}>
+        <p style={{ fontSize: 12, color: FAINT, margin: '0 0 3px', fontWeight: 600 }}>How Practice Pulse works</p>
+        <p style={{ fontSize: 12, color: FAINT, margin: 0, lineHeight: 1.6 }}>
           Nightly at 2am, PracticeCompanion scans your Athena account across billing, unpostable encounters, lab results, patient balances, recall queues, portal messages, and appointment confirmations. All issues prioritized by dollar impact. Connected to live Athena data, this reflects your actual practice in real time.
         </p>
       </div>

@@ -45,7 +45,7 @@ test('toFindingRow stores delta + status and omits the derived recoverable figur
     id: 'denial:PATIENT002:1', type: 'denial', claimControlNumber: 'PATIENT002', claimLineId: 'PATIENT002:1',
     payerName: 'Medicare', payerExternalId: '00123', cptHcpcs: '99215', modifiers: [],
     expectedCents: 16000, actualCents: 0, deltaCents: 16000, recoverableCents: 16000,
-    appealable: true, status: 'open', detectedAt: '2026-06-18T00:00:00Z',
+    appealable: true, status: 'open', reason: 'CARC 197 — authorization absent', detectedAt: '2026-06-18T00:00:00Z',
   }
   const row = toFindingRow('tenant-1', 'line-9', f)
   assert.equal(row.tenant_id, 'tenant-1')

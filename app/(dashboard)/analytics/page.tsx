@@ -2,6 +2,34 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 
+// ── Palette ───────────────────────────────────────────────────
+const INK   = '#16213a'
+const SUB   = '#5a6473'
+const FAINT = '#9aa3b2'
+const LINE  = '#e9ecf2'
+const GREEN = '#1a7a45'
+const AMBER = '#b45309'
+const RED   = '#c9302c'
+
+const card: React.CSSProperties = {
+  background: '#fff',
+  border: `1px solid ${LINE}`,
+  borderRadius: 14,
+  boxShadow: '0 1px 3px rgba(15,21,32,0.04)',
+}
+
+function SectionLabel({ children, meta }: { children: string; meta?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {children}
+      </span>
+      <div style={{ height: 1, flex: 1, background: LINE }} />
+      {meta && <span style={{ fontSize: 11.5, color: FAINT }}>{meta}</span>}
+    </div>
+  )
+}
+
 // ── Mock data ─────────────────────────────────────────────────
 
 const weeklySchedule = [
@@ -122,9 +150,9 @@ const maxMonthlyRev = Math.max(...monthlyRevenue.map(m => Math.max(m.actual || 0
 const maxWeeklyRev  = Math.max(...weeklySchedule.map(w => Math.max(w.revenue || 0, w.projected || 0)))
 
 function TrendArrow({ trend, size = 14 }: { trend: 'up' | 'down' | 'neutral'; size?: number }) {
-  if (trend === 'up') return <span style={{ color: '#1a7a45', fontSize: `${size}px` }}>↑</span>
-  if (trend === 'down') return <span style={{ color: '#c9302c', fontSize: `${size}px` }}>↓</span>
-  return <span style={{ color: '#9aa3b2', fontSize: `${size}px` }}>→</span>
+  if (trend === 'up') return <span style={{ color: GREEN, fontSize: `${size}px` }}>↑</span>
+  if (trend === 'down') return <span style={{ color: RED, fontSize: `${size}px` }}>↓</span>
+  return <span style={{ color: FAINT, fontSize: `${size}px` }}>→</span>
 }
 
 function Sparkline({ values, color = '#3b6ef8' }: { values: number[]; color?: string }) {
@@ -147,9 +175,9 @@ function Sparkline({ values, color = '#3b6ef8' }: { values: number[]; color?: st
 
 function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div style={{ marginBottom: '16px' }}>
-      <h2 style={{ fontSize: '15px', fontWeight: '600', color: '#1e2533', margin: '0 0 3px', letterSpacing: '-0.01em' }}>{title}</h2>
-      <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0 }}>{subtitle}</p>
+    <div style={{ marginBottom: 16 }}>
+      <h2 style={{ fontSize: 14, fontWeight: 600, color: INK, margin: '0 0 3px', letterSpacing: '-0.01em' }}>{title}</h2>
+      <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{subtitle}</p>
     </div>
   )
 }
@@ -169,180 +197,198 @@ export default function AnalyticsPage() {
   const projectedMonthRevenue = upcomingAppts.reduce((s, w) => s + (w.projected || 0), 0)
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
+      <style>{`
+        .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+      `}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+      <div style={{ marginBottom: 30 }}>
+        <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: '0 0 6px', letterSpacing: '-0.025em' }}>
           Revenue Analytics
         </h1>
-        <p style={{ fontSize: '13px', color: '#9aa3b2', margin: 0 }}>
+        <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>
           Forward projections, operational performance, and year-over-year trends.
         </p>
       </div>
 
-      {/* Top KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '28px' }}>
+      {/* Top KPIs — white cards, color only on numbers/icons */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 34 }}>
         {[
           {
             label: 'Projected May revenue',
             value: `$${(projectedMay / 1000).toFixed(1)}k`,
             delta: `+${mayVsYOY}% vs May 2025`,
-            deltaType: 'up' as const,
+            deltaColor: GREEN,
             sub: `vs $${(actualApr / 1000).toFixed(1)}k in April`,
-            accent: 'success',
+            numColor: GREEN,
+            accent: GREEN,
           },
           {
             label: 'Upcoming appointments',
             value: totalUpcoming.toString(),
             delta: 'Next 4 weeks',
-            deltaType: 'neutral' as const,
+            deltaColor: FAINT,
             sub: `~${Math.round(totalUpcoming / 4)} per week`,
-            accent: 'default',
+            numColor: INK,
+            accent: '#5a6473',
           },
           {
             label: 'Overall DAR',
             value: `${overallDAR} days`,
             delta: `↓ ${prevDAR - overallDAR} days vs last month`,
-            deltaType: 'up' as const,
+            deltaColor: GREEN,
             sub: `Benchmark: ${benchmarkDAR} days`,
-            accent: overallDAR > benchmarkDAR ? 'warning' : 'success',
+            numColor: AMBER,
+            accent: AMBER,
           },
           {
             label: 'Clean claim rate',
             value: '88.4%',
             delta: '+3.3pp vs last month',
-            deltaType: 'up' as const,
+            deltaColor: GREEN,
             sub: 'Benchmark: 95.0%',
-            accent: 'warning',
+            numColor: AMBER,
+            accent: AMBER,
           },
-        ].map((kpi: { label: string; value: string; delta: string; deltaType: 'up' | 'down' | 'neutral'; sub: string; accent: string }, i) => (
-          <div key={i} style={{
-            background: kpi.accent === 'success' ? '#f0faf4' : kpi.accent === 'warning' ? '#fffbf0' : '#fff',
-            border: `1px solid ${kpi.accent === 'success' ? '#dcf4e8' : kpi.accent === 'warning' ? '#fef3d0' : '#e4e8ef'}`,
-            borderRadius: '12px', padding: '16px 18px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)',
-          }}>
-            <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>{kpi.label}</p>
-            <p style={{ fontSize: '26px', fontWeight: '600', letterSpacing: '-0.02em', margin: '0 0 4px', color: kpi.accent === 'success' ? '#1a7a45' : kpi.accent === 'warning' ? '#b45309' : '#1e2533' }}>{kpi.value}</p>
-            <p style={{ fontSize: '12px', fontWeight: '500', color: kpi.deltaType === 'up' ? '#1a7a45' : kpi.deltaType === 'down' ? '#c9302c' : '#9aa3b2', margin: '0 0 2px' }}>{kpi.delta}</p>
-            <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>{kpi.sub}</p>
+        ].map((kpi, i) => (
+          <div key={i} className="pc-card" style={card}>
+            <div style={{ padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: `${kpi.accent}14`, color: kpi.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>$</span>
+                </div>
+                <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>{kpi.label}</p>
+              </div>
+              <p style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 4px', color: kpi.numColor, fontVariantNumeric: 'tabular-nums' }}>{kpi.value}</p>
+              <p style={{ fontSize: 12, fontWeight: 500, color: kpi.deltaColor, margin: '0 0 2px' }}>{kpi.delta}</p>
+              <p style={{ fontSize: 11, color: FAINT, margin: 0 }}>{kpi.sub}</p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Revenue chart */}
-      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '14px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <div>
-            <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533', margin: '0 0 3px' }}>Revenue trend</h2>
-            <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0 }}>Actual vs projected vs prior year</p>
-          </div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button onClick={() => setShowYOY(!showYOY)} style={{ padding: '5px 12px', fontSize: '12px', fontWeight: '500', background: showYOY ? '#f0f4ff' : '#f8f9fb', color: showYOY ? '#2d5de8' : '#6b7585', border: `1px solid ${showYOY ? '#dce6ff' : '#e4e8ef'}`, borderRadius: '7px', cursor: 'pointer' }}>
-              {showYOY ? '✓ YoY' : 'YoY'}
-            </button>
-            {(['weekly','monthly'] as const).map(p => (
-              <button key={p} onClick={() => setRevPeriod(p)} style={{ padding: '5px 12px', fontSize: '12px', fontWeight: '500', background: revPeriod === p ? '#1e2533' : '#f8f9fb', color: revPeriod === p ? '#fff' : '#6b7585', border: '1px solid transparent', borderRadius: '7px', cursor: 'pointer', textTransform: 'capitalize' }}>
-                {p}
+      <div style={{ marginBottom: 34 }}>
+        <SectionLabel>Revenue trend</SectionLabel>
+        <div className="pc-card" style={{ ...card, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div>
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: INK, margin: '0 0 3px' }}>Revenue trend</h2>
+              <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>Actual vs projected vs prior year</p>
+            </div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button onClick={() => setShowYOY(!showYOY)} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 500, background: showYOY ? '#f5f8ff' : '#f8f9fb', color: showYOY ? '#2d5de8' : SUB, border: `1px solid ${showYOY ? '#dce6ff' : LINE}`, borderRadius: 7, cursor: 'pointer' }}>
+                {showYOY ? '✓ YoY' : 'YoY'}
               </button>
+              {(['weekly','monthly'] as const).map(p => (
+                <button key={p} onClick={() => setRevPeriod(p)} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 500, background: revPeriod === p ? INK : '#f8f9fb', color: revPeriod === p ? '#fff' : SUB, border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', textTransform: 'capitalize' }}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+            {[
+              { color: '#3b6ef8', label: 'Actual revenue', dash: false },
+              { color: '#34d399', label: 'Projected', dash: true },
+              showYOY && { color: LINE, label: 'Prior year', dash: false },
+            ].filter(Boolean).map((item: any, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 24, height: 3, background: item.color, borderRadius: 2, borderTop: item.dash ? '2px dashed' : 'none', opacity: item.dash ? 1 : 1 }} />
+                <span style={{ fontSize: 12, color: SUB }}>{item.label}</span>
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-          {[
-            { color: '#3b6ef8', label: 'Actual revenue', dash: false },
-            { color: '#34d399', label: 'Projected', dash: true },
-            showYOY && { color: '#e4e8ef', label: 'Prior year', dash: false },
-          ].filter(Boolean).map((item: any, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '24px', height: '3px', background: item.color, borderRadius: '2px', borderTop: item.dash ? '2px dashed' : 'none', opacity: item.dash ? 1 : 1 }} />
-              <span style={{ fontSize: '12px', color: '#6b7585' }}>{item.label}</span>
+          {/* Bar chart */}
+          {revPeriod === 'monthly' && (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 160, padding: '0 4px' }}>
+              {monthlyRevenue.map((m, i) => {
+                const isProjected = m.actual === null
+                const actualH = m.actual ? (m.actual / maxMonthlyRev) * 140 : 0
+                const projH = m.projected ? (m.projected / maxMonthlyRev) * 140 : 0
+                const yoyH = m.yoy ? (m.yoy / maxMonthlyRev) * 140 : 0
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', gap: 2, height: 140 }}>
+                      {showYOY && m.yoy && (
+                        <div style={{ flex: 1, background: '#f1f3f7', borderRadius: '3px 3px 0 0', height: `${yoyH}px`, minHeight: 2 }} />
+                      )}
+                      <div style={{ flex: 1, borderRadius: '3px 3px 0 0', height: `${isProjected ? projH : actualH}px`, minHeight: 2, background: isProjected ? 'repeating-linear-gradient(45deg, #dcf4e8, #dcf4e8 2px, transparent 2px, transparent 6px)' : '#3b6ef8', position: 'relative' }}>
+                        {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 9.5, color: isProjected ? '#34d399' : FAINT, fontWeight: isProjected ? 600 : 400, whiteSpace: 'nowrap' }}>{m.month}</span>
+                  </div>
+                )
+              })}
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Bar chart */}
-        {revPeriod === 'monthly' && (
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '160px', padding: '0 4px' }}>
-            {monthlyRevenue.map((m, i) => {
-              const isProjected = m.actual === null
-              const actualH = m.actual ? (m.actual / maxMonthlyRev) * 140 : 0
-              const projH = m.projected ? (m.projected / maxMonthlyRev) * 140 : 0
-              const yoyH = m.yoy ? (m.yoy / maxMonthlyRev) * 140 : 0
-              return (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                  <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', gap: '2px', height: '140px' }}>
-                    {showYOY && m.yoy && (
-                      <div style={{ flex: 1, background: '#f1f3f7', borderRadius: '3px 3px 0 0', height: `${yoyH}px`, minHeight: '2px' }} />
-                    )}
-                    <div style={{ flex: 1, border: isProjected ? 'none' : 'none', borderRadius: '3px 3px 0 0', height: `${isProjected ? projH : actualH}px`, minHeight: '2px', background: isProjected ? 'repeating-linear-gradient(45deg, #dcf4e8, #dcf4e8 2px, transparent 2px, transparent 6px)' : '#3b6ef8', position: 'relative' }}>
-                      {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
+          {revPeriod === 'weekly' && (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 160, padding: '0 4px' }}>
+              {weeklySchedule.map((w, i) => {
+                const isProjected = w.revenue === null
+                const actualH = w.revenue ? (w.revenue / maxWeeklyRev) * 140 : 0
+                const projH = w.projected ? (w.projected / maxWeeklyRev) * 140 : 0
+                return (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <div style={{ width: '100%', height: 140, display: 'flex', alignItems: 'flex-end' }}>
+                      <div style={{ width: '100%', height: `${isProjected ? projH : actualH}px`, minHeight: 2, borderRadius: '3px 3px 0 0', background: isProjected ? 'transparent' : '#3b6ef8', position: 'relative' }}>
+                        {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
+                      </div>
                     </div>
+                    <span style={{ fontSize: 9.5, color: isProjected ? '#34d399' : FAINT, fontWeight: isProjected ? 600 : 400, whiteSpace: 'nowrap' }}>{w.week}</span>
                   </div>
-                  <span style={{ fontSize: '9.5px', color: isProjected ? '#34d399' : '#9aa3b2', fontWeight: isProjected ? '600' : '400', whiteSpace: 'nowrap' }}>{m.month}</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
+                )
+              })}
+            </div>
+          )}
 
-        {revPeriod === 'weekly' && (
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '160px', padding: '0 4px' }}>
-            {weeklySchedule.map((w, i) => {
-              const isProjected = w.revenue === null
-              const actualH = w.revenue ? (w.revenue / maxWeeklyRev) * 140 : 0
-              const projH = w.projected ? (w.projected / maxWeeklyRev) * 140 : 0
-              return (
-                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                  <div style={{ width: '100%', height: '140px', display: 'flex', alignItems: 'flex-end' }}>
-                    <div style={{ width: '100%', height: `${isProjected ? projH : actualH}px`, minHeight: '2px', borderRadius: '3px 3px 0 0', background: isProjected ? 'transparent' : '#3b6ef8', position: 'relative' }}>
-                      {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '9.5px', color: isProjected ? '#34d399' : '#9aa3b2', fontWeight: isProjected ? '600' : '400', whiteSpace: 'nowrap' }}>{w.week}</span>
-                </div>
-              )
-            })}
+          {/* Y-axis labels */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, borderTop: `1px solid ${LINE}`, paddingTop: 8 }}>
+            <span style={{ fontSize: 11, color: FAINT }}>
+              {revPeriod === 'monthly' ? `12-month actual avg: $${Math.round(monthlyRevenue.filter(m => m.actual).reduce((s, m) => s + (m.actual || 0), 0) / monthlyRevenue.filter(m => m.actual).length / 1000)}k/mo` : 'Weekly actual vs projected'}
+            </span>
+            <span style={{ fontSize: 11, color: '#34d399', fontWeight: 600 }}>
+              May projected: ${(projectedMay / 1000).toFixed(1)}k (+{mayVsYOY}% YoY)
+            </span>
           </div>
-        )}
-
-        {/* Y-axis labels */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', borderTop: '1px solid #f1f3f7', paddingTop: '8px' }}>
-          <span style={{ fontSize: '11px', color: '#9aa3b2' }}>
-            {revPeriod === 'monthly' ? `12-month actual avg: $${Math.round(monthlyRevenue.filter(m => m.actual).reduce((s, m) => s + (m.actual || 0), 0) / monthlyRevenue.filter(m => m.actual).length / 1000)}k/mo` : 'Weekly actual vs projected'}
-          </span>
-          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600' }}>
-            May projected: ${(projectedMay / 1000).toFixed(1)}k (+{mayVsYOY}% YoY)
-          </span>
         </div>
       </div>
 
       {/* Two column: Operational metrics + DAR */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, marginBottom: 34 }}>
+        <SectionLabel>Performance</SectionLabel>
+        <SectionLabel>Days in AR</SectionLabel>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, marginBottom: 34, marginTop: -20 }}>
 
         {/* Operational metrics */}
-        <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '14px', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)' }}>
+        <div className="pc-card" style={{ ...card, padding: '20px 24px' }}>
           <SectionTitle title="Operational metrics" subtitle="Your performance vs national primary care benchmarks" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {operationalMetrics.map((m, i) => (
-              <div key={i} style={{ padding: '12px 0', borderBottom: i < operationalMetrics.length - 1 ? '1px solid #f8f9fb' : 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div key={i} style={{ padding: '12px 0', borderBottom: i < operationalMetrics.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '500', color: '#333d4d' }}>{m.label}</span>
-                      <span style={{ fontSize: '11px', color: '#9aa3b2' }}>· benchmark {m.benchmark}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 2 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: INK }}>{m.label}</span>
+                      <span style={{ fontSize: 11, color: FAINT }}>· benchmark {m.benchmark}</span>
                     </div>
-                    <span style={{ fontSize: '11px', color: m.trend === 'up' ? '#1a7a45' : '#c9302c' }}>{m.delta}</span>
+                    <span style={{ fontSize: 11, color: m.trend === 'up' ? GREEN : RED }}>{m.delta}</span>
                   </div>
                   <Sparkline values={m.sparkline} color={m.trend === 'up' ? '#34d399' : '#f87171'} />
-                  <div style={{ textAlign: 'right', minWidth: '60px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                  <div style={{ textAlign: 'right', minWidth: 60 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
                       <TrendArrow trend={m.trend} />
-                      <span style={{ fontSize: '15px', fontWeight: '600', color: '#1e2533' }}>{m.value}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: INK, fontVariantNumeric: 'tabular-nums' }}>{m.value}</span>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#9aa3b2' }}>was {m.prev}</span>
+                    <span style={{ fontSize: 11, color: FAINT }}>was {m.prev}</span>
                   </div>
                 </div>
               </div>
@@ -351,127 +397,128 @@ export default function AnalyticsPage() {
         </div>
 
         {/* DAR by payer */}
-        <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '14px', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)' }}>
+        <div className="pc-card" style={{ ...card, padding: '20px 24px' }}>
           <SectionTitle title="Days in AR by payer" subtitle="Lower is better — benchmark is 30-35 days" />
 
           {/* Overall DAR */}
-          <div style={{ padding: '12px 14px', background: overallDAR > benchmarkDAR ? '#fffbf0' : '#f0faf4', borderRadius: '10px', border: `1px solid ${overallDAR > benchmarkDAR ? '#fef3d0' : '#dcf4e8'}`, marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '12px 14px', background: overallDAR > benchmarkDAR ? `${AMBER}09` : `${GREEN}09`, borderRadius: 10, border: `1px solid ${overallDAR > benchmarkDAR ? `${AMBER}28` : `${GREEN}28`}`, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 3px' }}>Overall DAR</p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                <span style={{ fontSize: '28px', fontWeight: '700', color: overallDAR > benchmarkDAR ? '#b45309' : '#1a7a45', letterSpacing: '-0.02em' }}>{overallDAR}</span>
-                <span style={{ fontSize: '13px', color: '#9aa3b2' }}>days</span>
+              <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 3px' }}>Overall DAR</p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: overallDAR > benchmarkDAR ? AMBER : GREEN, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{overallDAR}</span>
+                <span style={{ fontSize: 13, color: FAINT }}>days</span>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '12px', color: '#1a7a45', fontWeight: '600', margin: '0 0 2px' }}>↓ {prevDAR - overallDAR} days vs last month</p>
-              <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>Benchmark: {benchmarkDAR} days</p>
+              <p style={{ fontSize: 12, color: GREEN, fontWeight: 600, margin: '0 0 2px' }}>↓ {prevDAR - overallDAR} days vs last month</p>
+              <p style={{ fontSize: 11, color: FAINT, margin: 0 }}>Benchmark: {benchmarkDAR} days</p>
             </div>
           </div>
 
           {/* Per-payer DAR */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {darByPayer.map((p, i) => {
               const pct = Math.min((p.dar / 70) * 100, 100)
               const benchPct = Math.min((p.benchmark / 70) * 100, 100)
               const isOver = p.dar > p.benchmark
               return (
                 <div key={i}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                      <span style={{ fontSize: '12.5px', color: '#333d4d', fontWeight: '500' }}>{p.payer}</span>
-                      <span style={{ fontSize: '11px', color: '#9aa3b2' }}>{p.volume}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12.5, color: INK, fontWeight: 500 }}>{p.payer}</span>
+                      <span style={{ fontSize: 11, color: FAINT }}>{p.volume}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       <TrendArrow trend={p.trend} size={12} />
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: isOver ? '#c9302c' : '#1a7a45' }}>{p.dar}d</span>
-                      <span style={{ fontSize: '11px', color: '#9aa3b2' }}>was {p.prev}d</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: isOver ? AMBER : GREEN, fontVariantNumeric: 'tabular-nums' }}>{p.dar}d</span>
+                      <span style={{ fontSize: 11, color: FAINT }}>was {p.prev}d</span>
                     </div>
                   </div>
-                  <div style={{ height: '6px', background: '#f1f3f7', borderRadius: '3px', position: 'relative', overflow: 'visible' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: isOver ? '#f87171' : '#34d399', borderRadius: '3px', transition: 'width 0.5s ease' }} />
-                    <div style={{ position: 'absolute', top: '-2px', left: `${benchPct}%`, width: '2px', height: '10px', background: '#9aa3b2', borderRadius: '1px' }} title={`Benchmark: ${p.benchmark}d`} />
+                  <div style={{ height: 6, background: '#f1f3f7', borderRadius: 3, position: 'relative', overflow: 'visible' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: isOver ? '#f87171' : '#34d399', borderRadius: 3, transition: 'width 0.5s ease' }} />
+                    <div style={{ position: 'absolute', top: -2, left: `${benchPct}%`, width: 2, height: 10, background: FAINT, borderRadius: 1 }} title={`Benchmark: ${p.benchmark}d`} />
                   </div>
                 </div>
               )
             })}
           </div>
 
-          <p style={{ fontSize: '11px', color: '#9aa3b2', margin: '12px 0 0' }}>
+          <p style={{ fontSize: 11, color: FAINT, margin: '12px 0 0' }}>
             Gray markers = benchmark. Medicaid and Aetna are above target — focus collection efforts here.
           </p>
         </div>
       </div>
 
       {/* Payer mix + upcoming schedule */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px', marginBottom: '24px' }}>
+      <SectionLabel>Mix & schedule</SectionLabel>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 16, marginBottom: 34 }}>
 
         {/* Payer mix */}
-        <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '14px', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)' }}>
+        <div className="pc-card" style={{ ...card, padding: '20px 24px' }}>
           <SectionTitle title="Payer mix" subtitle="Volume distribution — shifts affect DAR and predictability" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {payerMix.map((p, i) => (
               <div key={i}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: p.color }} />
-                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#333d4d' }}>{p.payer}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: p.color }} />
+                    <span style={{ fontSize: 13, fontWeight: 500, color: INK }}>{p.payer}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '11px', color: p.pct > p.prevPct ? '#1a7a45' : p.pct < p.prevPct ? '#c9302c' : '#9aa3b2' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, color: p.pct > p.prevPct ? GREEN : p.pct < p.prevPct ? RED : FAINT }}>
                       {p.pct > p.prevPct ? '↑' : p.pct < p.prevPct ? '↓' : '→'} was {p.prevPct}%
                     </span>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#1e2533' }}>{p.pct}%</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: INK, fontVariantNumeric: 'tabular-nums' }}>{p.pct}%</span>
                   </div>
                 </div>
-                <div style={{ height: '8px', background: '#f1f3f7', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: '4px', transition: 'width 0.5s ease' }} />
+                <div style={{ height: 8, background: '#f1f3f7', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 4, transition: 'width 0.5s ease' }} />
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: '14px', padding: '10px 12px', background: '#f8f9fb', borderRadius: '8px' }}>
-            <p style={{ fontSize: '12px', color: '#4a5366', margin: 0, lineHeight: '1.5' }}>
+          <div style={{ marginTop: 14, padding: '10px 12px', background: '#f8f9fb', borderRadius: 9, border: `1px solid ${LINE}` }}>
+            <p style={{ fontSize: 12, color: SUB, margin: 0, lineHeight: 1.5 }}>
               Medicare mix increasing (+2pp) — positive for DAR predictability. Medicaid decrease (-1pp) helps DAR overall.
             </p>
           </div>
         </div>
 
         {/* Upcoming schedule */}
-        <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: '14px', padding: '20px 24px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)' }}>
+        <div className="pc-card" style={{ ...card, padding: '20px 24px' }}>
           <SectionTitle title="Upcoming schedule — next 4 weeks" subtitle={`${totalUpcoming} appointments · $${(projectedMonthRevenue / 1000).toFixed(1)}k projected revenue`} />
-          <table style={{ width: '100%', fontSize: '13px' }}>
+          <table style={{ width: '100%', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #f1f3f7' }}>
+              <tr style={{ borderBottom: `1px solid ${LINE}` }}>
                 {['Week of', 'Scheduled', 'Proj. revenue', 'Avg/visit'].map((h, i) => (
-                  <th key={h} style={{ padding: '7px 10px', textAlign: i > 0 ? 'right' : 'left', fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  <th key={h} style={{ padding: '7px 10px', textAlign: i > 0 ? 'right' : 'left', fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {weeklySchedule.filter(w => w.completed === null).map((w, i, arr) => (
-                <tr key={i} style={{ borderBottom: i < arr.length - 1 ? '1px solid #f8f9fb' : 'none' }}>
-                  <td style={{ padding: '10px 10px', fontWeight: '500', color: '#333d4d' }}>{w.week}</td>
-                  <td style={{ padding: '10px 10px', textAlign: 'right', color: '#4a5366' }}>{w.scheduled}</td>
-                  <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '600', color: '#1a7a45' }}>${((w.projected || 0) / 1000).toFixed(1)}k</td>
-                  <td style={{ padding: '10px 10px', textAlign: 'right', color: '#6b7585' }}>${Math.round((w.projected || 0) / w.scheduled)}</td>
+                <tr key={i} style={{ borderBottom: i < arr.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+                  <td style={{ padding: '10px 10px', fontWeight: 500, color: INK }}>{w.week}</td>
+                  <td style={{ padding: '10px 10px', textAlign: 'right', color: SUB, fontVariantNumeric: 'tabular-nums' }}>{w.scheduled}</td>
+                  <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>${((w.projected || 0) / 1000).toFixed(1)}k</td>
+                  <td style={{ padding: '10px 10px', textAlign: 'right', color: SUB, fontVariantNumeric: 'tabular-nums' }}>${Math.round((w.projected || 0) / w.scheduled)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr style={{ borderTop: '1px solid #e4e8ef', background: '#f8f9fb' }}>
-                <td style={{ padding: '10px 10px', fontWeight: '600', color: '#1e2533' }}>Total</td>
-                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '600', color: '#1e2533' }}>{totalUpcoming}</td>
-                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '700', color: '#1a7a45' }}>${(projectedMonthRevenue / 1000).toFixed(1)}k</td>
-                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: '600', color: '#1e2533' }}>${Math.round(projectedMonthRevenue / totalUpcoming)}</td>
+              <tr style={{ borderTop: `1px solid ${LINE}`, background: '#fafbfd' }}>
+                <td style={{ padding: '10px 10px', fontWeight: 600, color: INK }}>Total</td>
+                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: INK, fontVariantNumeric: 'tabular-nums' }}>{totalUpcoming}</td>
+                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>${(projectedMonthRevenue / 1000).toFixed(1)}k</td>
+                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: INK, fontVariantNumeric: 'tabular-nums' }}>${Math.round(projectedMonthRevenue / totalUpcoming)}</td>
               </tr>
             </tfoot>
           </table>
 
-          <div style={{ marginTop: '14px', padding: '10px 12px', background: '#f0f4ff', borderRadius: '8px', border: '1px solid #dce6ff' }}>
-            <p style={{ fontSize: '12px', color: '#2d5de8', margin: 0, lineHeight: '1.5' }}>
-              <strong>Projection basis:</strong> Scheduled appointments × average allowed by payer mix × (1 − 7.2% no-show rate) + expected care gap revenue.
+          <div style={{ marginTop: 14, padding: '10px 12px', background: '#f5f8ff', borderRadius: 9, border: '1px solid #dce6ff' }}>
+            <p style={{ fontSize: 12, color: SUB, margin: 0, lineHeight: 1.5 }}>
+              <strong style={{ color: '#2d5de8' }}>Projection basis:</strong> Scheduled appointments × average allowed by payer mix × (1 − 7.2% no-show rate) + expected care gap revenue.
               Actuals will vary based on coding accuracy and payer adjudication.
             </p>
           </div>
@@ -479,21 +526,21 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Insight callout */}
-      <div style={{ background: '#1e2533', borderRadius: '14px', padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#3b6ef8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ background: INK, borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#3b6ef8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a7 7 0 100 14A7 7 0 009 2zM9 6v4M9 12v.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
         <div>
-          <p style={{ fontSize: '14px', fontWeight: '600', color: '#fff', margin: '0 0 6px' }}>Revenue opportunity summary</p>
-          <p style={{ fontSize: '13px', color: '#9aa3b2', margin: '0 0 10px', lineHeight: '1.6' }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: '0 0 6px' }}>Revenue opportunity summary</p>
+          <p style={{ fontSize: 13, color: '#9aa3b2', margin: '0 0 10px', lineHeight: 1.6 }}>
             Based on current dynamics, your May projected revenue of <strong style={{ color: '#34d399' }}>${(projectedMay / 1000).toFixed(1)}k</strong> is {mayVsYOY}% above May 2025.
             Closing the 3 coding leakage flags adds ~<strong style={{ color: '#34d399' }}>$310</strong> to this week alone.
             Improving clean claim rate from 88% to the 95% benchmark would recover an estimated <strong style={{ color: '#34d399' }}>$2,800/month</strong> in currently denied claims.
             Reducing DAR from {overallDAR} to {benchmarkDAR} days accelerates approximately <strong style={{ color: '#34d399' }}>$14,000</strong> in cash flow into this quarter.
           </p>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <a href="/coding" style={{ padding: '7px 14px', background: '#3b6ef8', color: '#fff', fontSize: '12.5px', fontWeight: '500', borderRadius: '8px', textDecoration: 'none', display: 'inline-block' }}>Review coding flags</a>
-            <a href="/pulse" style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: '12.5px', fontWeight: '500', borderRadius: '8px', textDecoration: 'none', display: 'inline-block' }}>View Practice Pulse</a>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a href="/coding" style={{ padding: '7px 14px', background: '#3b6ef8', color: '#fff', fontSize: 12.5, fontWeight: 500, borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>Review coding flags</a>
+            <a href="/pulse" style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12.5, fontWeight: 500, borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>View Practice Pulse</a>
           </div>
         </div>
       </div>

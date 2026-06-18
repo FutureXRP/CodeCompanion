@@ -1,5 +1,31 @@
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+
+// ── Palette ───────────────────────────────────────────────────
+const INK   = '#16213a'
+const SUB   = '#5a6473'
+const FAINT = '#9aa3b2'
+const LINE  = '#e9ecf2'
+const GREEN = '#1a7a45'
+const AMBER = '#b45309'
+
+const card: React.CSSProperties = {
+  background: '#fff',
+  border: `1px solid ${LINE}`,
+  borderRadius: 14,
+  boxShadow: '0 1px 3px rgba(15,21,32,0.04)',
+}
+
+function SectionLabel({ children, meta }: { children: string; meta?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {children}
+      </span>
+      <div style={{ height: 1, flex: 1, background: LINE }} />
+      {meta && <span style={{ fontSize: 11.5, color: FAINT }}>{meta}</span>}
+    </div>
+  )
+}
 
 const gaps = [
   {
@@ -69,14 +95,16 @@ const gaps = [
 ]
 
 const priorityBadge = { high: 'red', medium: 'amber', low: 'gray' } as const
-const typeColor: Record<string, string> = {
-  'Annual Wellness Visit': '#dce6ff',
-  'CCM Enrollment': '#dcf4e8',
-  'HCC Recapture': '#ffe0e0',
-  'HbA1c overdue': '#fef3d0',
-  'Depression screening': '#f0f4ff',
-  'Colorectal screening': '#f1f3f7',
-  'Immunization gap': '#f1f3f7',
+
+// Icon accent per gap type — small tinted tile, exactly like dashboard
+const typeAccent: Record<string, string> = {
+  'Annual Wellness Visit': '#2d5de8',
+  'CCM Enrollment':        GREEN,
+  'HCC Recapture':         AMBER,
+  'HbA1c overdue':         AMBER,
+  'Depression screening':  '#7c3aed',
+  'Colorectal screening':  '#5a6473',
+  'Immunization gap':      '#5a6473',
 }
 
 const totalRevenue = gaps.filter(g => g.revenue > 0).reduce((s, g) => s + g.revenue, 0)
@@ -84,85 +112,96 @@ const highCount = gaps.filter(g => g.priority === 'high').length
 
 export default function GapsPage() {
   return (
-    <div style={{ padding: '28px 32px', maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
+      <style>{`
+        .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-row { transition: background .12s ease; }
+        .pc-row:hover { background: #fafbfd; }
+      `}</style>
 
-      <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+      {/* Header */}
+      <div style={{ marginBottom: 30 }}>
+        <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: '0 0 6px', letterSpacing: '-0.025em' }}>
           Care gap scanner
         </h1>
-        <p style={{ fontSize: '13px', color: '#9aa3b2', margin: 0 }}>
+        <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>
           Revenue opportunities and quality gaps across your patient panel.
         </p>
       </div>
 
-      {/* Summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+      {/* Summary KPIs — white cards, color only on numbers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 34 }}>
         {[
-          { label: 'Open gaps', value: `${gaps.length}`, sub: 'Across 8 patients', accent: 'default' },
-          { label: 'High priority', value: `${highCount}`, sub: 'Needs attention now', accent: 'danger' },
-          { label: 'Recoverable revenue', value: `$${totalRevenue.toLocaleString()}`, sub: 'Direct billing + recurring', accent: 'success' },
+          { label: 'Open gaps',          value: `${gaps.length}`,               sub: 'Across 8 patients',              numColor: INK,   icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: '#5a6473' },
+          { label: 'High priority',      value: `${highCount}`,                 sub: 'Needs attention now',            numColor: AMBER, icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: AMBER },
+          { label: 'Recoverable revenue', value: `$${totalRevenue.toLocaleString()}`, sub: 'Direct billing + recurring', numColor: GREEN, icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: GREEN },
         ].map((s, i) => (
-          <div key={i} style={{
-            background: s.accent === 'danger' ? '#fff5f5' : s.accent === 'success' ? '#f0faf4' : '#fff',
-            border: `1px solid ${s.accent === 'danger' ? '#ffe0e0' : s.accent === 'success' ? '#dcf4e8' : '#e4e8ef'}`,
-            borderRadius: '12px', padding: '16px 18px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)',
-          }}>
-            <p style={{ fontSize: '11px', fontWeight: '600', color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>{s.label}</p>
-            <p style={{ fontSize: '28px', fontWeight: '600', letterSpacing: '-0.02em', margin: '0 0 4px', color: s.accent === 'danger' ? '#c9302c' : s.accent === 'success' ? '#1a7a45' : '#1e2533' }}>{s.value}</p>
-            <p style={{ fontSize: '12px', color: '#9aa3b2', margin: 0 }}>{s.sub}</p>
+          <div key={i} className="pc-card" style={card}>
+            <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: `${s.accent}14`, color: s.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {s.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>{s.label}</p>
+                <p style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em', margin: '0 0 3px', color: s.numColor, fontVariantNumeric: 'tabular-nums' }}>{s.value}</p>
+                <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{s.sub}</p>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Gap list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {gaps.map((g, i) => (
-          <div key={i} style={{
-            background: '#fff', border: '1px solid #e4e8ef', borderRadius: '12px',
-            padding: '16px 20px', boxShadow: '0 1px 3px rgba(15,21,32,0.05)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+      <SectionLabel meta={`${gaps.length} gaps`}>All care gaps</SectionLabel>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {gaps.map((g, i) => {
+          const accent = typeAccent[g.type] || '#5a6473'
+          return (
+            <div key={i} className="pc-card" style={card}>
+              <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
 
-              {/* Type pill */}
-              <div style={{
-                background: typeColor[g.type] || '#f1f3f7',
-                borderRadius: '8px', padding: '8px 12px', flexShrink: 0, minWidth: '160px', textAlign: 'center',
-              }}>
-                <p style={{ fontSize: '11px', fontWeight: '600', color: '#4a5366', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{g.type}</p>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '12px', color: '#3b6ef8', fontWeight: '500' }}>{g.code}</span>
-              </div>
-
-              {/* Detail */}
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533' }}>{g.patient}</span>
-                  {g.age > 0 && <span style={{ fontSize: '12px', color: '#9aa3b2' }}>Age {g.age} · {g.insurance}</span>}
-                  <Badge label={g.priority} variant={priorityBadge[g.priority]} />
-                  {g.revenue > 0 && (
-                    <span style={{ marginLeft: 'auto', fontSize: '14px', fontWeight: '700', color: '#1a7a45' }}>
-                      +${g.revenue}{g.type === 'CCM Enrollment' ? '/mo' : ''}
-                    </span>
-                  )}
+                {/* Type icon tile */}
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: `${accent}14`, color: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, fontWeight: 700 }}>{g.code.slice(0, 3)}</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#4a5366', margin: '0 0 8px', lineHeight: '1.5' }}>{g.detail}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                  {g.conditions.map((c, j) => (
-                    <span key={j} style={{ fontSize: '11px', background: '#f1f3f7', color: '#6b7585', padding: '2px 8px', borderRadius: '99px' }}>{c}</span>
-                  ))}
-                </div>
-              </div>
 
-              {/* Action */}
-              <button style={{
-                padding: '7px 14px', background: '#f0f4ff', color: '#2d5de8',
-                fontSize: '12.5px', fontWeight: '500', borderRadius: '8px',
-                border: '1px solid #dce6ff', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
-              }}>
-                {g.action}
-              </button>
+                {/* Detail */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{g.patient}</span>
+                    {g.age > 0 && <span style={{ fontSize: 12, color: FAINT }}>Age {g.age} · {g.insurance}</span>}
+                    <Badge label={g.priority} variant={priorityBadge[g.priority]} />
+                    {g.revenue > 0 && (
+                      <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 700, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>
+                        +${g.revenue}{g.type === 'CCM Enrollment' ? '/mo' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: SUB, margin: '0 0 4px' }}>
+                    {g.type}
+                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: FAINT, marginLeft: 8, fontWeight: 400 }}>{g.code}</span>
+                  </p>
+                  <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 8px', lineHeight: 1.5 }}>{g.detail}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {g.conditions.map((c, j) => (
+                      <span key={j} style={{ fontSize: 11, background: '#f3f5f9', color: SUB, padding: '2px 8px', borderRadius: 99 }}>{c}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action */}
+                <button style={{
+                  padding: '7px 14px', background: '#f5f8ff', color: '#2d5de8',
+                  fontSize: 12.5, fontWeight: 500, borderRadius: 8,
+                  border: '1px solid #dce6ff', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                }}>
+                  {g.action}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
