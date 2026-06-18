@@ -34,14 +34,14 @@ export interface RcmReport {
   meta: { source: 'samples' | 'files'; generatedAt: string }
 }
 
-export function runRcmCycle(): RcmReport {
+export async function runRcmCycle(): Promise<RcmReport> {
   const claims = loadClaims()
   const feeSchedule = loadFeeSchedule()
   const clearinghouse = createClearinghouse({ provider: 'mock', rates: feeSchedule, submitterId: 'BLAIRPC' })
 
   const edi837 = generate837(claims, { submitterId: 'BLAIRPC', controlNumber: '000000001' })
-  const acks = clearinghouse.submit(edi837)
-  const remittances = clearinghouse.fetchRemittances()
+  const acks = await clearinghouse.submit(edi837)
+  const remittances = await clearinghouse.fetchRemittances()
   const findings = runDiff(claims, remittances, feeSchedule)
 
   const ackByClaim = new Map(acks.map((a) => [a.claimControlNumber, a]))

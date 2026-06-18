@@ -38,15 +38,15 @@ test('validateClaim rejects claims a clearinghouse would bounce', () => {
   assert.equal(validateClaim({ ...claim, lines: [] }).ok, false)
 })
 
-test('mock clearinghouse accepts valid claims and assigns control numbers', () => {
+test('mock clearinghouse accepts valid claims and assigns control numbers', async () => {
   const ch = new MockClearinghouse(loadFeeSchedule())
-  const acks = ch.submit(generate837(loadSampleClaims()))
+  const acks = await ch.submit(generate837(loadSampleClaims()))
   assert.equal(acks.length, 4)
   assert.ok(acks.every((a) => a.status === 'accepted' && a.payerClaimControlNumber))
 })
 
-test('full RCM cycle: submitted, adjudicated, lifecycle + worklist derived', () => {
-  const r = runRcmCycle()
+test('full RCM cycle: submitted, adjudicated, lifecycle + worklist derived', async () => {
+  const r = await runRcmCycle()
   assert.equal(r.totals.accepted, 4)
   assert.equal(r.totals.rejected, 0)
   assert.equal(r.totals.denied, 1) // 99215 -> simulated prior-auth denial

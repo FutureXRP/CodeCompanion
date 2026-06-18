@@ -50,19 +50,26 @@ test('enrollment: submission is gated until a payer enrollment is approved', () 
   assert.equal(reg.canSubmit('1234567893', '00456', 'stedi', 'claim').ok, true) // no enrollment required
 })
 
-test('clearinghouse factory: mock works; real providers are gated by the compliance gate', () => {
-  const mock = createClearinghouse({ provider: 'mock', rates })
-  assert.ok(mock instanceof MockClearinghouse)
+test('clearinghouse factory: mock + stedi sandbox work; production is gated', () => {
+  assert.ok(createClearinghouse({ provider: 'mock', rates }) instanceof MockClearinghouse)
 
-  // real provider without the gate -> refuses to move PHI
-  assert.throws(() => createClearinghouse({ provider: 'stedi', rates }), /COMPLIANCE/)
-  // gate open, but the adapter itself isn't built yet
-  assert.throws(() => createClearinghouse({ provider: 'stedi', rates, allowRealPhi: true }), /not implemented/)
+  // Stedi sandbox is allowed for synthetic testing — no ALLOW_REAL_PHI needed
+  assert.ok(createClearinghouse({ provider: 'stedi', rates, stedi: { apiKey: 'test', sandbox: true } }))
+
+  // Stedi in production without the gate -> refuses to move PHI
+  assert.throws(
+    () => createClearinghouse({ provider: 'stedi', rates, stedi: { apiKey: 'test', sandbox: false } }),
+    /COMPLIANCE/,
+  )
+
+  // other real providers: gated first, then not-implemented
+  assert.throws(() => createClearinghouse({ provider: 'availity', rates }), /COMPLIANCE/)
+  assert.throws(() => createClearinghouse({ provider: 'availity', rates, allowRealPhi: true }), /not implemented/)
 })
 
-test('mock clearinghouse reports claim status (276/277-equivalent)', () => {
+test('mock clearinghouse reports claim status (276/277-equivalent)', async () => {
   const ch = new MockClearinghouse(rates)
-  ch.submit(generate837(loadSampleClaims()))
-  assert.equal(ch.checkStatus(['PATIENT001'])[0].category, 'finalized')
-  assert.equal(ch.checkStatus(['NOPE'])[0].category, 'unknown')
+  await ch.submit(generate837(loadSampleClaims()))
+  assert.equal((await ch.checkStatus(['PATIENT001']))[0].category, 'finalized')
+  assert.equal((await ch.checkStatus(['NOPE']))[0].category, 'unknown')
 })

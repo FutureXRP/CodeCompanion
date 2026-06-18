@@ -24,11 +24,11 @@ const td: React.CSSProperties = {
   fontSize: 13, color: '#333d4d', padding: '11px 12px', borderBottom: '1px solid #f1f3f7', verticalAlign: 'top',
 }
 
-export default function ClaimsPage() {
+export default async function ClaimsPage() {
   let report: RcmReport | null = null
   let error: string | null = null
   try {
-    report = runRcmCycle()
+    report = await runRcmCycle()
   } catch (e) {
     error = e instanceof Error ? e.message : String(e)
   }

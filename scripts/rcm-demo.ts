@@ -9,8 +9,8 @@
 import { runRcmCycle } from '../lib/rcm/run'
 import { formatCents } from '../lib/canonical'
 
-function main(): void {
-  const { totals, claims, findings, edi837 } = runRcmCycle()
+async function main(): Promise<void> {
+  const { totals, claims, findings, edi837 } = await runRcmCycle()
   const rule = '  ' + '─'.repeat(66)
 
   console.log('')
@@ -46,4 +46,7 @@ function main(): void {
   console.log('')
 }
 
-main()
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

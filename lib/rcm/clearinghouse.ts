@@ -3,6 +3,7 @@ import { parse837 } from '../adapters/edi'
 import type { RateLookup } from '../diff'
 import type { PayerDirectory } from './payer-directory'
 import type { EnrollmentRegistry } from './enrollment'
+import { StediClearinghouse, stediFromEnv, type StediConfig } from './stedi-clearinghouse'
 
 /**
  * Clearinghouse boundary (Rung 1). Submitting 837s and pulling 835s is how a
@@ -39,11 +40,11 @@ export interface ClaimStatusResponse {
 
 export interface Clearinghouse {
   /** Submit an X12 837 document; returns one ack per claim (277CA-equivalent). */
-  submit(edi837: string): SubmissionAck[]
+  submit(edi837: string): Promise<SubmissionAck[]>
   /** Poll claim status (276/277-equivalent) for previously submitted claims. */
-  checkStatus(claimControlNumbers: string[]): ClaimStatusResponse[]
+  checkStatus(claimControlNumbers: string[]): Promise<ClaimStatusResponse[]>
   /** Pull remittances (835-equivalent) for previously accepted claims. */
-  fetchRemittances(): Remittance[]
+  fetchRemittances(): Promise<Remittance[]>
 }
 
 /** Pre-submission validation — the kind of scrub a clearinghouse rejects on. */
@@ -66,7 +67,7 @@ export class MockClearinghouse implements Clearinghouse {
 
   constructor(private readonly rates: RateLookup) {}
 
-  submit(edi837: string): SubmissionAck[] {
+  async submit(edi837: string): Promise<SubmissionAck[]> {
     const claims = parse837(edi837)
     return claims.map((claim) => {
       const check = validateClaim(claim)
@@ -83,7 +84,7 @@ export class MockClearinghouse implements Clearinghouse {
     })
   }
 
-  checkStatus(claimControlNumbers: string[]): ClaimStatusResponse[] {
+  async checkStatus(claimControlNumbers: string[]): Promise<ClaimStatusResponse[]> {
     const accepted = new Set(this.accepted.map((c) => c.controlNumber))
     return claimControlNumbers.map((cn) =>
       accepted.has(cn)
@@ -92,7 +93,7 @@ export class MockClearinghouse implements Clearinghouse {
     )
   }
 
-  fetchRemittances(): Remittance[] {
+  async fetchRemittances(): Promise<Remittance[]> {
     return this.accepted.map((claim) => {
       const lines: RemittanceLine[] = claim.lines.map((line) => {
         const contracted = this.rates.rate(claim.payer.externalId, line.cptHcpcs, line.modifiers[0])
@@ -142,6 +143,8 @@ export interface ClearinghouseConfig {
   enrollment?: EnrollmentRegistry
   /** Real providers move PHI — refuse unless the COMPLIANCE.md gate is open. */
   allowRealPhi?: boolean
+  /** Stedi adapter options (api key, sandbox flag). Falls back to STEDI_* env. */
+  stedi?: StediConfig
 }
 
 /**
@@ -154,7 +157,18 @@ export function createClearinghouse(config: ClearinghouseConfig): Clearinghouse 
   switch (config.provider) {
     case 'mock':
       return new MockClearinghouse(config.rates)
-    case 'stedi':
+    case 'stedi': {
+      const stedi = config.stedi ?? stediFromEnv(config.payerDirectory)
+      const production = stedi.sandbox === false
+      if (production && !config.allowRealPhi) {
+        throw new Error(
+          'Stedi in production transmits real claims/PHI to payers — gated by COMPLIANCE.md. ' +
+            'Set allowRealPhi=true (ALLOW_REAL_PHI) only after a BAA + payer enrollment are in place. ' +
+            'Use sandbox mode (STEDI_SANDBOX=true) for synthetic testing.',
+        )
+      }
+      return new StediClearinghouse({ ...stedi, payerDirectory: stedi.payerDirectory ?? config.payerDirectory })
+    }
     case 'claimmd':
     case 'availity':
     case 'office_ally':
