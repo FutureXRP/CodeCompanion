@@ -2,7 +2,7 @@ import type { Finding } from '../canonical'
 import { loadClaims, generate837 } from '../adapters/edi'
 import { loadFeeSchedule } from '../adapters/fee-schedule'
 import { runDiff } from '../diff'
-import { MockClearinghouse } from './clearinghouse'
+import { createClearinghouse } from './clearinghouse'
 import { deriveClaimState, type ClaimState } from './lifecycle'
 
 /**
@@ -37,7 +37,7 @@ export interface RcmReport {
 export function runRcmCycle(): RcmReport {
   const claims = loadClaims()
   const feeSchedule = loadFeeSchedule()
-  const clearinghouse = new MockClearinghouse(feeSchedule)
+  const clearinghouse = createClearinghouse({ provider: 'mock', rates: feeSchedule, submitterId: 'BLAIRPC' })
 
   const edi837 = generate837(claims, { submitterId: 'BLAIRPC', controlNumber: '000000001' })
   const acks = clearinghouse.submit(edi837)

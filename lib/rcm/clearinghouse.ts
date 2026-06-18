@@ -1,6 +1,8 @@
 import type { Claim, Remittance, RemittanceLine } from '../canonical'
 import { parse837 } from '../adapters/edi'
 import type { RateLookup } from '../diff'
+import type { PayerDirectory } from './payer-directory'
+import type { EnrollmentRegistry } from './enrollment'
 
 /**
  * Clearinghouse boundary (Rung 1). Submitting 837s and pulling 835s is how a
@@ -23,9 +25,23 @@ export interface SubmissionAck {
   rejectReason?: string
 }
 
+/** Clearinghouses we can route through. `mock` is the only one implemented. */
+export type ClearinghouseProvider = 'mock' | 'stedi' | 'claimmd' | 'availity' | 'office_ally'
+
+export type ClaimStatusCategory = 'accepted' | 'pending' | 'finalized' | 'rejected' | 'unknown'
+
+/** 276/277-equivalent: where a previously submitted claim currently stands. */
+export interface ClaimStatusResponse {
+  claimControlNumber: string
+  category: ClaimStatusCategory
+  description: string
+}
+
 export interface Clearinghouse {
   /** Submit an X12 837 document; returns one ack per claim (277CA-equivalent). */
   submit(edi837: string): SubmissionAck[]
+  /** Poll claim status (276/277-equivalent) for previously submitted claims. */
+  checkStatus(claimControlNumbers: string[]): ClaimStatusResponse[]
   /** Pull remittances (835-equivalent) for previously accepted claims. */
   fetchRemittances(): Remittance[]
 }
@@ -67,6 +83,15 @@ export class MockClearinghouse implements Clearinghouse {
     })
   }
 
+  checkStatus(claimControlNumbers: string[]): ClaimStatusResponse[] {
+    const accepted = new Set(this.accepted.map((c) => c.controlNumber))
+    return claimControlNumbers.map((cn) =>
+      accepted.has(cn)
+        ? { claimControlNumber: cn, category: 'finalized', description: 'Adjudicated (mock) — remittance available.' }
+        : { claimControlNumber: cn, category: 'unknown', description: 'No record of this claim at the clearinghouse.' },
+    )
+  }
+
   fetchRemittances(): Remittance[] {
     return this.accepted.map((claim) => {
       const lines: RemittanceLine[] = claim.lines.map((line) => {
@@ -101,5 +126,50 @@ export class MockClearinghouse implements Clearinghouse {
         lines,
       }
     })
+  }
+}
+
+/**
+ * Submission config. A real provider transmits real claims to payers, so it is
+ * gated behind the COMPLIANCE.md PHI gate and needs a payer directory +
+ * enrollment registry in place before anything goes out.
+ */
+export interface ClearinghouseConfig {
+  provider: ClearinghouseProvider
+  rates: RateLookup
+  submitterId?: string
+  payerDirectory?: PayerDirectory
+  enrollment?: EnrollmentRegistry
+  /** Real providers move PHI — refuse unless the COMPLIANCE.md gate is open. */
+  allowRealPhi?: boolean
+}
+
+/**
+ * Provider-agnostic factory. Today only the mock is implemented; a real adapter
+ * (Stedi / Claim.MD / Availity / Office Ally) drops in behind the Clearinghouse
+ * interface — same money math, same canonical model, nothing changes above this
+ * seam.
+ */
+export function createClearinghouse(config: ClearinghouseConfig): Clearinghouse {
+  switch (config.provider) {
+    case 'mock':
+      return new MockClearinghouse(config.rates)
+    case 'stedi':
+    case 'claimmd':
+    case 'availity':
+    case 'office_ally':
+      if (!config.allowRealPhi) {
+        throw new Error(
+          `Clearinghouse '${config.provider}' transmits real claims to payers and is gated by COMPLIANCE.md. ` +
+            'Set allowRealPhi=true (ALLOW_REAL_PHI) only after a BAA + payer enrollment are in place.',
+        )
+      }
+      throw new Error(
+        `Clearinghouse adapter '${config.provider}' is not implemented yet — wire it behind the Clearinghouse interface.`,
+      )
+    default: {
+      const exhaustive: never = config.provider
+      throw new Error(`Unknown clearinghouse provider: ${String(exhaustive)}`)
+    }
   }
 }
