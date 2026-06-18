@@ -5,6 +5,7 @@ import { StediClearinghouse, stediFromEnv, canonicalToStediClaim } from '@/lib/r
 import { sampleEncounter, encounterToClaim } from '@/lib/adapters/ehr'
 import { loadSampleClaims } from '@/lib/adapters/edi'
 import { buildLedger } from '@/lib/ledger'
+import { scrubClaim, OKLAHOMA } from '@/lib/scrub'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -44,10 +45,15 @@ export async function POST(request: Request) {
       const tradingPartnerServiceId = process.env.STEDI_TEST_PAYER_ID || 'STEDITEST'
       // Exercise the real pipeline: synthetic EHR encounter -> canonical -> Stedi JSON.
       const claim = encounterToClaim(sampleEncounter(tradingPartnerServiceId))
+      // Pre-submission scrub: a claim that fails the scrubber never reaches the payer.
+      const scrub = scrubClaim(claim, OKLAHOMA)
+      if (!scrub.ok) {
+        return NextResponse.json({ action, sandbox, error: 'Claim failed the pre-submission scrub.', scrub }, { status: 422 })
+      }
       const res = await ch.submitJson(
         canonicalToStediClaim(claim, { tradingPartnerServiceId, usageIndicator: 'T', submitterId: process.env.STEDI_SUBMITTER_ID }),
       )
-      return NextResponse.json({ action, sandbox, tradingPartnerServiceId, httpStatus: res.status, raw: res.body })
+      return NextResponse.json({ action, sandbox, tradingPartnerServiceId, scrub, httpStatus: res.status, raw: res.body })
     }
     if (action === 'status') {
       const statuses = await ch.checkStatus(loadSampleClaims().map((c) => c.controlNumber))

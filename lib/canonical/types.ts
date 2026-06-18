@@ -62,6 +62,28 @@ export interface RenderingProvider {
   lastName?: string
 }
 
+/** One service line's adjudication by a prior payer — the 837 COB line loop (2430). */
+export interface OtherPayerLineAdjudication {
+  cptHcpcs: string
+  paidCents: Cents
+  adjustments: Adjustment[]
+}
+
+/**
+ * A payer other than the destination payer on this claim — coordination of
+ * benefits. On a secondary claim, the primary payer appears here with what it
+ * paid and why, so the secondary can adjudicate the remainder.
+ */
+export interface OtherPayer {
+  payer: Payer
+  /** Responsibility sequence this payer held: P primary, S secondary, T tertiary. */
+  sequence: 'P' | 'S' | 'T'
+  paidCents: Cents
+  /** Claim-level adjustments (CAS) from this payer's remittance. */
+  adjustments?: Adjustment[]
+  lineAdjudications?: OtherPayerLineAdjudication[]
+}
+
 export interface Claim {
   /** Provider's claim control number. The join key to remittances. */
   controlNumber: string
@@ -92,6 +114,12 @@ export interface Claim {
    * a new original (frequency 1) instead.
    */
   originalClaimRef?: string
+  /**
+   * Coordination of benefits: payers that adjudicated this encounter before the
+   * destination payer. Present on a secondary/tertiary claim; drives the 837 COB
+   * loops (2320/2330/2430). See lib/rcm/cob.ts.
+   */
+  otherPayers?: OtherPayer[]
 }
 
 export interface Adjustment {

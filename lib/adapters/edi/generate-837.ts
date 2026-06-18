@@ -64,8 +64,10 @@ export function generate837(claims: Claim[], opts: Generate837Options = {}): str
 
   let hl = 2
   for (const claim of claims) {
+    // SBR01: this claim's payer sequence. A claim with prior payers is a secondary.
+    const sbrSeq = claim.otherPayers && claim.otherPayers.length > 0 ? 'S' : 'P'
     st.addSegment('HL', [String(hl), '1', '22', '0']) // 2000B subscriber
-    st.addSegment('SBR', ['P', '18', '', '', '', '', '', '', 'MB'])
+    st.addSegment('SBR', [sbrSeq, '18', '', '', '', '', '', '', claim.claimFilingCode || 'MB'])
     st.addSegment('NM1', ['IL', '1', 'SUBSCRIBER', '', '', '', '', 'MI', 'MEMBERID'])
     st.addSegment('NM1', ['PR', '2', claim.payer.name || 'PAYER', '', '', '', '', 'PI', claim.payer.externalId || 'PAYER'])
 
@@ -78,6 +80,14 @@ export function generate837(claims: Claim[], opts: Generate837Options = {}): str
     if (claim.originalClaimRef) st.addSegment('REF', ['F8', claim.originalClaimRef])
     if (claim.diagnoses.length) {
       st.addSegment('HI', claim.diagnoses.map((dx, i) => `${i === 0 ? 'ABK' : 'ABF'}:${dx}`))
+    }
+    // 2320 Other Subscriber Information (COB) — simplified claim-level: each prior
+    // payer's sequence, what it paid (AMT*D), and the payer name. A full build
+    // adds OI, the other subscriber NM1, and per-line 2430 SVD/CAS loops.
+    for (const op of claim.otherPayers ?? []) {
+      st.addSegment('SBR', [op.sequence, '18', '', '', '', '', '', '', op.payer.name ? 'CI' : 'MB'])
+      st.addSegment('AMT', ['D', amount(op.paidCents)]) // payer paid amount
+      st.addSegment('NM1', ['PR', '2', op.payer.name || 'PAYER', '', '', '', '', 'PI', op.payer.externalId || 'PAYER'])
     }
     for (const line of claim.lines) {
       st.addSegment('LX', [String(line.lineNumber)])

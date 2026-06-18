@@ -320,6 +320,17 @@ export function canonicalToStediClaim(
       ...(claim.originalClaimRef
         ? { claimSupplementalInformation: { claimControlNumber: claim.originalClaimRef } }
         : {}),
+      // Coordination of benefits: prior payers' adjudication for a secondary claim
+      // (837 loop 2320). Confirm the exact field path against Stedi docs.
+      ...(claim.otherPayers && claim.otherPayers.length > 0
+        ? {
+            otherSubscriberInformation: claim.otherPayers.map((op) => ({
+              paymentResponsibilityLevelCode: op.sequence,
+              otherPayerName: { organizationName: op.payer.name, otherPayerIdentifier: op.payer.externalId },
+              payerPaidAmount: money(op.paidCents),
+            })),
+          }
+        : {}),
       signatureIndicator: 'Y',
       planParticipationCode: 'A',
       benefitsAssignmentCertificationIndicator: 'Y',

@@ -124,6 +124,18 @@ Get this right and the moat compounds. Get it wrong and you have a breach, not a
 
 ---
 
+## Layer 4.5 — Pre-submission scrubber + state-by-state jurisdiction logic
+
+The scrubber (`lib/scrub/`) is the prevention counterpart to the diff engine: it catches what a payer would reject or deny *before* the claim goes out. Deterministic rules only — it produces findings (errors block, warnings advise), never dollar figures.
+
+Coding/modifier rules stack in three tiers, which is also how "state logic" is actually structured — most rules are **not** state-specific:
+
+1. **National** — CPT/HCPCS, ICD-10, the X12 format, and the **NCCI** edits (CCI procedure-to-procedure + MUE unit caps) plus modifier rules (25, 59/X{EPSU}, telehealth). Identical in every state.
+2. **Jurisdiction** — the genuinely state-specific layer. Selected by `(state + claim filing type)`: a Medicare claim adjudicates under that state's **MAC** and its **LCDs** (Oklahoma = **Novitas Solutions, JH**); a Medicaid claim follows the **state program** (Oklahoma = **SoonerCare/OHCA**) with its own manual, prior-auth, and state Medicaid NCCI. Modeled as a `Jurisdiction` object that layers rules on the national set — new states are data, not code branches.
+3. **Payer** — a specific payer's own policies. Mostly *learned* empirically by the Rung 2 corpus, which is already keyed by `region` (= the state axis).
+
+The seam matters more than the seed: the full CMS NCCI tables and OHCA/Novitas policy load behind the same `EditTables`/`Jurisdiction` interfaces without touching rule code. Fee-schedule-style data acquisition, not re-architecture.
+
 ## Layer 5 — Predictive adjudication service (Rung 2)
 
 Reads the corpus. Given a proposed coded encounter + payer + contract, returns:
