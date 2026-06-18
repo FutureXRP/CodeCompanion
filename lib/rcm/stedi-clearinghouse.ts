@@ -1,5 +1,5 @@
 import { parse835, parse837 } from '../adapters/edi'
-import type { Remittance } from '../canonical'
+import type { Address, Claim, Remittance } from '../canonical'
 import type { Clearinghouse, SubmissionAck, ClaimStatusResponse, ClaimStatusCategory } from './clearinghouse'
 import type { PayerDirectory } from './payer-directory'
 
@@ -248,6 +248,92 @@ export function stediFromEnv(payerDirectory?: PayerDirectory): StediConfig {
     sandbox: process.env.STEDI_SANDBOX !== 'false', // must explicitly opt into production
     baseUrl: process.env.STEDI_BASE_URL || undefined,
     payerDirectory,
+  }
+}
+
+function stediAddress(a: Address): Record<string, unknown> {
+  return {
+    address1: a.line1,
+    ...(a.line2 ? { address2: a.line2 } : {}),
+    city: a.city,
+    state: a.state,
+    postalCode: a.postalCode,
+  }
+}
+
+/**
+ * Map an enriched canonical Claim into Stedi's JSON professional-claim shape.
+ * Requires subscriber + billing provider — a payable claim cannot be built
+ * without them. This is the bridge from the canonical model (fed by the EHR
+ * adapter) to the clearinghouse.
+ */
+export function canonicalToStediClaim(
+  claim: Claim,
+  opts: { tradingPartnerServiceId: string; usageIndicator?: 'T' | 'P' },
+): Record<string, unknown> {
+  const sub = claim.subscriber
+  const bp = claim.billingProvider
+  if (!sub) throw new Error('canonicalToStediClaim: claim.subscriber is required')
+  if (!bp) throw new Error('canonicalToStediClaim: claim.billingProvider is required')
+  const rp = claim.renderingProvider
+  const money = (cents: number) => (cents / 100).toFixed(2)
+  const ymd = (d?: string) => (d ?? '').replace(/-/g, '')
+
+  return {
+    usageIndicator: opts.usageIndicator ?? 'T',
+    controlNumber: '000000001',
+    tradingPartnerServiceId: opts.tradingPartnerServiceId,
+    submitter: {
+      organizationName: bp.organizationName,
+      contactInformation: { name: 'BILLING', phoneNumber: bp.phone ?? '0000000000' },
+    },
+    receiver: { organizationName: claim.payer.name },
+    subscriber: {
+      memberId: sub.memberId,
+      paymentResponsibilityLevelCode: 'P',
+      firstName: sub.firstName,
+      lastName: sub.lastName,
+      gender: sub.gender ?? 'U',
+      dateOfBirth: ymd(sub.dateOfBirth),
+      policyNumber: sub.memberId,
+      ...(sub.address ? { address: stediAddress(sub.address) } : {}),
+    },
+    providers: [
+      {
+        providerType: 'BillingProvider',
+        npi: bp.npi,
+        ...(bp.taxId ? { employerId: bp.taxId } : {}),
+        organizationName: bp.organizationName,
+        ...(bp.address ? { address: stediAddress(bp.address) } : {}),
+      },
+      ...(rp ? [{ providerType: 'RenderingProvider', npi: rp.npi, firstName: rp.firstName ?? '', lastName: rp.lastName ?? '' }] : []),
+    ],
+    claimInformation: {
+      claimFilingCode: claim.claimFilingCode ?? 'MB',
+      patientControlNumber: claim.controlNumber,
+      claimChargeAmount: money(claim.totalBilledCents),
+      placeOfServiceCode: claim.placeOfService ?? '11',
+      claimFrequencyCode: claim.claimFrequencyCode ?? '1',
+      signatureIndicator: 'Y',
+      planParticipationCode: 'A',
+      benefitsAssignmentCertificationIndicator: 'Y',
+      releaseInformationCode: 'Y',
+      healthCareCodeInformation: claim.diagnoses.map((dx, i) => ({
+        diagnosisTypeCode: i === 0 ? 'ABK' : 'ABF',
+        diagnosisCode: dx,
+      })),
+      serviceLines: claim.lines.map((l) => ({
+        serviceDate: ymd(claim.dateOfService),
+        professionalService: {
+          procedureIdentifier: 'HC',
+          procedureCode: l.cptHcpcs,
+          lineItemChargeAmount: money(l.billedCents),
+          measurementUnit: 'UN',
+          serviceUnitCount: String(l.units),
+          compositeDiagnosisCodePointers: { diagnosisCodePointers: l.diagnosisPointers.map(String) },
+        },
+      })),
+    },
   }
 }
 

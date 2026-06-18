@@ -28,6 +28,40 @@ export interface ClaimLine {
   billedCents: Cents
 }
 
+/** A mailing / service-location address. */
+export interface Address {
+  line1: string
+  line2?: string
+  city: string
+  state: string
+  postalCode: string
+}
+
+/** The insured party on a claim. PHI — never reaches the de-identified corpus. */
+export interface Subscriber {
+  memberId: string
+  firstName: string
+  lastName: string
+  dateOfBirth?: string
+  gender?: 'M' | 'F' | 'U'
+  address?: Address
+}
+
+export interface BillingProvider {
+  npi: string
+  organizationName: string
+  taxId?: string
+  taxonomyCode?: string
+  address?: Address
+  phone?: string
+}
+
+export interface RenderingProvider {
+  npi: string
+  firstName?: string
+  lastName?: string
+}
+
 export interface Claim {
   /** Provider's claim control number. The join key to remittances. */
   controlNumber: string
@@ -41,6 +75,16 @@ export interface Claim {
   totalBilledCents: Cents
   sourceAdapter: SourceAdapter
   lines: ClaimLine[]
+  // ── Enrichment for submittable claims (Rung 1). Optional, so the Rung 0 diff
+  //    path and existing adapters are unaffected; only the 837 / Stedi builders
+  //    read these.
+  subscriber?: Subscriber
+  billingProvider?: BillingProvider
+  renderingProvider?: RenderingProvider
+  /** Claim filing indicator: MB Medicare, MC Medicaid, CI commercial, … */
+  claimFilingCode?: string
+  /** Claim frequency: 1 original, 7 replacement, 8 void. */
+  claimFrequencyCode?: string
 }
 
 export interface Adjustment {

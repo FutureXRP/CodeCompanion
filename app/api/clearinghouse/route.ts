@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
-import { StediClearinghouse, stediFromEnv, buildStediTestClaim } from '@/lib/rcm/stedi-clearinghouse'
+import { StediClearinghouse, stediFromEnv, canonicalToStediClaim } from '@/lib/rcm/stedi-clearinghouse'
+import { sampleEncounter, encounterToClaim } from '@/lib/adapters/ehr'
 import { loadSampleClaims } from '@/lib/adapters/edi'
 
 export const runtime = 'nodejs'
@@ -40,7 +41,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Sandbox trials run in test mode only. Set STEDI_SANDBOX=true.' }, { status: 400 })
       }
       const tradingPartnerServiceId = process.env.STEDI_TEST_PAYER_ID || 'STEDITEST'
-      const res = await ch.submitJson(buildStediTestClaim(tradingPartnerServiceId))
+      // Exercise the real pipeline: synthetic EHR encounter -> canonical -> Stedi JSON.
+      const claim = encounterToClaim(sampleEncounter(tradingPartnerServiceId))
+      const res = await ch.submitJson(canonicalToStediClaim(claim, { tradingPartnerServiceId, usageIndicator: 'T' }))
       return NextResponse.json({ action, sandbox, tradingPartnerServiceId, httpStatus: res.status, raw: res.body })
     }
     if (action === 'status') {

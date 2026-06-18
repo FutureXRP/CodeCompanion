@@ -8,7 +8,8 @@ const LINE = '#e9ecf2'
 type Action = 'submit' | 'status' | 'remittances'
 
 const BUTTONS: { action: Action; label: string; hint: string }[] = [
-  { action: 'submit', label: 'Submit test claim', hint: 'synthetic claim → Stedi Test Payer (STEDITEST)' },
+  { action: 'submit', label: 'Submit test claim', hint: 'synthetic encounter → Stedi Test Payer (STEDITEST)' },
+  { action: 'remittances', label: 'Fetch test ERAs', hint: 'pull the simulated 835 remittances' },
 ]
 
 export function SandboxPanel({ configured, sandbox }: { configured: boolean; sandbox: boolean }) {
@@ -88,7 +89,7 @@ export function SandboxPanel({ configured, sandbox }: { configured: boolean; san
 
       <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 14, lineHeight: 1.5 }}>
         {sandbox ? 'Test mode (usageIndicator "T") → Stedi Test Payer: a fully synthetic claim, no real PHI. Stedi simulates adjudication and returns a test 277CA — nothing is sent to a real payer and no money moves.' : 'PRODUCTION mode — gated by ALLOW_REAL_PHI + payer enrollment.'}
-        {' '}If the call fails, the raw HTTP status and Stedi response above show exactly what to adjust.
+        {' '}Full loop: Submit returns a 277CA acknowledgment; Fetch test ERAs pulls the simulated 835 (the Stedi Test Payer marks all lines paid). If a call fails, the raw HTTP status + Stedi response above show exactly what to adjust.
       </p>
     </div>
   )
