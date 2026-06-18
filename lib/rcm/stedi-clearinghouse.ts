@@ -22,9 +22,9 @@ import type { PayerDirectory } from './payer-directory'
 
 const DEFAULT_BASE_URL = 'https://healthcare.us.stedi.com'
 const DEFAULT_PATHS = {
-  submitRawX12: '/change/medicalnetwork/professionalclaims/v3/submission/raw-x12',
-  claimStatus: '/change/medicalnetwork/professionalclaimstatus/v3',
-  listEras: '/change/medicalnetwork/reports/v2/eras',
+  submitRawX12: '/2024-04-01/change/medicalnetwork/professionalclaims/v3/raw-x12-submission',
+  claimStatus: '/2024-04-01/change/medicalnetwork/claimstatus/v2',
+  listEras: '/2024-04-01/change/medicalnetwork/reports/v2',
 }
 type Paths = typeof DEFAULT_PATHS
 
@@ -105,7 +105,8 @@ export class StediClearinghouse implements Clearinghouse {
   }
 
   private headers(): Record<string, string> {
-    return { Authorization: `Key ${this.config.apiKey}`, 'Content-Type': 'application/json' }
+    // Stedi expects the raw API key in Authorization (no "Bearer"/"Key" prefix).
+    return { Authorization: this.config.apiKey, 'Content-Type': 'application/json' }
   }
 
   /** Sandbox by default — only "P" when production is explicitly requested. */
@@ -127,7 +128,7 @@ export class StediClearinghouse implements Clearinghouse {
     const res = await this.transport({
       method: 'POST',
       url: this.baseUrl + this.paths.submitRawX12,
-      headers: this.headers(),
+      headers: { ...this.headers(), 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify({ rawX12: edi837, usageIndicator: this.usageIndicator() }),
     })
     return { status: res.status, body: res.json, acks: mapSubmissionResponse(res, submitted) }

@@ -38,7 +38,7 @@ test('stedi submit: posts raw X12 with sandbox usageIndicator and Key auth', asy
 
   const req = reqs[0]
   assert.equal(req.method, 'POST')
-  assert.equal(req.headers.Authorization, 'Key test-key')
+  assert.equal(req.headers.Authorization, 'test-key')
   const body = JSON.parse(req.body ?? '{}')
   assert.equal(body.usageIndicator, 'T') // sandbox never defaults to production
   assert.ok(body.rawX12.includes('ST*837'))
