@@ -3,6 +3,15 @@ import { StatCard } from '@/components/ui/StatCard'
 import { formatCents } from '@/lib/canonical'
 import { runRcmCycle, type RcmReport } from '@/lib/rcm/run'
 import type { ClaimStatus } from '@/lib/rcm/lifecycle'
+import { WORK_ACTION_LABEL, type WorkAction } from '@/lib/rcm/worklist'
+
+const ACTION_BADGE: Record<WorkAction, 'green' | 'red' | 'amber' | 'blue' | 'gray'> = {
+  fix_resubmit: 'gray',
+  correct_resubmit: 'blue',
+  appeal: 'amber',
+  follow_up: 'blue',
+  write_off: 'red',
+}
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -44,7 +53,7 @@ export default async function ClaimsPage() {
     )
   }
 
-  const { totals, claims } = report
+  const { totals, claims, worklist } = report
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
@@ -91,6 +100,49 @@ export default async function ClaimsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginTop: 22 }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Action worklist</span>
+          <span style={{ fontSize: 12, color: '#9aa3b2' }}>{worklist.length} items · ranked by recoverable</span>
+        </div>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: 0, padding: '10px 16px', borderBottom: '1px solid #f1f3f7', lineHeight: 1.5, background: '#fbfcfe' }}>
+          A <strong>rejection</strong> (pre-adjudication) has no claim on file — fix it and resend as a new original. A <strong>denial</strong> (on the 835)
+          does — appeal it, or correct &amp; replace it as a frequency-7 claim that references the payer ICN. The worklist routes each automatically.
+        </p>
+        {worklist.length === 0 ? (
+          <div style={{ padding: '16px', fontSize: 13, color: '#6b7280' }}>Nothing to work — every claim paid clean.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={th}>Claim</th>
+                <th style={th}>CPT</th>
+                <th style={th}>Issue</th>
+                <th style={th}>Recommended action</th>
+                <th style={th}>Payer ICN</th>
+                <th style={{ ...th, textAlign: 'right' }}>Recoverable</th>
+              </tr>
+            </thead>
+            <tbody>
+              {worklist.map((w, i) => (
+                <tr key={`${w.claimControlNumber}:${w.cptHcpcs ?? ''}:${i}`}>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{w.claimControlNumber}</td>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{w.cptHcpcs ?? '—'}</td>
+                  <td style={{ ...td, textTransform: 'capitalize' }}>{w.kind}{w.carcCode ? <span style={{ color: '#9aa3b2' }}> · CARC {w.carcCode}</span> : null}</td>
+                  <td style={td}><Badge label={WORK_ACTION_LABEL[w.action]} variant={ACTION_BADGE[w.action]} /></td>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12, color: w.needsIcn ? '#333d4d' : '#c0c6d0' }}>
+                    {w.needsIcn ? w.payerClaimControlNumber ?? 'needed' : 'n/a'}
+                  </td>
+                  <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: w.recoverableCents > 0 ? 600 : 400, color: w.recoverableCents > 0 ? '#b45309' : '#9aa3b2' }}>
+                    {w.recoverableCents > 0 ? formatCents(w.recoverableCents) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 14, lineHeight: 1.5 }}>

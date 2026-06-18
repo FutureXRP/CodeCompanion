@@ -4,6 +4,7 @@ import { loadFeeSchedule } from '../adapters/fee-schedule'
 import { runDiff } from '../diff'
 import { createClearinghouse } from './clearinghouse'
 import { deriveClaimState, type ClaimState } from './lifecycle'
+import { buildWorklist, type WorkItem } from './worklist'
 
 /**
  * The Rung 1 in-house RCM cycle, end to end:
@@ -29,6 +30,7 @@ export interface RcmTotals {
 export interface RcmReport {
   claims: ClaimState[]
   findings: Finding[]
+  worklist: WorkItem[]
   edi837: string
   totals: RcmTotals
   meta: { source: 'samples' | 'files'; generatedAt: string }
@@ -43,6 +45,7 @@ export async function runRcmCycle(): Promise<RcmReport> {
   const acks = await clearinghouse.submit(edi837)
   const remittances = await clearinghouse.fetchRemittances()
   const findings = runDiff(claims, remittances, feeSchedule)
+  const worklist = buildWorklist({ claims, acks, remittances, findings })
 
   const ackByClaim = new Map(acks.map((a) => [a.claimControlNumber, a]))
   const remitByClaim = new Map(remittances.map((r) => [r.claimControlNumber, r]))
@@ -65,6 +68,7 @@ export async function runRcmCycle(): Promise<RcmReport> {
   return {
     claims: states,
     findings,
+    worklist,
     edi837,
     totals,
     meta: {

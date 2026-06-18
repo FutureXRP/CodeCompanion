@@ -315,6 +315,11 @@ export function canonicalToStediClaim(
       claimChargeAmount: money(claim.totalBilledCents),
       placeOfServiceCode: claim.placeOfService ?? '11',
       claimFrequencyCode: claim.claimFrequencyCode ?? '1',
+      // On a replacement/void, carry the payer's original claim control number
+      // (ICN/DCN). Maps to 837 REF*F8 — confirm the field path against Stedi docs.
+      ...(claim.originalClaimRef
+        ? { claimSupplementalInformation: { claimControlNumber: claim.originalClaimRef } }
+        : {}),
       signatureIndicator: 'Y',
       planParticipationCode: 'A',
       benefitsAssignmentCertificationIndicator: 'Y',

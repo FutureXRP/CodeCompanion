@@ -70,7 +70,12 @@ export function generate837(claims: Claim[], opts: Generate837Options = {}): str
     st.addSegment('NM1', ['PR', '2', claim.payer.name || 'PAYER', '', '', '', '', 'PI', claim.payer.externalId || 'PAYER'])
 
     const pos = claim.placeOfService || '11'
-    st.addSegment('CLM', [claim.controlNumber, amount(claim.totalBilledCents), '', '', `${pos}:B:1`, 'Y', 'A', 'Y', 'Y'])
+    // CLM05-3 is the claim frequency code (1 original, 7 replacement, 8 void).
+    const freq = claim.claimFrequencyCode || '1'
+    st.addSegment('CLM', [claim.controlNumber, amount(claim.totalBilledCents), '', '', `${pos}:B:${freq}`, 'Y', 'A', 'Y', 'Y'])
+    // REF*F8 carries the payer's original claim control number (ICN/DCN) on a
+    // replacement or void, so the payer supersedes the right claim on file.
+    if (claim.originalClaimRef) st.addSegment('REF', ['F8', claim.originalClaimRef])
     if (claim.diagnoses.length) {
       st.addSegment('HI', claim.diagnoses.map((dx, i) => `${i === 0 ? 'ABK' : 'ABF'}:${dx}`))
     }

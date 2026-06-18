@@ -53,6 +53,10 @@ export function validateClaim(claim: Claim): { ok: boolean; reason?: string } {
   if (claim.lines.length === 0) return { ok: false, reason: 'No service lines' }
   if (claim.lines.some((l) => !l.cptHcpcs)) return { ok: false, reason: 'Service line missing CPT/HCPCS' }
   if (claim.totalBilledCents <= 0) return { ok: false, reason: 'Non-positive total charge' }
+  // A replacement (7) or void (8) must reference the payer's original claim (ICN/DCN).
+  if ((claim.claimFrequencyCode === '7' || claim.claimFrequencyCode === '8') && !claim.originalClaimRef) {
+    return { ok: false, reason: 'Replacement/void claim requires the original payer claim control number (ICN)' }
+  }
   return { ok: true }
 }
 

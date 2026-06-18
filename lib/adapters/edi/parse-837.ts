@@ -70,19 +70,27 @@ export function parse837(raw: string): Claim[] {
         case 'CLM': {
           push()
           lineNumber = 0
+          const clm05 = components(el(seg.elements, 4))
           current = {
             controlNumber: el(seg.elements, 0),
             payer,
             providerNpi,
             diagnoses: [],
-            placeOfService: components(el(seg.elements, 4))[0] || undefined,
+            placeOfService: clm05[0] || undefined,
             totalBilledCents: dollarsToCents(el(seg.elements, 1)),
             sourceAdapter: 'edi',
             lines: [],
+            // CLM05-3 is the claim frequency code (1 original, 7 replacement, 8 void).
+            ...(clm05[2] ? { claimFrequencyCode: clm05[2] } : {}),
             // Snapshot the subscriber so a later loop's DMG can't mutate this claim.
             ...(currentSubscriber ? { subscriber: { ...currentSubscriber } } : {}),
             ...(currentFilingCode ? { claimFilingCode: currentFilingCode } : {}),
           }
+          break
+        }
+        case 'REF': {
+          // F8 = the payer's original claim control number (ICN/DCN) on a replacement/void.
+          if (current && el(seg.elements, 0) === 'F8') current.originalClaimRef = el(seg.elements, 1)
           break
         }
         case 'HI': {

@@ -10,7 +10,7 @@
     "inngest:dev": "npx inngest-cli@latest dev",
     "found-money": "tsx scripts/found-money.ts",
     "rcm-demo": "tsx scripts/rcm-demo.ts",
-    "test": "tsx --test tests/found-money.test.ts tests/appeal.test.ts tests/rcm.test.ts tests/analyze.test.ts tests/rcm-framework.test.ts tests/clearinghouse-stedi.test.ts tests/db-mappers.test.ts tests/ehr.test.ts tests/ledger.test.ts tests/parse-837.test.ts"
+    "test": "tsx --test tests/found-money.test.ts tests/appeal.test.ts tests/rcm.test.ts tests/analyze.test.ts tests/rcm-framework.test.ts tests/clearinghouse-stedi.test.ts tests/db-mappers.test.ts tests/ehr.test.ts tests/ledger.test.ts tests/parse-837.test.ts tests/correction.test.ts tests/worklist.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",

@@ -5,11 +5,12 @@ const INK = '#16213a'
 const SUB = '#5a6473'
 const LINE = '#e9ecf2'
 
-type Action = 'submit' | 'status' | 'remittances'
+type Action = 'submit' | 'status' | 'remittances' | 'ledger'
 
 const BUTTONS: { action: Action; label: string; hint: string }[] = [
   { action: 'submit', label: 'Submit test claim', hint: 'synthetic encounter → Stedi Test Payer (STEDITEST)' },
   { action: 'remittances', label: 'Fetch test ERAs', hint: 'pull the simulated 835 remittances' },
+  { action: 'ledger', label: 'Post 835 → ledger', hint: 'post the test ERA and show the patient balance' },
 ]
 
 export function SandboxPanel({ configured, sandbox }: { configured: boolean; sandbox: boolean }) {

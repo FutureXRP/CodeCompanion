@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { StediClearinghouse, stediFromEnv, canonicalToStediClaim } from '@/lib/rcm/stedi-clearinghouse'
 import { sampleEncounter, encounterToClaim } from '@/lib/adapters/ehr'
 import { loadSampleClaims } from '@/lib/adapters/edi'
+import { buildLedger } from '@/lib/ledger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -55,6 +56,26 @@ export async function POST(request: Request) {
     if (action === 'remittances') {
       const remittances = await ch.fetchRemittances()
       return NextResponse.json({ action, sandbox, count: remittances.length, remittances })
+    }
+    if (action === 'ledger') {
+      // Close the loop: fetch the test 835 and POST it into the patient ledger,
+      // so submit -> adjudicate -> post -> balance runs end to end in the sandbox.
+      const tradingPartnerServiceId = process.env.STEDI_TEST_PAYER_ID || 'STEDITEST'
+      const claim = encounterToClaim(sampleEncounter(tradingPartnerServiceId))
+      const remittances = await ch.fetchRemittances()
+      const matched = remittances.filter((r) => r.claimControlNumber === claim.controlNumber)
+      // Post only remittances for this claim; an unmatched charge stays outstanding
+      // (awaiting payer) rather than polluting the account with orphan entries.
+      const ledger = buildLedger({ claims: [claim], remittances: matched })
+      return NextResponse.json({
+        action,
+        sandbox,
+        claimControlNumber: claim.controlNumber,
+        remittancesFetched: remittances.length,
+        remittancesMatched: matched.length,
+        totals: ledger.totals,
+        accounts: ledger.accounts,
+      })
     }
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
   } catch (e) {

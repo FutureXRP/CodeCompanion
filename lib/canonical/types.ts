@@ -85,6 +85,13 @@ export interface Claim {
   claimFilingCode?: string
   /** Claim frequency: 1 original, 7 replacement, 8 void. */
   claimFrequencyCode?: string
+  /**
+   * The payer's claim control number (ICN/DCN) being replaced or voided, from a
+   * prior 277/835. Required when claimFrequencyCode is 7 or 8; emitted as 837
+   * REF*F8. A *rejected* claim never adjudicated, so it has no ICN — resend it as
+   * a new original (frequency 1) instead.
+   */
+  originalClaimRef?: string
 }
 
 export interface Adjustment {
