@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'PracticeCompanion — Recover the revenue your billing leaves behind',
+  title: 'CodeCompanion — Recover the revenue your billing leaves behind',
   description:
     'EHR-agnostic revenue recovery and RCM for independent primary care. Deterministic found-money analysis on your 837/835 — underpayments, un-appealed denials, timely-filing write-offs, undercoding.',
 }
@@ -124,7 +124,7 @@ export default function LandingPage() {
             <div style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(45,93,232,.32)' }}>
               <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
-            <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em' }}>PracticeCompanion</span>
+            <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em' }}>CodeCompanion</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
             <Link href="/upload" style={{ fontSize: 13.5, fontWeight: 500, color: SUB, textDecoration: 'none' }}>Upload &amp; test</Link>
@@ -150,7 +150,7 @@ export default function LandingPage() {
             <span style={{ background: 'linear-gradient(120deg, #1a7a45, #16a34a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>billing leaves behind.</span>
           </h1>
           <p style={{ fontSize: 17.5, lineHeight: 1.6, color: SUB, margin: '20px auto 0', maxWidth: 600 }}>
-            PracticeCompanion diffs what you billed against what was paid and what you were contracted —
+            CodeCompanion diffs what you billed against what was paid and what you were contracted —
             then surfaces every underpayment, un-appealed denial, and timely-filing write-off the rest of the industry leaves on the table.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 30, flexWrap: 'wrap' }}>
@@ -262,7 +262,7 @@ export default function LandingPage() {
             <div style={{ width: 24, height: 24, borderRadius: 7, background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: INK }}>PracticeCompanion</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: INK }}>CodeCompanion</span>
           </div>
           <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>
             Synthetic / de-identified data only · no PHI flows until the BAA gate is closed · money math is deterministic, integer cents.

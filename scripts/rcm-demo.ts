@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   const rule = '  ' + '─'.repeat(66)
 
   console.log('')
-  console.log('  PracticeCompanion — In-House RCM Cycle (Rung 1 · mock clearinghouse)')
+  console.log('  CodeCompanion — In-House RCM Cycle (Rung 1 · mock clearinghouse)')
   console.log(rule)
   console.log('  837 generated and submitted (first segments):')
   for (const seg of edi837.split('~').slice(0, 5)) {

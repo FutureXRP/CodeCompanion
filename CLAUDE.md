@@ -1,4 +1,4 @@
-# CLAUDE.md — PracticeCompanion
+# CLAUDE.md — CodeCompanion
 
 Read this file first, every session. Then read `ARCHITECTURE.md` and `DATA-MODEL.md` before writing any code that touches data flow. Read `COMPLIANCE.md` before anything that could touch PHI.
 
@@ -6,7 +6,7 @@ Read this file first, every session. Then read `ARCHITECTURE.md` and `DATA-MODEL
 
 ## What this is
 
-PracticeCompanion is a multi-tenant SaaS platform for primary-care practices that finds and recovers revenue the rest of the billing industry leaves on the table, then expands into full revenue-cycle management and, eventually, instant claim settlement.
+CodeCompanion is a multi-tenant SaaS platform for primary-care practices that finds and recovers revenue the rest of the billing industry leaves on the table, then expands into full revenue-cycle management and, eventually, instant claim settlement.
 
 It is **EHR-agnostic**. It currently has an Athena integration, but Athena is just one *adapter* — the platform core never depends on any specific EHR.
 

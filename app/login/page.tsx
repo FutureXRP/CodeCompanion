@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(45,93,232,.3)' }}>
             <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
-          <span style={{ fontSize: 16, fontWeight: 600, color: INK, letterSpacing: '-0.01em' }}>PracticeCompanion</span>
+          <span style={{ fontSize: 16, fontWeight: 600, color: INK, letterSpacing: '-0.01em' }}>CodeCompanion</span>
         </Link>
 
         <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, boxShadow: '0 8px 30px rgba(15,21,32,.06)', padding: '28px 26px' }}>

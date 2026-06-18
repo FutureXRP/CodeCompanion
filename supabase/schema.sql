@@ -1,4 +1,4 @@
--- PracticeCompanion — consolidated Supabase schema. Idempotent, safe to re-run.
+-- CodeCompanion — consolidated Supabase schema. Idempotent, safe to re-run.
 -- Equivalent to migrations 005 + 006. Paste into the Supabase SQL editor.
 --
 -- Multi-tenant RLS on Supabase Auth: current_tenant_id() resolves the caller's

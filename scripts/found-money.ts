@@ -31,7 +31,7 @@ function main(): void {
 
   const line = '  ' + '─'.repeat(64)
   console.log('')
-  console.log('  PracticeCompanion — Found-Money Report (Rung 0)')
+  console.log('  CodeCompanion — Found-Money Report (Rung 0)')
   console.log(line)
   console.log(
     `  Source: ${meta.source}   Claims: ${meta.claimCount}   Lines: ${meta.lineCount}   ` +

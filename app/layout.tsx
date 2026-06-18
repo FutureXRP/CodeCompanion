@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'PracticeCompanion — Revenue Intelligence',
+  title: 'CodeCompanion — Revenue Intelligence',
   description: 'AI-powered revenue intelligence and practice management for independent primary care',
 }
 

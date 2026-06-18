@@ -1,4 +1,4 @@
-# PracticeCompanion
+# CodeCompanion
 
 EHR-agnostic revenue recovery and RCM for independent primary care. Diffs what
 you billed (837) against what was paid (835) against your contracted rate, and

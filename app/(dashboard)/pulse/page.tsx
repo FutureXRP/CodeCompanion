@@ -347,7 +347,7 @@ export default function PulsePage() {
           })}
           <div style={{ marginTop: 14, padding: '12px 16px', background: '#f5f8ff', borderRadius: 10, border: '1px solid #dce6ff' }}>
             <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.5 }}>
-              <strong style={{ color: '#2d5de8' }}>How unpostables are detected:</strong> Every night at 2am, PracticeCompanion pulls all encounters with status OPEN, REVIEW, or HOLD from Athena that are more than 24 hours old. Any encounter that should have been billed but hasn't appears here with a specific fix.
+              <strong style={{ color: '#2d5de8' }}>How unpostables are detected:</strong> Every night at 2am, CodeCompanion pulls all encounters with status OPEN, REVIEW, or HOLD from Athena that are more than 24 hours old. Any encounter that should have been billed but hasn't appears here with a specific fix.
             </p>
           </div>
         </div>
@@ -515,7 +515,7 @@ export default function PulsePage() {
       <div style={{ marginTop: 24, padding: '14px 18px', background: '#f8f9fb', borderRadius: 12, border: `1px solid ${LINE}` }}>
         <p style={{ fontSize: 12, color: FAINT, margin: '0 0 3px', fontWeight: 600 }}>How Practice Pulse works</p>
         <p style={{ fontSize: 12, color: FAINT, margin: 0, lineHeight: 1.6 }}>
-          Nightly at 2am, PracticeCompanion scans your Athena account across billing, unpostable encounters, lab results, patient balances, recall queues, portal messages, and appointment confirmations. All issues prioritized by dollar impact. Connected to live Athena data, this reflects your actual practice in real time.
+          Nightly at 2am, CodeCompanion scans your Athena account across billing, unpostable encounters, lab results, patient balances, recall queues, portal messages, and appointment confirmations. All issues prioritized by dollar impact. Connected to live Athena data, this reflects your actual practice in real time.
         </p>
       </div>
     </div>

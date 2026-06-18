@@ -114,6 +114,15 @@ export class StediClearinghouse implements Clearinghouse {
   }
 
   async submit(edi837: string): Promise<SubmissionAck[]> {
+    return (await this.submitRaw(edi837)).acks
+  }
+
+  /**
+   * Like submit(), but also returns the raw HTTP status + body. Used by the
+   * sandbox-trial surface so the actual Stedi response is visible for debugging
+   * (e.g. confirming endpoint paths against a real account).
+   */
+  async submitRaw(edi837: string): Promise<{ status: number; body: unknown; acks: SubmissionAck[] }> {
     const submitted = parse837(edi837).map((c) => c.controlNumber)
     const res = await this.transport({
       method: 'POST',
@@ -121,7 +130,7 @@ export class StediClearinghouse implements Clearinghouse {
       headers: this.headers(),
       body: JSON.stringify({ rawX12: edi837, usageIndicator: this.usageIndicator() }),
     })
-    return mapSubmissionResponse(res, submitted)
+    return { status: res.status, body: res.json, acks: mapSubmissionResponse(res, submitted) }
   }
 
   async checkStatus(claimControlNumbers: string[]): Promise<ClaimStatusResponse[]> {

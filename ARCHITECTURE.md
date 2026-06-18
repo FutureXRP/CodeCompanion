@@ -1,6 +1,6 @@
 # Platform Architecture — Working Blueprint
 
-*The broader RCM platform. PracticeCompanion becomes Rung 0 inside it.*
+*The broader RCM platform. CodeCompanion becomes Rung 0 inside it.*
 
 **Thesis:** The whole industry is the destination. The architecture wins by getting two boundaries right on day one — (1) a hard line between an EHR-agnostic core and per-EHR adapters, and (2) a hard line between tenant-isolated claims and a de-identified, cross-tenant behavioral corpus. Everything else can be refactored later. These two cannot.
 
@@ -72,7 +72,7 @@ interface SourceAdapter {
 ```
 
 - **edi-837-835-adapter** is the universal path and your first build. X12 837 (claim) and 835 (remittance advice) are the HIPAA-mandated transaction standards — *every* payer exchange produces them. Parse them and you ingest any practice on any EHR. Use a maintained X12 parser; do not hand-roll the segment grammar.
-- **athena-adapter** = refactor of PracticeCompanion's existing Athena code, lifted out of the modules and quarantined here. This is the single largest piece of the refactor.
+- **athena-adapter** = refactor of CodeCompanion's existing Athena code, lifted out of the modules and quarantined here. This is the single largest piece of the refactor.
 - **fhir-adapter** = design the interface so the Jan 2027 CMS FHIR mandate is just another implementation, not a re-architecture. You want to be ready, not surprised.
 
 **Rule:** nothing above this layer ever imports an Athena type, an Epic type, or an X12 segment name. If it does, the abstraction has leaked.
@@ -100,7 +100,7 @@ It joins three things per line: **837 sent ↔ 835 paid ↔ contracted rate**, a
 
 1. **Underpayment delta** — paid vs. contracted. The jaw-dropper number.
 2. **Denial classification** — grouped by CARC/RARC, split into *appealable* vs. *terminal*, ranked by expected recovery value.
-3. **Undercoding flags** — patterns where documentation supports a higher-value code than was billed (this is where PracticeCompanion's Coding module is reborn).
+3. **Undercoding flags** — patterns where documentation supports a higher-value code than was billed (this is where CodeCompanion's Coding module is reborn).
 
 Output is the found-money report. This is your entire go-to-market artifact and your data-acquisition engine in one.
 
@@ -166,7 +166,7 @@ HIPAA here is architecture, not a checklist item bolted on at the end.
 
 ---
 
-## PracticeCompanion refactor map
+## CodeCompanion refactor map
 
 The eight existing modules sit on the Athena mock today. Where each goes:
 
@@ -211,4 +211,4 @@ Run it on **your own clinic's last 12 months of 835s.** The dollar figure that f
 1. Fee-schedule acquisition — how do you get contracted rates cleanly per payer? (Hardest data problem on the page.)
 2. Contingency pricing mechanics for Rung 0 — % of recovered, floor, clawback terms.
 3. Capital source for Rung 3 — own balance sheet vs. a lending partner.
-4. Platform naming — does this stay "PracticeCompanion" expanded, or does the broader platform get its own name with PC as the Rung-0 product inside it?
+4. Platform naming — does this stay "CodeCompanion" expanded, or does the broader platform get its own name with PC as the Rung-0 product inside it?

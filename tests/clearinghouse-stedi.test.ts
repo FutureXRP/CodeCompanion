@@ -44,6 +44,18 @@ test('stedi submit: posts raw X12 with sandbox usageIndicator and Key auth', asy
   assert.ok(body.rawX12.includes('ST*837'))
 })
 
+test('stedi submitRaw: surfaces raw HTTP status + body alongside the acks', async () => {
+  const ch = new StediClearinghouse({
+    apiKey: 'k',
+    sandbox: true,
+    transport: transportReturning({ status: 200, json: { transactionId: 'TX-9' } }),
+  })
+  const raw = await ch.submitRaw(generate837(loadSampleClaims()))
+  assert.equal(raw.status, 200)
+  assert.deepEqual(raw.body, { transactionId: 'TX-9' })
+  assert.ok(raw.acks.every((a) => a.status === 'accepted'))
+})
+
 test('stedi submit: per-claim references map accepted vs rejected', () => {
   const res: HttpResponse = {
     status: 200,
