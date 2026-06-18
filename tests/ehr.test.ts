@@ -20,14 +20,17 @@ test('canonicalToStediClaim builds a test-mode Stedi payload from a canonical cl
   const payload = canonicalToStediClaim(claim, { tradingPartnerServiceId: 'STEDITEST', usageIndicator: 'T' }) as {
     usageIndicator: string
     tradingPartnerServiceId: string
+    tradingPartnerName: string
     subscriber: { memberId: string }
-    providers: { providerType: string }[]
+    billing: { providerType: string; npi: string }
     claimInformation: { claimChargeAmount: string; serviceLines: unknown[] }
   }
   assert.equal(payload.usageIndicator, 'T') // test mode, never production
   assert.equal(payload.tradingPartnerServiceId, 'STEDITEST')
+  assert.equal(payload.tradingPartnerName, 'Stedi Test Payer')
   assert.equal(payload.subscriber.memberId, 'TEST123456789')
-  assert.equal(payload.providers[0].providerType, 'BillingProvider')
+  assert.equal(payload.billing.providerType, 'BillingProvider') // top-level billing object, not a providers[]
+  assert.equal(payload.billing.npi, '1234567893')
   assert.equal(payload.claimInformation.claimChargeAmount, '175.00')
   assert.equal(payload.claimInformation.serviceLines.length, 2)
 })

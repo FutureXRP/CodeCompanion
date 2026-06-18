@@ -43,7 +43,9 @@ export async function POST(request: Request) {
       const tradingPartnerServiceId = process.env.STEDI_TEST_PAYER_ID || 'STEDITEST'
       // Exercise the real pipeline: synthetic EHR encounter -> canonical -> Stedi JSON.
       const claim = encounterToClaim(sampleEncounter(tradingPartnerServiceId))
-      const res = await ch.submitJson(canonicalToStediClaim(claim, { tradingPartnerServiceId, usageIndicator: 'T' }))
+      const res = await ch.submitJson(
+        canonicalToStediClaim(claim, { tradingPartnerServiceId, usageIndicator: 'T', submitterId: process.env.STEDI_SUBMITTER_ID }),
+      )
       return NextResponse.json({ action, sandbox, tradingPartnerServiceId, httpStatus: res.status, raw: res.body })
     }
     if (action === 'status') {

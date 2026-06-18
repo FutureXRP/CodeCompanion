@@ -269,7 +269,7 @@ function stediAddress(a: Address): Record<string, unknown> {
  */
 export function canonicalToStediClaim(
   claim: Claim,
-  opts: { tradingPartnerServiceId: string; usageIndicator?: 'T' | 'P' },
+  opts: { tradingPartnerServiceId: string; usageIndicator?: 'T' | 'P'; submitterId?: string },
 ): Record<string, unknown> {
   const sub = claim.subscriber
   const bp = claim.billingProvider
@@ -278,14 +278,17 @@ export function canonicalToStediClaim(
   const rp = claim.renderingProvider
   const money = (cents: number) => (cents / 100).toFixed(2)
   const ymd = (d?: string) => (d ?? '').replace(/-/g, '')
+  const contact = { name: bp.organizationName, phoneNumber: bp.phone ?? '0000000000' }
+  const submitterId = opts.submitterId ?? bp.taxId
 
   return {
     usageIndicator: opts.usageIndicator ?? 'T',
-    controlNumber: '000000001',
     tradingPartnerServiceId: opts.tradingPartnerServiceId,
+    tradingPartnerName: claim.payer.name,
     submitter: {
       organizationName: bp.organizationName,
-      contactInformation: { name: 'BILLING', phoneNumber: bp.phone ?? '0000000000' },
+      ...(submitterId ? { submitterIdentification: submitterId } : {}),
+      contactInformation: contact,
     },
     receiver: { organizationName: claim.payer.name },
     subscriber: {
@@ -295,19 +298,17 @@ export function canonicalToStediClaim(
       lastName: sub.lastName,
       gender: sub.gender ?? 'U',
       dateOfBirth: ymd(sub.dateOfBirth),
-      policyNumber: sub.memberId,
       ...(sub.address ? { address: stediAddress(sub.address) } : {}),
     },
-    providers: [
-      {
-        providerType: 'BillingProvider',
-        npi: bp.npi,
-        ...(bp.taxId ? { employerId: bp.taxId } : {}),
-        organizationName: bp.organizationName,
-        ...(bp.address ? { address: stediAddress(bp.address) } : {}),
-      },
-      ...(rp ? [{ providerType: 'RenderingProvider', npi: rp.npi, firstName: rp.firstName ?? '', lastName: rp.lastName ?? '' }] : []),
-    ],
+    billing: {
+      providerType: 'BillingProvider',
+      npi: bp.npi,
+      ...(bp.taxId ? { employerId: bp.taxId } : {}),
+      ...(bp.taxonomyCode ? { taxonomyCode: bp.taxonomyCode } : {}),
+      organizationName: bp.organizationName,
+      ...(bp.address ? { address: stediAddress(bp.address) } : {}),
+      contactInformation: contact,
+    },
     claimInformation: {
       claimFilingCode: claim.claimFilingCode ?? 'MB',
       patientControlNumber: claim.controlNumber,
@@ -327,11 +328,17 @@ export function canonicalToStediClaim(
         professionalService: {
           procedureIdentifier: 'HC',
           procedureCode: l.cptHcpcs,
+          ...(l.modifiers.length > 0 ? { procedureModifiers: l.modifiers } : {}),
           lineItemChargeAmount: money(l.billedCents),
           measurementUnit: 'UN',
           serviceUnitCount: String(l.units),
           compositeDiagnosisCodePointers: { diagnosisCodePointers: l.diagnosisPointers.map(String) },
         },
+        // No reserved X12 delimiter chars (~ * : ^) — payer correlation id per line.
+        providerControlNumber: `${claim.controlNumber}L${l.lineNumber}`,
+        ...(rp
+          ? { renderingProvider: { providerType: 'RenderingProvider', npi: rp.npi, firstName: rp.firstName ?? '', lastName: rp.lastName ?? '' } }
+          : {}),
       })),
     },
   }
