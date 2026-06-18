@@ -8,9 +8,7 @@ const LINE = '#e9ecf2'
 type Action = 'submit' | 'status' | 'remittances'
 
 const BUTTONS: { action: Action; label: string; hint: string }[] = [
-  { action: 'submit', label: 'Submit sample 837', hint: 'transmit the synthetic claims' },
-  { action: 'status', label: 'Check status', hint: '276/277 inquiry' },
-  { action: 'remittances', label: 'Fetch ERAs', hint: 'pull 835 remittances' },
+  { action: 'submit', label: 'Submit sample 837', hint: 'transmit the synthetic claims to the Stedi sandbox' },
 ]
 
 export function SandboxPanel({ configured, sandbox }: { configured: boolean; sandbox: boolean }) {
@@ -90,7 +88,8 @@ export function SandboxPanel({ configured, sandbox }: { configured: boolean; san
 
       <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 14, lineHeight: 1.5 }}>
         {sandbox ? 'Sandbox mode (usageIndicator "T") — synthetic test claims only, no real PHI.' : 'PRODUCTION mode — gated by ALLOW_REAL_PHI + payer enrollment.'}
-        {' '}If a call fails, the raw HTTP status and Stedi response above show exactly what to adjust.
+        {' '}If the call fails, the raw HTTP status and Stedi response above show exactly what to adjust.
+        {' '}Claim status (276/277) and ERAs (835) only become available after a payer adjudicates a claim, so they are not part of this submission test.
       </p>
     </div>
   )
