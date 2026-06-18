@@ -1,4 +1,4 @@
-import type { Claim, ClaimLine, Payer } from '../../canonical'
+import type { Claim, ClaimLine, Payer, Subscriber } from '../../canonical'
 import { dollarsToCents } from '../../canonical'
 import { parseX12, components, el, ccyymmdd, idAfterQualifier, type RawSegment } from './x12'
 
@@ -17,6 +17,11 @@ export function parse837(raw: string): Claim[] {
 
     let payer: Payer = { externalId: '', name: '' }
     let providerNpi: string | undefined
+    // The subscriber loop (SBR / NM1*IL / DMG) precedes the CLM(s) it covers; we
+    // track the most recent one and snapshot it onto each claim. Enrichment for
+    // the submittable / ledger path — the diff engine never reads it.
+    let currentSubscriber: Subscriber | undefined
+    let currentFilingCode: string | undefined
     let current: Claim | null = null
     let lineNumber = 0
 
@@ -38,6 +43,27 @@ export function parse837(raw: string): Claim[] {
             // Rendering (82) preferred over billing (85) provider NPI.
             const npi = idAfterQualifier(seg.elements, ['XX'])
             if (entity === '82' || !providerNpi) providerNpi = npi
+          } else if (entity === 'IL') {
+            // Insured / subscriber. Member id follows the MI (or II) qualifier.
+            currentSubscriber = {
+              memberId: idAfterQualifier(seg.elements, ['MI', 'II']) ?? '',
+              firstName: el(seg.elements, 3),
+              lastName: el(seg.elements, 2),
+            }
+          }
+          break
+        }
+        case 'SBR': {
+          // SBR09 carries the claim filing indicator (MB Medicare, MC Medicaid, CI commercial, …).
+          currentFilingCode = el(seg.elements, 8) || currentFilingCode
+          break
+        }
+        case 'DMG': {
+          // Subscriber demographics follow the NM1*IL within the same loop.
+          if (currentSubscriber && el(seg.elements, 0) === 'D8') {
+            currentSubscriber.dateOfBirth = ccyymmdd(el(seg.elements, 1))
+            const gender = el(seg.elements, 2)
+            if (gender === 'M' || gender === 'F') currentSubscriber.gender = gender
           }
           break
         }
@@ -53,6 +79,9 @@ export function parse837(raw: string): Claim[] {
             totalBilledCents: dollarsToCents(el(seg.elements, 1)),
             sourceAdapter: 'edi',
             lines: [],
+            // Snapshot the subscriber so a later loop's DMG can't mutate this claim.
+            ...(currentSubscriber ? { subscriber: { ...currentSubscriber } } : {}),
+            ...(currentFilingCode ? { claimFilingCode: currentFilingCode } : {}),
           }
           break
         }

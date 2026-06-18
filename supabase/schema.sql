@@ -1,5 +1,5 @@
 -- CodeCompanion — consolidated Supabase schema. Idempotent, safe to re-run.
--- Equivalent to migrations 005 + 006. Paste into the Supabase SQL editor.
+-- Equivalent to migrations 005 + 006 + 007. Paste into the Supabase SQL editor.
 --
 -- Multi-tenant RLS on Supabase Auth: current_tenant_id() resolves the caller's
 -- tenant from tenant_users via auth.uid(). Every tenant table enforces RLS.
@@ -223,4 +223,32 @@ create index if not exists findings_claim_line_idx on findings(claim_line_id);
 alter table findings enable row level security;
 drop policy if exists findings_tenant on findings;
 create policy findings_tenant on findings
+  using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());
+
+-- ── Patient ledger (Rung 1) ────────────────────────────────────────────────────
+-- Append-only financial entries: 837 charges, 835 payments/adjustments, patient
+-- payments. Balances are derived by summing signed deltas, never stored. PHI
+-- minimization: no patient name here — account_key (member id) groups entries.
+create table if not exists ledger_entries (
+  id                    uuid primary key default uuid_generate_v4(),
+  tenant_id             uuid not null references tenants(id) on delete cascade,
+  claim_id              uuid references claims(id) on delete set null,
+  claim_line_id         uuid references claim_lines(id) on delete set null,
+  account_key           text not null,
+  type                  text not null check (type in (
+                          'charge','insurance_payment','contractual_adjustment',
+                          'payer_adjustment','patient_responsibility','patient_payment','patient_writeoff')),
+  insurance_delta_cents bigint not null default 0,
+  patient_delta_cents   bigint not null default 0,
+  carc_code             text,
+  memo                  text,
+  source                text check (source in ('837','835','manual')),
+  posted_at             timestamptz not null default now()
+);
+create index if not exists ledger_entries_tenant_idx on ledger_entries(tenant_id);
+create index if not exists ledger_entries_account_idx on ledger_entries(tenant_id, account_key);
+create index if not exists ledger_entries_claim_idx on ledger_entries(claim_id);
+alter table ledger_entries enable row level security;
+drop policy if exists ledger_entries_tenant on ledger_entries;
+create policy ledger_entries_tenant on ledger_entries
   using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());

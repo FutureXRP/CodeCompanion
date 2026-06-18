@@ -1,4 +1,5 @@
 import type { Adjustment, Claim, ClaimLine, Finding, RemittanceLine } from '../canonical'
+import type { LedgerEntry } from '../ledger'
 
 /**
  * Pure canonical -> Supabase row mappers. No DB access here, so they are fully
@@ -107,6 +108,38 @@ export function toFindingRow(tenantId: string, claimLineId: string | null, f: Fi
     delta_cents: f.deltaCents,
     appealable: f.appealable,
     status: f.status,
+  }
+}
+
+export interface LedgerEntryRow {
+  tenant_id: string
+  claim_id: string | null
+  claim_line_id: string | null
+  account_key: string
+  type: LedgerEntry['type']
+  insurance_delta_cents: number
+  patient_delta_cents: number
+  carc_code: string | null
+  memo: string | null
+  source: LedgerEntry['source'] | null
+}
+export function toLedgerEntryRow(
+  tenantId: string,
+  claimId: string | null,
+  claimLineId: string | null,
+  e: LedgerEntry,
+): LedgerEntryRow {
+  return {
+    tenant_id: tenantId,
+    claim_id: claimId,
+    claim_line_id: claimLineId,
+    account_key: e.accountKey,
+    type: e.type,
+    insurance_delta_cents: e.insuranceDeltaCents,
+    patient_delta_cents: e.patientDeltaCents,
+    carc_code: e.carcCode ?? null,
+    memo: e.memo,
+    source: e.source,
   }
 }
 

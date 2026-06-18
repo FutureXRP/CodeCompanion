@@ -109,6 +109,27 @@ status            text          -- 'open' | 'appealing' | 'recovered' | 'termina
 detected_at       timestamptz
 ```
 
+### ledger_entries [PHI] — the patient ledger (Rung 1, full RCM)
+The practice's financial system of record. When the EHR is clinical-only, the balance lives here. **Append-only:** every charge, payment, and adjustment is a row; balances are derived by summing the signed deltas, never mutated in place — the same auditable discipline as the diff engine. The 835 transfers the patient-responsibility (PR) portion from the insurance bucket to the patient bucket; a patient payment draws it down.
+```
+id                     uuid pk
+tenant_id              uuid fk -> tenants
+claim_id               uuid fk -> claims            -- null once the claim is purged
+claim_line_id          uuid fk -> claim_lines
+account_key            text          -- patient account: subscriber member id (NOT a name)
+type                   text          -- charge | insurance_payment | contractual_adjustment |
+                                     --   payer_adjustment | patient_responsibility |
+                                     --   patient_payment | patient_writeoff
+insurance_delta_cents  bigint        -- signed effect on what the payer still owes
+patient_delta_cents    bigint        -- signed effect on what the patient still owes
+carc_code              text          -- CARC for adjustment / patient-responsibility rows
+memo                   text          -- deterministic template text, NEVER LLM-generated
+source                 text          -- 837 | 835 | manual
+posted_at              timestamptz
+```
+> **Derived balances** (never stored): `insurance_ar = Σ insurance_delta_cents`, `patient_ar = Σ patient_delta_cents`, `total_balance = insurance_ar + patient_ar`, grouped by `account_key`. Computed in `lib/ledger/`.
+> **PHI minimization:** no patient name is stored on the ledger — `account_key` groups a patient's rows, and identity is reachable only through the RLS-locked `claims`/`patients` tables.
+
 ---
 
 ## Contract / reference entities [REF or tenant-scoped]
@@ -190,4 +211,5 @@ create policy tenant_isolation on <t>
 3. `remittances`, `remittance_lines`, `adjustments` (the 835 side).
 4. `payer_contracts`, `fee_schedule_lines` (the contracted-rate side).
 5. `findings` (diff output).
-6. `payer_behavior_corpus` + de-id transform — **last**, and only with its gate tests in place.
+6. `ledger_entries` (patient ledger — Rung 1 RCM).
+7. `payer_behavior_corpus` + de-id transform — **last**, and only with its gate tests in place.

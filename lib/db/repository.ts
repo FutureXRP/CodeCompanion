@@ -1,10 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Claim, Finding, Remittance } from '../canonical'
 import {
+  postClaimCharges,
+  postRemittance,
+  accountsFromEntries,
+  type LedgerEntry,
+  type PatientAccount,
+} from '../ledger'
+import {
   toAdjustmentRow,
   toClaimLineRow,
   toClaimRow,
   toFindingRow,
+  toLedgerEntryRow,
   toRemittanceLineRow,
   toRemittanceRow,
   lineMatchKey,
@@ -23,6 +31,7 @@ export interface PersistResult {
   claimLines: number
   remittances: number
   findings: number
+  ledgerEntries: number
 }
 
 /** Find-or-create a tenant by name (single-practice bootstrap). */
@@ -122,12 +131,36 @@ export async function persistRun(
     findingCount = findingRows.length
   }
 
+  // 5. Patient ledger — post 837 charges + 835 payments/adjustments into the
+  //    append-only ledger, wiring claim + claim-line FKs from the maps above.
+  const claimByControl = new Map(input.claims.map((c) => [c.controlNumber, c]))
+  const ledgerEntries: LedgerEntry[] = []
+  for (const claim of input.claims) ledgerEntries.push(...postClaimCharges(claim))
+  for (const remit of input.remittances) {
+    ledgerEntries.push(...postRemittance(remit, claimByControl.get(remit.claimControlNumber)))
+  }
+  let ledgerEntryCount = 0
+  const ledgerRows = ledgerEntries.map((e) =>
+    toLedgerEntryRow(
+      tenantId,
+      claimIdByControl.get(e.claimControlNumber) ?? null,
+      e.claimLineId ? lineIdByCanonical.get(e.claimLineId) ?? null : null,
+      e,
+    ),
+  )
+  if (ledgerRows.length > 0) {
+    const lgIns = await db.from('ledger_entries').insert(ledgerRows)
+    if (lgIns.error) throw lgIns.error
+    ledgerEntryCount = ledgerRows.length
+  }
+
   return {
     tenantId,
     claims: input.claims.length,
     claimLines: claimLineCount,
     remittances: remittanceCount,
     findings: findingCount,
+    ledgerEntries: ledgerEntryCount,
   }
 }
 
@@ -151,6 +184,45 @@ export interface StoredFinding {
   deltaCents: number
   appealable: boolean
   status: string
+}
+
+interface LedgerEntryRowRead {
+  account_key: string
+  type: LedgerEntry['type']
+  insurance_delta_cents: number
+  patient_delta_cents: number
+  carc_code: string | null
+  memo: string | null
+  source: LedgerEntry['source'] | null
+}
+
+/**
+ * Read the persisted ledger for a tenant, grouped into accounts with derived
+ * balances. Patient names are not stored on the ledger (PHI minimization), so
+ * accounts are keyed by account_key; balances reuse the same engine as the
+ * in-memory ledger, so the numbers are identical.
+ */
+export async function loadLedger(db: SupabaseClient, tenantId: string): Promise<PatientAccount[]> {
+  const res = await db
+    .from('ledger_entries')
+    .select('account_key, type, insurance_delta_cents, patient_delta_cents, carc_code, memo, source')
+    .eq('tenant_id', tenantId)
+  if (res.error) throw res.error
+
+  const rows = (res.data ?? []) as unknown as LedgerEntryRowRead[]
+  const entries: LedgerEntry[] = rows.map((r, i) => ({
+    id: `db:${i}`,
+    type: r.type,
+    claimControlNumber: '',
+    accountKey: r.account_key,
+    insuranceDeltaCents: r.insurance_delta_cents,
+    patientDeltaCents: r.patient_delta_cents,
+    carcCode: r.carc_code ?? undefined,
+    memo: r.memo ?? '',
+    source: r.source ?? 'manual',
+    postedAt: '',
+  }))
+  return accountsFromEntries(entries)
 }
 
 /** Read persisted findings for a tenant, ranked by recoverable delta. */
