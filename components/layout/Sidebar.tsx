@@ -27,7 +27,7 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1M12.7 12.7l-1.1-1.1M4.4 4.4L3.3 3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
 ]
 
-export function Sidebar() {
+export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled?: boolean; userEmail?: string | null }) {
   const pathname = usePathname()
   return (
     <aside style={{ width: '220px', flexShrink: 0, background: '#fff', borderRight: '1px solid #e4e8ef', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -63,14 +63,28 @@ export function Sidebar() {
           )
         })}
       </nav>
-      <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f3f7' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#2d5de8' }}>B</div>
-          <div>
-            <p style={{ fontSize: '12.5px', fontWeight: '500', color: '#333d4d', margin: 0 }}>Dr. Blair</p>
-            <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>Professional Plan</p>
+      <div style={{ padding: '14px 16px', borderTop: '1px solid #f1f3f7' }}>
+        {authEnabled && userEmail ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#2d5de8', flexShrink: 0, textTransform: 'uppercase' }}>{userEmail.charAt(0)}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '12px', fontWeight: '500', color: '#333d4d', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
+              <form action="/auth/signout" method="post" style={{ margin: 0 }}>
+                <button type="submit" style={{ background: 'none', border: 'none', padding: 0, fontSize: '11px', color: '#9aa3b2', cursor: 'pointer' }}>Sign out</button>
+              </form>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#eef1f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '999px', background: '#34d399', display: 'block' }} />
+            </div>
+            <div>
+              <p style={{ fontSize: '12.5px', fontWeight: '500', color: '#333d4d', margin: 0 }}>Demo mode</p>
+              <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>synthetic data</p>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   )
