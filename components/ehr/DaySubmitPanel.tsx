@@ -90,20 +90,24 @@ export function DaySubmitPanel({ claims, configured, sandbox }: { claims: ClaimR
           disabled={running}
           style={{ fontSize: 13.5, fontWeight: 600, color: '#fff', background: running ? '#9bb0e8' : 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', border: 'none', borderRadius: 10, padding: '10px 18px', cursor: running ? 'default' : 'pointer', boxShadow: '0 4px 14px rgba(45,93,232,.2)' }}
         >
-          {running ? 'Submitting…' : `Submit ${claims.length} claims to Stedi`}
+          {running ? 'Submitting…' : `Submit ${claims.length} claims → ${routing === 'test' ? 'STEDITEST' : 'real payers'}`}
         </button>
 
-        <div style={{ display: 'inline-flex', border: `1px solid ${LINE}`, borderRadius: 9, overflow: 'hidden', fontSize: 12.5 }}>
-          {(['test', 'real'] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setRouting(mode)}
-              disabled={running}
-              style={{ padding: '7px 12px', border: 'none', cursor: running ? 'default' : 'pointer', fontWeight: 600, color: routing === mode ? '#1e4acc' : SUB, background: routing === mode ? '#eef3ff' : '#fff' }}
-            >
-              {mode === 'test' ? 'Test payer (STEDITEST)' : 'Real payer ids'}
-            </button>
-          ))}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: SUB }}>Route to</span>
+          <div style={{ display: 'inline-flex', border: `1px solid ${LINE}`, borderRadius: 9, overflow: 'hidden', fontSize: 12.5 }}>
+            {(['test', 'real'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setRouting(mode)}
+                disabled={running}
+                title={mode === 'test' ? 'Send to the Stedi Test Payer' : 'Send to each claim’s real payer id'}
+                style={{ padding: '7px 12px', border: 'none', cursor: running ? 'default' : 'pointer', fontWeight: 600, color: routing === mode ? '#1e4acc' : SUB, background: routing === mode ? '#eef3ff' : '#fff' }}
+              >
+                {mode === 'test' ? 'Test payer (STEDITEST)' : 'Real payer ids'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {done.length > 0 && (
