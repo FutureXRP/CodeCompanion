@@ -18,7 +18,7 @@ export interface RosterPayer {
 }
 
 export const PAYERS: Record<PayerKey, RosterPayer> = {
-  medicare: { id: '00123', name: 'Medicare (Novitas JH)', filing: 'MB', contractClass: 'medicare' },
+  medicare: { id: '04312', name: 'Medicare (Novitas JH)', filing: 'MB', contractClass: 'medicare' },
   soonercare: { id: 'SKOK0', name: 'SoonerCare (OHCA)', filing: 'MC', contractClass: 'medicaid' },
   bcbsok: { id: '00840', name: 'BCBS Oklahoma', filing: 'CI', contractClass: 'commercial' },
   aetna: { id: '60054', name: 'Aetna', filing: 'CI', contractClass: 'commercial' },

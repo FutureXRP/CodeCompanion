@@ -13,7 +13,7 @@ test('the FHIR adapter normalizes a bundle into one encounter per Encounter reso
 test('FHIR → canonical maps payer, subscriber, provider, and dotless diagnoses', () => {
   const enc = ingestFhirBundle(mockEhrDay('2026-06-19')).find((e) => e.patientControlNumber === 'pt01')
   assert.ok(enc)
-  assert.equal(enc.payer.externalId, '00123')
+  assert.equal(enc.payer.externalId, '04312')
   assert.equal(enc.payer.name, 'Medicare (Novitas JH)')
   assert.equal(enc.claimFilingCode, 'MB')
   assert.equal(enc.subscriber.memberId, '1EG4TE5MK73')
