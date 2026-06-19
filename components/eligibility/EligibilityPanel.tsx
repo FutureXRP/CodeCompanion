@@ -72,7 +72,6 @@ export function EligibilityPanel({ configured, sandbox }: { configured: boolean;
         },
         provider: TEST_PROVIDER,
         serviceTypeCodes: [form.serviceTypeCode.trim() || '30'],
-        stediTest: Boolean(configured && sandbox), // Stedi sandbox mock flag (not sent in production)
       }
       const res = await fetch('/api/eligibility', {
         method: 'POST',

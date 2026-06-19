@@ -184,13 +184,13 @@ test('buildStediTestEligibility: Stedi documented mock member (returns active co
   assert.equal(req.subscriber.memberId, '23051322')
   assert.equal(req.subscriber.firstName, 'Bernie')
   assert.equal(req.provider.npi, '1447848577')
-  assert.equal(req.stediTest, true)
   assert.deepEqual(req.serviceTypeCodes, ['30'])
 })
 
-test('canonicalToStedi270: includes the stediTest flag only for a mock request', () => {
-  const off = canonicalToStedi270(REQ, { tradingPartnerServiceId: 'STEDI' }) as Record<string, any>
-  assert.equal(off.stediTest, undefined)
-  const on = canonicalToStedi270({ ...REQ, stediTest: true }, { tradingPartnerServiceId: 'STEDI' }) as Record<string, any>
-  assert.equal(on.stediTest, true)
+test('canonicalToStedi270 sends only Stedi-accepted top-level fields', () => {
+  const payload = canonicalToStedi270(buildStediTestEligibility(), { tradingPartnerServiceId: 'STEDI' }) as Record<string, unknown>
+  const allowed = new Set(['submitterTransactionIdentifier', 'controlNumber', 'tradingPartnerServiceId', 'tradingPartnerName', 'provider', 'portalUsername', 'portalPassword', 'informationReceiverName', 'subscriber', 'dependents', 'encounter', 'externalPatientId', 'eligibilitySearchId'])
+  for (const key of Object.keys(payload)) {
+    assert.ok(allowed.has(key), `unexpected field "${key}" — Stedi rejects unknown fields`)
+  }
 })

@@ -82,12 +82,6 @@ export interface EligibilityRequest {
   serviceTypeCodes?: string[]
   /** YYYY-MM-DD (or YYYYMMDD) date of service; optional. */
   dateOfService?: string
-  /**
-   * Stedi SANDBOX ONLY: send the `stediTest` flag so a documented mock member
-   * (e.g. 23051322 "Bernie Prohas" via payer STEDI) returns canned benefits.
-   * Must be false/absent in production — it would return mock data, not real.
-   */
-  stediTest?: boolean
 }
 
 export interface EligibilityResult extends EligibilitySummary {

@@ -125,7 +125,6 @@ export function canonicalToStedi270(
 
   return {
     controlNumber: opts.controlNumber ?? randomControlNumber(),
-    ...(request.stediTest ? { stediTest: true } : {}), // Stedi sandbox mock flag (sandbox only)
     tradingPartnerServiceId: opts.tradingPartnerServiceId,
     provider,
     subscriber: {
@@ -247,9 +246,9 @@ export function stediEligibilityFromEnv(payerDirectory?: PayerDirectory): StediE
 
 /**
  * Stedi's documented mock-request member (no real PHI): payer STEDI, member
- * 23051322 "Bernie Prohas", provider STEDI / 1447848577, with stediTest=true.
- * Returns active coverage in the Stedi sandbox. See Stedi "Eligibility mock
- * requests". A real member ID against this payer returns AAA error 72.
+ * 23051322 "Bernie Prohas", provider STEDI / 1447848577. With a TEST API key,
+ * Stedi returns mock active coverage for this exact member — test mode is keyed
+ * off the key, not a request flag. A real/invalid member returns AAA error 72.
  */
 export function buildStediTestEligibility(payerExternalId = 'STEDI'): EligibilityRequest {
   return {
@@ -257,6 +256,5 @@ export function buildStediTestEligibility(payerExternalId = 'STEDI'): Eligibilit
     subscriber: { memberId: '23051322', firstName: 'Bernie', lastName: 'Prohas' },
     provider: { npi: '1447848577', organizationName: 'STEDI' },
     serviceTypeCodes: ['30'],
-    stediTest: true,
   }
 }
