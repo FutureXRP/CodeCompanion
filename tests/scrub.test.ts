@@ -125,3 +125,16 @@ test('the jurisdiction layer applies Oklahoma notes by filing type, and is empty
   const tx = scrubClaim(claim([line('99214')], { claimFilingCode: 'MB' }), getJurisdiction('TX'))
   assert.ok(!tx.findings.some((f) => f.source === 'jurisdiction'))
 })
+
+test('pulse oximetry billed with an E/M is flagged as bundled, not a modifier-25 fix', () => {
+  const r = scrubClaim(claim([line('99214'), line('94760')]))
+  assert.ok(r.findings.some((f) => f.code === 'EM-BUNDLED' && f.severity === 'warning'))
+  assert.ok(!r.findings.some((f) => f.code === 'CCI-25')) // modifier 25 doesn't unbundle it
+  assert.equal(r.ok, true) // advisory, not blocking
+})
+
+test('an EKG billed with an E/M still prompts a modifier-25 review (payer-variable)', () => {
+  const r = scrubClaim(claim([line('99214'), line('93000')]))
+  assert.ok(r.findings.some((f) => f.code === 'CCI-25' && f.severity === 'warning'))
+  assert.ok(!r.findings.some((f) => f.code === 'EM-BUNDLED'))
+})

@@ -34,7 +34,18 @@ const TELEHEALTH_MODS = new Set(['95', 'GT', 'GQ', '93'])
 const isEM = (cpt: string): boolean => EM_OFFICE.has(cpt)
 // Labs/specimen draws don't trigger the modifier-25 E/M edit (minor services).
 const isLabOrDraw = (cpt: string): boolean => cpt === '36415' || /^8\d{4}$/.test(cpt)
-const isProcedure = (cpt: string): boolean => Boolean(cpt) && !isEM(cpt) && !isLabOrDraw(cpt)
+// Services that are themselves bundled into a same-day E/M and not separately
+// payable. Modifier 25 does NOT unbundle these, so they get their own finding
+// rather than the (misleading) modifier-25 advisory. SEED — pulse oximetry is the
+// canonical example; the full status-indicator set loads behind this same seam.
+const BUNDLED_INTO_EM: Record<string, string> = {
+  '94760': 'pulse oximetry, single',
+  '94761': 'pulse oximetry, multiple',
+  '94762': 'pulse oximetry, continuous overnight',
+}
+const isBundledIntoEM = (cpt: string): boolean => cpt in BUNDLED_INTO_EM
+const isProcedure = (cpt: string): boolean =>
+  Boolean(cpt) && !isEM(cpt) && !isLabOrDraw(cpt) && !isBundledIntoEM(cpt)
 
 /** NPI check digit: Luhn over the constant prefix "80840" + the 10-digit NPI. */
 function isValidNpi(npi: string): boolean {
@@ -132,17 +143,37 @@ function cciPairs(claim: Claim, ctx: ScrubContext): ScrubFinding[] {
 
 function modifier25(claim: Claim): ScrubFinding[] {
   const emNoMod = claim.lines.filter((l) => isEM(l.cptHcpcs) && !l.modifiers.includes('25'))
-  const hasProcedure = claim.lines.some((l) => isProcedure(l.cptHcpcs))
-  if (emNoMod.length === 0 || !hasProcedure) return []
+  const procedures = claim.lines.filter((l) => isProcedure(l.cptHcpcs)).map((l) => l.cptHcpcs)
+  if (emNoMod.length === 0 || procedures.length === 0) return []
   return emNoMod.map((l) => ({
     severity: 'warning' as const,
     source: 'cci' as const,
     code: 'CCI-25',
     claimLineId: l.id,
     cptHcpcs: l.cptHcpcs,
-    message: `E/M ${l.cptHcpcs} is billed the same day as a procedure without modifier 25.`,
+    message: `E/M ${l.cptHcpcs} is billed the same day as procedure ${procedures.join(', ')} without modifier 25.`,
     hint: 'Append modifier 25 to the E/M if it was a significant, separately identifiable service — otherwise the payer bundles it into the procedure.',
   }))
+}
+
+/**
+ * Services bundled into a same-day E/M (e.g. pulse oximetry) — not separately
+ * payable, and modifier 25 doesn't change that. Flag them accurately so the line
+ * is dropped or expected to zero-pay, instead of (mis)advising a modifier-25 fix.
+ */
+function bundledIntoEm(claim: Claim): ScrubFinding[] {
+  if (!claim.lines.some((l) => isEM(l.cptHcpcs))) return []
+  return claim.lines
+    .filter((l) => isBundledIntoEM(l.cptHcpcs))
+    .map((l) => ({
+      severity: 'warning' as const,
+      source: 'cci' as const,
+      code: 'EM-BUNDLED',
+      claimLineId: l.id,
+      cptHcpcs: l.cptHcpcs,
+      message: `${l.cptHcpcs} (${BUNDLED_INTO_EM[l.cptHcpcs]}) is typically bundled into the same-day E/M and not separately payable (esp. Medicare).`,
+      hint: 'Modifier 25 will not unbundle it — drop the line or expect a zero-pay; bill it only if the payer’s policy allows separate reimbursement.',
+    }))
 }
 
 function telehealthModifier(claim: Claim): ScrubFinding[] {
@@ -216,6 +247,7 @@ const NATIONAL_RULES: ScrubRule[] = [
   mueCaps,
   cciPairs,
   modifier25,
+  bundledIntoEm,
   telehealthModifier,
 ]
 
