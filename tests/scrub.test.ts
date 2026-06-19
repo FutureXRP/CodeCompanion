@@ -93,6 +93,15 @@ test('an invalid NPI (bad check digit) is blocked; a valid one passes', () => {
   assert.ok(!good.findings.some((f) => f.code === 'NPI-INVALID'))
 })
 
+test('a claim whose subscriber has an incomplete address is blocked', () => {
+  const sub = { memberId: 'M1', firstName: 'Ada', lastName: 'Byron' }
+  const incomplete = scrubClaim({ ...claim([line('99214')]), subscriber: sub })
+  assert.ok(incomplete.findings.some((f) => f.code === 'ADDR-REQUIRED'))
+  assert.equal(incomplete.ok, false)
+  const complete = scrubClaim({ ...claim([line('99214')]), subscriber: { ...sub, address: { line1: '1 Main St', city: 'Tulsa', state: 'OK', postalCode: '74135' } } })
+  assert.ok(!complete.findings.some((f) => f.code === 'ADDR-REQUIRED'))
+})
+
 test('a future service date is blocked', () => {
   const future = scrubClaim(claim([line('99214')], { dateOfService: '2099-01-01' }))
   assert.ok(future.findings.some((f) => f.code === 'DOS-FUTURE'))

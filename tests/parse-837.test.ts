@@ -13,6 +13,10 @@ test('837 parser enriches claims with the subscriber loop (SBR / NM1*IL / DMG)',
   assert.equal(c1.subscriber.lastName, 'DOE')
   assert.equal(c1.subscriber.dateOfBirth, '1950-01-01')
   assert.equal(c1.subscriber.gender, 'M')
+  assert.equal(c1.subscriber.address?.line1, '456 OAK AVE')
+  assert.equal(c1.subscriber.address?.city, 'AUSTIN')
+  assert.equal(c1.subscriber.address?.state, 'TX')
+  assert.equal(c1.subscriber.address?.postalCode, '78701')
   assert.equal(c1.claimFilingCode, 'MB')
 })
 

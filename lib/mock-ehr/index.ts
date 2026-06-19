@@ -30,6 +30,12 @@ const NPI = 'http://hl7.org/fhir/sid/us-npi'
 const PAYER_ID = 'http://codecompanion.dev/payer-id'
 const TAX = 'http://terminology.hl7.org/CodeSystem/v2-0203/tax'
 
+// ZIP by city, so every patient gets a complete (clearinghouse-valid) address.
+const CITY_ZIP: Record<string, string> = {
+  Tulsa: '74135', 'Broken Arrow': '74012', Owasso: '74055', Jenks: '74037',
+  'Sand Springs': '74063', Bixby: '74008', Glenpool: '74033',
+}
+
 // ── FHIR bundle (the EHR's native output) ────────────────────────────────────
 export function mockEhrDay(date: string = defaultServiceDate()): FhirBundle {
   const resources: FhirResource[] = []
@@ -54,14 +60,14 @@ export function mockEhrDay(date: string = defaultServiceDate()): FhirBundle {
     resources.push({ resourceType: 'Practitioner', id: key, name: [{ family: p.last, given: [p.first] }], identifier: [{ system: NPI, value: p.npi }] })
   }
 
-  for (const pt of PATIENTS) {
+  PATIENTS.forEach((pt, ptIndex) => {
     resources.push({
       resourceType: 'Patient',
       id: pt.id,
       name: [{ family: pt.last, given: [pt.first] }],
       birthDate: pt.dob,
       gender: pt.gender,
-      address: [{ city: pt.city, state: 'OK' }],
+      address: [{ line: [`${(ptIndex + 1) * 100} S Main St`], city: pt.city, state: 'OK', postalCode: CITY_ZIP[pt.city] ?? '74101' }],
     })
     resources.push({
       resourceType: 'Coverage',
@@ -106,7 +112,7 @@ export function mockEhrDay(date: string = defaultServiceDate()): FhirBundle {
         supportingInformation: svc.dx.map((code) => ({ reference: dxRef.get(code) ?? '' })).filter((r) => r.reference),
       })
     })
-  }
+  })
 
   return { resourceType: 'Bundle', type: 'collection', entry: resources.map((resource) => ({ resource })) }
 }

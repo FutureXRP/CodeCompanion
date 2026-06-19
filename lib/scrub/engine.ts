@@ -175,6 +175,16 @@ function npiChecksum(claim: Claim): ScrubFinding[] {
   return out
 }
 
+/** A claim with a subscriber needs a complete address — a clearinghouse rejects empty fields. */
+function subscriberAddress(claim: Claim): ScrubFinding[] {
+  if (!claim.subscriber) return []
+  const a = claim.subscriber.address
+  if (!a || !a.line1 || !a.city || !a.state || !a.postalCode) {
+    return [{ severity: 'error', source: 'required', code: 'ADDR-REQUIRED', message: 'Subscriber address is incomplete — street, city, state, and ZIP are all required.', hint: 'A clearinghouse rejects a claim with a missing or empty subscriber address.' }]
+  }
+  return []
+}
+
 /** A service date can't be later than the submission date — payers reject future dates. */
 function futureServiceDate(claim: Claim): ScrubFinding[] {
   if (!claim.dateOfService) return []
@@ -198,6 +208,7 @@ function nonBillableDx(claim: Claim): ScrubFinding[] {
 const NATIONAL_RULES: ScrubRule[] = [
   requiredFields,
   npiChecksum,
+  subscriberAddress,
   diagnoses,
   nonBillableDx,
   frequencyIcn,

@@ -22,6 +22,7 @@ export function parse837(raw: string): Claim[] {
     // the submittable / ledger path — the diff engine never reads it.
     let currentSubscriber: Subscriber | undefined
     let currentFilingCode: string | undefined
+    let inSubscriberLoop = false
     let current: Claim | null = null
     let lineNumber = 0
 
@@ -34,6 +35,8 @@ export function parse837(raw: string): Claim[] {
       switch (seg.tag) {
         case 'NM1': {
           const entity = el(seg.elements, 0)
+          // N3/N4 that follow NM1*IL belong to the subscriber; any other NM1 ends that loop.
+          inSubscriberLoop = entity === 'IL'
           if (entity === 'PR') {
             payer = {
               name: el(seg.elements, 2),
@@ -56,6 +59,28 @@ export function parse837(raw: string): Claim[] {
         case 'SBR': {
           // SBR09 carries the claim filing indicator (MB Medicare, MC Medicaid, CI commercial, …).
           currentFilingCode = el(seg.elements, 8) || currentFilingCode
+          break
+        }
+        case 'N3': {
+          if (inSubscriberLoop && currentSubscriber) {
+            currentSubscriber.address = {
+              line1: el(seg.elements, 0),
+              city: currentSubscriber.address?.city ?? '',
+              state: currentSubscriber.address?.state ?? '',
+              postalCode: currentSubscriber.address?.postalCode ?? '',
+            }
+          }
+          break
+        }
+        case 'N4': {
+          if (inSubscriberLoop && currentSubscriber) {
+            currentSubscriber.address = {
+              line1: currentSubscriber.address?.line1 ?? '',
+              city: el(seg.elements, 0),
+              state: el(seg.elements, 1),
+              postalCode: el(seg.elements, 2),
+            }
+          }
           break
         }
         case 'DMG': {

@@ -298,7 +298,8 @@ export function canonicalToStediClaim(
       lastName: sub.lastName,
       gender: sub.gender ?? 'U',
       dateOfBirth: ymd(sub.dateOfBirth),
-      ...(sub.address ? { address: stediAddress(sub.address) } : {}),
+      // Only emit an address when it's complete — Stedi rejects empty-string fields.
+      ...(sub.address?.line1 && sub.address.postalCode ? { address: stediAddress(sub.address) } : {}),
     },
     billing: {
       providerType: 'BillingProvider',
