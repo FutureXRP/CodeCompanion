@@ -7,7 +7,6 @@ import {
   normalizeBaseUrl,
   stediAuthFromEnv,
   stediHeaders,
-  usageIndicator,
   type HttpResponse,
   type HttpTransport,
   type StediAuth,
@@ -27,13 +26,13 @@ import {
  * JSON benefits and run them through the shared deterministic derivation, so the
  * money math is identical to the mock and to any future clearinghouse.
  *
- * SAFETY: defaults to SANDBOX (usageIndicator "T", synthetic members). Production
+ * SAFETY: sandbox vs production is determined by the Stedi API KEY (a test key
+ * hits the sandbox), NOT a request field — Stedi's eligibility API rejects an
+ * unknown `usageIndicator` (that field belongs to the claims API only). Production
  * (real member PHI to real payers) is gated in createEligibilityService behind
- * ALLOW_REAL_PHI. Request-building and response-mapping are pure + unit-tested
- * via an injectable transport — no network or account required.
+ * ALLOW_REAL_PHI. Request-building and response-mapping are pure + unit-tested.
  *
- * Endpoint path confirmed against Stedi docs (eligibility/v3); override via
- * `path` (or STEDI_ELIGIBILITY_PATH) if Stedi versions it.
+ * Endpoint path: eligibility/v3; override via `path` (or STEDI_ELIGIBILITY_PATH).
  */
 
 const DEFAULT_PATH = '/2024-04-01/change/medicalnetwork/eligibility/v3'
@@ -93,7 +92,6 @@ export class StediEligibilityService implements EligibilityService {
   async checkRaw(request: EligibilityRequest): Promise<{ status: number; body: unknown; result: EligibilityResult }> {
     const payload = canonicalToStedi270(request, {
       tradingPartnerServiceId: this.resolvePayerId(request.payer),
-      usageIndicator: usageIndicator(this.config.sandbox),
     })
     const res = await this.transport({
       method: 'POST',
@@ -115,7 +113,7 @@ export class StediEligibilityService implements EligibilityService {
 /** Build Stedi's 270 JSON request from a canonical eligibility request. */
 export function canonicalToStedi270(
   request: EligibilityRequest,
-  opts: { tradingPartnerServiceId: string; usageIndicator?: 'T' | 'P'; controlNumber?: string },
+  opts: { tradingPartnerServiceId: string; controlNumber?: string },
 ): Record<string, unknown> {
   const sub = request.subscriber
   const prov = request.provider
@@ -128,7 +126,6 @@ export function canonicalToStedi270(
 
   return {
     controlNumber: opts.controlNumber ?? randomControlNumber(),
-    usageIndicator: opts.usageIndicator ?? 'T',
     tradingPartnerServiceId: opts.tradingPartnerServiceId,
     provider,
     subscriber: {

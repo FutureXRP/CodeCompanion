@@ -92,7 +92,7 @@ test('mapEligibilityResponse: tolerates string-form errors and empty body', () =
 test('canonicalToStedi270: builds the documented 270 shape', () => {
   const payload = canonicalToStedi270(REQ, { tradingPartnerServiceId: 'AETNA', controlNumber: '000000001' }) as Record<string, any>
   assert.equal(payload.controlNumber, '000000001')
-  assert.equal(payload.usageIndicator, 'T') // defaults to test mode
+  assert.equal(payload.usageIndicator, undefined) // eligibility must NOT send usageIndicator (claims-API field only)
   assert.equal(payload.tradingPartnerServiceId, 'AETNA')
   assert.equal(payload.provider.npi, '1234567893')
   assert.equal(payload.provider.organizationName, 'CODECOMPANION TEST CLINIC')
@@ -131,7 +131,7 @@ test('StediEligibilityService.check: posts to eligibility/v3, sandbox auth, reso
   assert.ok(sent.url.endsWith('/eligibility/v3'))
   assert.equal(sent.headers.Authorization, 'test-key')
   const body = JSON.parse(sent.body ?? '{}')
-  assert.equal(body.usageIndicator, 'T') // sandbox never defaults to production
+  assert.equal(body.usageIndicator, undefined) // Stedi eligibility rejects usageIndicator — must not send it
   assert.equal(body.tradingPartnerServiceId, '60054') // resolved via the payer directory
 })
 
