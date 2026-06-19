@@ -1,6 +1,5 @@
 import type { Payer } from '../canonical'
 import { dollarsToCents } from '../canonical'
-import { sampleEncounter } from '../adapters/ehr'
 import type { PayerDirectory } from './payer-directory'
 import {
   fetchTransport,
@@ -126,6 +125,7 @@ export function canonicalToStedi270(
 
   return {
     controlNumber: opts.controlNumber ?? randomControlNumber(),
+    ...(request.stediTest ? { stediTest: true } : {}), // Stedi sandbox mock flag (sandbox only)
     tradingPartnerServiceId: opts.tradingPartnerServiceId,
     provider,
     subscriber: {
@@ -246,23 +246,17 @@ export function stediEligibilityFromEnv(payerDirectory?: PayerDirectory): StediE
 }
 
 /**
- * A fully-synthetic eligibility request (no real PHI) for sandbox trials + tests,
- * reusing the shared synthetic encounter so the test member/provider match the
- * claim-submission fixtures.
+ * Stedi's documented mock-request member (no real PHI): payer STEDI, member
+ * 23051322 "Bernie Prohas", provider STEDI / 1447848577, with stediTest=true.
+ * Returns active coverage in the Stedi sandbox. See Stedi "Eligibility mock
+ * requests". A real member ID against this payer returns AAA error 72.
  */
-export function buildStediTestEligibility(payerExternalId = 'STEDITEST'): EligibilityRequest {
-  const enc = sampleEncounter(payerExternalId)
+export function buildStediTestEligibility(payerExternalId = 'STEDI'): EligibilityRequest {
   return {
-    payer: enc.payer,
-    subscriber: {
-      memberId: enc.subscriber.memberId,
-      firstName: enc.subscriber.firstName,
-      lastName: enc.subscriber.lastName,
-      dateOfBirth: enc.subscriber.dateOfBirth,
-      gender: enc.subscriber.gender,
-    },
-    provider: { npi: enc.billingProvider.npi, organizationName: enc.billingProvider.organizationName },
+    payer: { externalId: payerExternalId, name: 'Stedi Test Payer' },
+    subscriber: { memberId: '23051322', firstName: 'Bernie', lastName: 'Prohas' },
+    provider: { npi: '1447848577', organizationName: 'STEDI' },
     serviceTypeCodes: ['30'],
-    dateOfService: enc.dateOfService,
+    stediTest: true,
   }
 }

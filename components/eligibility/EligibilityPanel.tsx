@@ -17,19 +17,19 @@ function safeStr(v: unknown): string {
 
 // The synthetic test member — pre-filled so a check works immediately in the sandbox.
 const TEST_MEMBER = {
-  memberId: 'TEST123456789',
-  firstName: 'JANE',
-  lastName: 'DOE',
-  dateOfBirth: '1990-01-01',
-  gender: 'F',
+  memberId: '23051322',
+  firstName: 'Bernie',
+  lastName: 'Prohas',
+  dateOfBirth: '',
+  gender: '',
   payerName: 'Stedi Test Payer',
-  payerId: 'STEDITEST',
+  payerId: 'STEDI',
   serviceTypeCode: '30',
 }
 
-// The billing provider for sandbox trials (matches the synthetic encounter fixture).
+// Stedi's documented mock provider — required for the mock member to resolve.
 // In production this comes from the signed-in practice, not the form.
-const TEST_PROVIDER = { npi: '1234567893', organizationName: 'CODECOMPANION TEST CLINIC' }
+const TEST_PROVIDER = { npi: '1447848577', organizationName: 'STEDI' }
 
 const STATUS_STYLE: Record<string, { fg: string; bg: string; label: string }> = {
   active: { fg: '#1a7a45', bg: '#e8f6ee', label: 'Active coverage' },
@@ -72,6 +72,7 @@ export function EligibilityPanel({ configured, sandbox }: { configured: boolean;
         },
         provider: TEST_PROVIDER,
         serviceTypeCodes: [form.serviceTypeCode.trim() || '30'],
+        stediTest: Boolean(configured && sandbox), // Stedi sandbox mock flag (not sent in production)
       }
       const res = await fetch('/api/eligibility', {
         method: 'POST',
@@ -101,6 +102,7 @@ export function EligibilityPanel({ configured, sandbox }: { configured: boolean;
           <div>
             <label style={labelStyle}>Sex</label>
             <select value={form.gender} onChange={(e) => set('gender', e.target.value)} style={inputStyle}>
+              <option value="">—</option>
               <option value="F">F</option>
               <option value="M">M</option>
               <option value="U">U</option>

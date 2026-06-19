@@ -178,9 +178,19 @@ test('MockEligibilityService: an "inactive" member id returns terminated coverag
   assert.equal(r.active, false)
 })
 
-test('buildStediTestEligibility: synthetic, no-PHI request shaped for the sandbox', () => {
+test('buildStediTestEligibility: Stedi documented mock member (returns active coverage)', () => {
   const req = buildStediTestEligibility()
-  assert.equal(req.payer.externalId, 'STEDITEST')
-  assert.equal(req.provider.npi, '1234567893')
+  assert.equal(req.payer.externalId, 'STEDI')
+  assert.equal(req.subscriber.memberId, '23051322')
+  assert.equal(req.subscriber.firstName, 'Bernie')
+  assert.equal(req.provider.npi, '1447848577')
+  assert.equal(req.stediTest, true)
   assert.deepEqual(req.serviceTypeCodes, ['30'])
+})
+
+test('canonicalToStedi270: includes the stediTest flag only for a mock request', () => {
+  const off = canonicalToStedi270(REQ, { tradingPartnerServiceId: 'STEDI' }) as Record<string, any>
+  assert.equal(off.stediTest, undefined)
+  const on = canonicalToStedi270({ ...REQ, stediTest: true }, { tradingPartnerServiceId: 'STEDI' }) as Record<string, any>
+  assert.equal(on.stediTest, true)
 })
