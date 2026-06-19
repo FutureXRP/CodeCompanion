@@ -1,6 +1,7 @@
 import type { Claim } from '../canonical'
 import { canonicalToStediClaim } from './stedi-clearinghouse'
 import { scrubClaim, OKLAHOMA, type Jurisdiction } from '../scrub'
+import { payerById, type StediPayer } from './payers'
 
 /**
  * Submit a batch of claims to Stedi and report per-claim outcomes — the billing
@@ -28,6 +29,8 @@ export interface ClaimSubmitResult {
   category?: string
   /** Reject/block reason or acceptance note. */
   detail: string
+  /** True when the resolved payer requires EDI enrollment before production claims are accepted. */
+  enrollmentRequired?: boolean
   httpStatus?: number
   /** Raw Stedi response, so the real result is always visible. */
   raw?: unknown
@@ -39,6 +42,13 @@ export interface SubmitBatchOptions {
   useTestPayer?: boolean
   testPayerId?: string
   submitterId?: string
+  /**
+   * Resolve a canonical payer.externalId against the clearinghouse payer network.
+   * Defaults to the bundled Stedi directory (lib/rcm/payers). Injectable for tests.
+   * Returns undefined when the payer isn't routable — which blocks the claim locally
+   * instead of letting it round-trip to a PAYER_NOT_CONFIGURED rejection.
+   */
+  resolvePayer?: (payerExternalId: string) => StediPayer | undefined
 }
 
 interface StediBody {
@@ -91,26 +101,50 @@ export async function submitClaimBatch(
 ): Promise<ClaimSubmitResult[]> {
   const jurisdiction = opts.jurisdiction ?? OKLAHOMA
   const testPayerId = opts.testPayerId ?? TEST_PAYER
+  const resolvePayer = opts.resolvePayer ?? payerById
   const results: ClaimSubmitResult[] = []
 
   for (const claim of claims) {
     const patientName = claim.subscriber ? `${claim.subscriber.firstName} ${claim.subscriber.lastName}` : undefined
     const tradingPartnerServiceId = opts.useTestPayer ? testPayerId : claim.payer.externalId
+    const base = { controlNumber: claim.controlNumber, patientName, payerName: claim.payer.name, tradingPartnerServiceId }
 
     const scrub = scrubClaim(claim, jurisdiction)
     if (!scrub.ok) {
       const reasons = scrub.findings.filter((f) => f.severity === 'error').map((f) => `${f.code}: ${f.message}`).join(' · ')
-      results.push({ controlNumber: claim.controlNumber, patientName, payerName: claim.payer.name, tradingPartnerServiceId, outcome: 'blocked', detail: reasons || 'Failed pre-submission scrub.' })
+      results.push({ ...base, outcome: 'blocked', detail: reasons || 'Failed pre-submission scrub.' })
       continue
+    }
+
+    // Pre-flight payer-network check (real routing only — the test payer is always valid).
+    // Resolve the payer id against the clearinghouse directory BEFORE transmitting, so a
+    // typo'd or placeholder id is caught locally instead of bouncing back as
+    // PAYER_NOT_CONFIGURED after a wasted round-trip.
+    let enrollmentRequired: boolean | undefined
+    if (!opts.useTestPayer) {
+      const networkPayer = resolvePayer(claim.payer.externalId)
+      if (!networkPayer) {
+        results.push({ ...base, outcome: 'blocked', detail: `Payer ${claim.payer.externalId} (${claim.payer.name}) is not in the Stedi payer network — verify the payer id against the published payer list (lib/rcm/payers) before submitting.` })
+        continue
+      }
+      if (!networkPayer.professionalClaim) {
+        results.push({ ...base, outcome: 'blocked', detail: `Payer ${claim.payer.externalId} (${networkPayer.name}) does not accept professional (837P) claims through Stedi.` })
+        continue
+      }
+      enrollmentRequired = networkPayer.professionalClaimEnrollmentRequired
     }
 
     try {
       const payload = canonicalToStediClaim(claim, { tradingPartnerServiceId, usageIndicator: 'T', submitterId: opts.submitterId })
       const res = await ch.submitJson(payload)
       const verdict = classifyStediSubmission(res.status, res.body)
-      results.push({ controlNumber: claim.controlNumber, patientName, payerName: claim.payer.name, tradingPartnerServiceId, outcome: verdict.outcome, category: verdict.category, detail: verdict.detail, httpStatus: res.status, raw: res.body })
+      const detail =
+        verdict.outcome === 'accepted' && enrollmentRequired
+          ? `${verdict.detail} Payer requires EDI enrollment before production submission.`
+          : verdict.detail
+      results.push({ ...base, outcome: verdict.outcome, category: verdict.category, detail, enrollmentRequired, httpStatus: res.status, raw: res.body })
     } catch (e) {
-      results.push({ controlNumber: claim.controlNumber, patientName, payerName: claim.payer.name, tradingPartnerServiceId, outcome: 'rejected', detail: e instanceof Error ? e.message : String(e) })
+      results.push({ ...base, outcome: 'rejected', detail: e instanceof Error ? e.message : String(e), enrollmentRequired })
     }
   }
 
