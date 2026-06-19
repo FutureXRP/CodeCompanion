@@ -22,6 +22,23 @@ insert into claim_lines(claim_id, line_number, cpt_hcpcs, billed_cents) values
   ('c1111111-1111-1111-1111-111111111111', 1, '99214', 15000),
   ('c2222222-2222-2222-2222-222222222222', 1, '99215', 20000);
 
+-- Operational modules (009): one row per tenant, to prove isolation.
+insert into eligibility_checks(tenant_id, account_key, status, source) values
+  ('11111111-1111-1111-1111-111111111111', 'MEMBER-A', 'active', 'mock'),
+  ('22222222-2222-2222-2222-222222222222', 'MEMBER-B', 'inactive', 'mock');
+insert into transaction_enrollments(tenant_id, provider_npi, payer_external_id, clearinghouse, transaction, state) values
+  ('11111111-1111-1111-1111-111111111111', '1999999984', '00123', 'stedi', 'era', 'approved'),
+  ('22222222-2222-2222-2222-222222222222', '1999999984', '00123', 'stedi', 'era', 'pending');
+insert into payment_transactions(tenant_id, account_key, amount_cents, method, provider) values
+  ('11111111-1111-1111-1111-111111111111', 'MEMBER-A', 2500, 'card', 'mock'),
+  ('22222222-2222-2222-2222-222222222222', 'MEMBER-B', 3000, 'card', 'mock');
+insert into tasks(tenant_id, source, title, dollars_cents) values
+  ('11111111-1111-1111-1111-111111111111', 'denial', 'Appeal A', 10000),
+  ('22222222-2222-2222-2222-222222222222', 'balance', 'Collect B', 5000);
+insert into audit_log(tenant_id, action, resource) values
+  ('11111111-1111-1111-1111-111111111111', 'write', 'seed'),
+  ('22222222-2222-2222-2222-222222222222', 'write', 'seed');
+
 -- ── Act as tenant 1's user ──────────────────────────────────────────────────
 set role authenticated;
 set request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
@@ -41,6 +58,22 @@ do $$ begin
   end if;
   if (select count(*) from payers) <> 1 then
     raise exception 'FAIL: u1 cannot read the shared payers catalog';
+  end if;
+  -- Operational tables: each must show exactly tenant 1's single row.
+  if (select count(*) from eligibility_checks) <> 1 then
+    raise exception 'FAIL: eligibility_checks isolation — u1 sees %', (select count(*) from eligibility_checks);
+  end if;
+  if (select count(*) from transaction_enrollments) <> 1 then
+    raise exception 'FAIL: transaction_enrollments isolation — u1 sees %', (select count(*) from transaction_enrollments);
+  end if;
+  if (select count(*) from payment_transactions) <> 1 then
+    raise exception 'FAIL: payment_transactions isolation — u1 sees %', (select count(*) from payment_transactions);
+  end if;
+  if (select count(*) from tasks) <> 1 then
+    raise exception 'FAIL: tasks isolation — u1 sees %', (select count(*) from tasks);
+  end if;
+  if (select count(*) from audit_log) <> 1 then
+    raise exception 'FAIL: audit_log isolation — u1 sees %', (select count(*) from audit_log);
   end if;
 end $$;
 
@@ -71,4 +104,29 @@ do $$ begin
 end $$;
 
 reset role;
+
+-- ── Audit log is append-only ────────────────────────────────────────────────
+-- Tested as the owner (RLS-exempt) so rows ARE visible: the immutability trigger,
+-- not RLS, is what must reject the mutation. This proves even the service role
+-- cannot rewrite the audit trail.
+do $$
+declare blocked_update boolean := false;
+        blocked_delete boolean := false;
+begin
+  begin
+    update audit_log set action = 'tamper';
+  exception when others then blocked_update := true;
+  end;
+  if not blocked_update then
+    raise exception 'FAIL: audit_log UPDATE was allowed — immutability trigger missing';
+  end if;
+  begin
+    delete from audit_log;
+  exception when others then blocked_delete := true;
+  end;
+  if not blocked_delete then
+    raise exception 'FAIL: audit_log DELETE was allowed — immutability trigger missing';
+  end if;
+end $$;
+
 select 'RLS ISOLATION TESTS PASSED' as result;

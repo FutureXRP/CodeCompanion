@@ -1,5 +1,6 @@
 -- CodeCompanion — consolidated Supabase schema. Idempotent, safe to re-run.
--- Equivalent to migrations 005 + 006 + 007 + 008. Paste into the Supabase SQL editor.
+-- Equivalent to migrations 005 + 006 + 007 + 008 + 009. Paste into the Supabase
+-- SQL editor and run once on a fresh project (the auth schema is provided by Supabase).
 --
 -- Multi-tenant RLS on Supabase Auth: current_tenant_id() resolves the caller's
 -- tenant from tenant_users via auth.uid(). Every tenant table enforces RLS.
@@ -299,6 +300,7 @@ create table if not exists eligibility_checks (
 create index if not exists eligibility_checks_tenant_idx on eligibility_checks(tenant_id);
 create index if not exists eligibility_checks_account_idx on eligibility_checks(tenant_id, account_key);
 alter table eligibility_checks enable row level security;
+drop policy if exists eligibility_checks_tenant on eligibility_checks;
 create policy eligibility_checks_tenant on eligibility_checks
   using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());
 
@@ -318,6 +320,7 @@ create table if not exists transaction_enrollments (
 );
 create index if not exists transaction_enrollments_tenant_idx on transaction_enrollments(tenant_id);
 alter table transaction_enrollments enable row level security;
+drop policy if exists transaction_enrollments_tenant on transaction_enrollments;
 create policy transaction_enrollments_tenant on transaction_enrollments
   using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());
 
@@ -336,6 +339,7 @@ create table if not exists payment_transactions (
 create index if not exists payment_transactions_tenant_idx on payment_transactions(tenant_id);
 create index if not exists payment_transactions_account_idx on payment_transactions(tenant_id, account_key);
 alter table payment_transactions enable row level security;
+drop policy if exists payment_transactions_tenant on payment_transactions;
 create policy payment_transactions_tenant on payment_transactions
   using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());
 
@@ -358,6 +362,7 @@ create table if not exists tasks (
 create index if not exists tasks_tenant_idx on tasks(tenant_id);
 create index if not exists tasks_status_idx on tasks(tenant_id, status);
 alter table tasks enable row level security;
+drop policy if exists tasks_tenant on tasks;
 create policy tasks_tenant on tasks
   using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());
 
@@ -373,7 +378,9 @@ create table if not exists audit_log (
 );
 create index if not exists audit_log_tenant_idx on audit_log(tenant_id, at desc);
 alter table audit_log enable row level security;
+drop policy if exists audit_log_insert on audit_log;
 create policy audit_log_insert on audit_log for insert with check (tenant_id = current_tenant_id());
+drop policy if exists audit_log_select on audit_log;
 create policy audit_log_select on audit_log for select using (tenant_id = current_tenant_id());
 revoke update, delete on audit_log from authenticated;
 create or replace function audit_log_immutable() returns trigger language plpgsql as $$
