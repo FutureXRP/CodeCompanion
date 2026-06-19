@@ -5,6 +5,7 @@ import { pullClaims, adjudicate, mockEhrRates, DEFAULT_DATE } from '@/lib/mock-e
 import { scrubClaim, OKLAHOMA } from '@/lib/scrub'
 import { buildLedger } from '@/lib/ledger'
 import { runDiff } from '@/lib/diff'
+import { DaySubmitPanel } from '@/components/ehr/DaySubmitPanel'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,21 @@ export default function EhrPage() {
   const accountByMember = new Map(ledger.accounts.map((a) => [a.accountKey, a]))
   const warned = [...scrubs.values()].filter((s) => s.ok && s.warningCount > 0).length
 
+  const configured = Boolean(process.env.STEDI_API_KEY)
+  const sandbox = process.env.STEDI_SANDBOX !== 'false'
+  const claimRows = claims.map((c) => {
+    const s = scrubs.get(c.controlNumber)!
+    return {
+      controlNumber: c.controlNumber,
+      patientName: c.subscriber ? `${c.subscriber.firstName} ${c.subscriber.lastName}` : c.controlNumber,
+      payerName: c.payer.name,
+      payerId: c.payer.externalId,
+      cpts: c.lines.map((l) => l.cptHcpcs + (l.modifiers.length ? `-${l.modifiers.join(',')}` : '')).join(' · '),
+      scrubOk: s.ok,
+      scrubWarnings: s.warningCount,
+    }
+  })
+
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1120, margin: '0 auto' }}>
       <div style={{ marginBottom: 4 }}>
@@ -51,6 +67,16 @@ export default function EhrPage() {
         Pipeline: <strong>FHIR → canonical</strong> ({claims.length}) → <strong>scrub</strong> ({claims.length - warned} clean, {warned} warnings) →
         <strong> 837 submit</strong> → <strong>835 adjudication</strong> → <strong>ledger</strong> ({ledger.accounts.length} accounts) →
         <strong> found-money</strong> ({findings.length}) → <strong>corpus</strong> (suppressed — one day is below the de-id floor).
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginBottom: 18 }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Submit to clearinghouse</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: sandbox ? '#1a7a45' : '#c9302c', background: sandbox ? '#e8f6ee' : '#fff5f5', padding: '3px 10px', borderRadius: 999 }}>{sandbox ? 'Stedi Sandbox' : 'Production'}</span>
+        </div>
+        <div style={{ padding: '16px' }}>
+          <DaySubmitPanel claims={claimRows} configured={configured} sandbox={sandbox} />
+        </div>
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
