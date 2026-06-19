@@ -33,9 +33,11 @@ interface CellSpec {
 function cell(spec: CellSpec): AdjudicatedObservation[] {
   const r = rng(spec.seed)
   const jitter = (x: number): number => Math.round(x * (0.9 + r() * 0.2))
+  // Deterministic denials (every Kth line) so the demo + stats are reproducible.
+  const everyK = spec.denialRate > 0 ? Math.max(2, Math.round(1 / spec.denialRate)) : 0
   const out: AdjudicatedObservation[] = []
   for (let i = 0; i < spec.n; i++) {
-    const denied = r() < spec.denialRate
+    const denied = everyK > 0 && i % everyK === 0
     out.push({
       payerExternalId: spec.payer,
       region: 'OK',

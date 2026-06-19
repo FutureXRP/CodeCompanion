@@ -147,6 +147,8 @@ Two uses from one model:
 
 This can be a conventional ML model over the corpus; the LLM's role is explaining *why* a prediction looks the way it does, not generating the number.
 
+**Stubbed** (`lib/predict/`): the `Predictor` seam + a deterministic `CorpusBaselinePredictor` (empirical medians + denial rate straight from the corpus cell). It returns `insufficient_data` with null figures when no cell qualifies — never a guess — and is marked `calibrated: false`. A trained, calibrated model swaps in behind the same interface once real adjudications are flowing. Surfaced at `/predict`; the two uses (`estimateEncounter`, `denialRiskSignals`) ride the same per-line prediction.
+
 ---
 
 ## Layer 6 — Settlement ledger (Rung 3, where it stops being software)
