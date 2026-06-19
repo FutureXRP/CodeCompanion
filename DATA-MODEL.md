@@ -178,9 +178,11 @@ allowed_stat      jsonb                    -- distribution stats, not raw values
 paid_stat         jsonb
 days_to_pay_stat  jsonb
 denial_rate       numeric
+top_carc_codes    text[]                   -- standardized HIPAA codes, not PHI
 sample_n          int                      -- suppress / withhold when sample_n is small
 updated_at        timestamptz
 ```
+> **Implemented** in `lib/corpus/` (one-way transform `observe()` → `aggregate()`, the runtime gate, the `sampleObservations` demo) and `008_corpus.sql`. The DB enforces the suppression floor with `check (sample_n >= 11)` and has no `tenant_id` column. Gate tests live in `tests/corpus.test.ts`.
 
 **Gate rules (enforced in `lib/corpus/`):**
 1. The transform reads tenant data, emits only aggregate statistics keyed by non-identifying dimensions.

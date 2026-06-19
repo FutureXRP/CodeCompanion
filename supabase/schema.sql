@@ -1,5 +1,5 @@
 -- CodeCompanion — consolidated Supabase schema. Idempotent, safe to re-run.
--- Equivalent to migrations 005 + 006 + 007. Paste into the Supabase SQL editor.
+-- Equivalent to migrations 005 + 006 + 007 + 008. Paste into the Supabase SQL editor.
 --
 -- Multi-tenant RLS on Supabase Auth: current_tenant_id() resolves the caller's
 -- tenant from tenant_users via auth.uid(). Every tenant table enforces RLS.
@@ -252,3 +252,29 @@ alter table ledger_entries enable row level security;
 drop policy if exists ledger_entries_tenant on ledger_entries;
 create policy ledger_entries_tenant on ledger_entries
   using (tenant_id = current_tenant_id()) with check (tenant_id = current_tenant_id());
+
+-- ── De-identified behavioral corpus (Rung 2) — the moat + the de-id gate ───────
+-- SACRED BOUNDARY: de-identified aggregates ONLY. No tenant_id, no FK to any
+-- tenant table (payer_id -> payers is shared reference data). A CHECK enforces
+-- small-cell suppression (sample_n >= 11) in the schema itself. RLS is on with NO
+-- tenant policy: only the service/prediction role (RLS-exempt) reads or writes it.
+create table if not exists payer_behavior_corpus (
+  id                uuid primary key default uuid_generate_v4(),
+  payer_id          uuid references payers(id),
+  region            text not null,
+  specialty         text not null,
+  cpt_hcpcs         text not null,
+  modifier          text not null default '',
+  contract_class    text not null,
+  allowed_stat      jsonb not null,
+  paid_stat         jsonb not null,
+  days_to_pay_stat  jsonb,
+  denial_rate       numeric not null default 0,
+  top_carc_codes    text[] not null default '{}',
+  sample_n          int not null,
+  updated_at        timestamptz not null default now(),
+  constraint corpus_min_sample check (sample_n >= 11)
+);
+create unique index if not exists payer_behavior_corpus_cell
+  on payer_behavior_corpus (payer_id, region, specialty, cpt_hcpcs, modifier, contract_class);
+alter table payer_behavior_corpus enable row level security;

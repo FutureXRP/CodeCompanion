@@ -29,6 +29,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h2.5l2-5 2 10 2-6 1.5 3H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/analytics',  label: 'Analytics',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4 3 3 3-6L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+  { href: '/corpus',     label: 'Corpus',         badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/><circle cx="3" cy="3.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="3.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="3" cy="12.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="12.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><path d="M6.2 6.8L4.1 4.6M9.8 6.8l2.1-2.2M6.2 9.2L4.1 11.4M9.8 9.2l2.1 2.2" stroke="currentColor" strokeWidth="1.2"/></svg> },
   { href: '/schedule',   label: 'Schedule',       badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
   { href: '/account',    label: 'Account',        badge: null,

@@ -7,10 +7,12 @@ import {
   type LedgerEntry,
   type PatientAccount,
 } from '../ledger'
+import { assertDeidentified, type CorpusRow } from '../corpus'
 import {
   toAdjustmentRow,
   toClaimLineRow,
   toClaimRow,
+  toCorpusRow,
   toFindingRow,
   toLedgerEntryRow,
   toRemittanceLineRow,
@@ -42,6 +44,29 @@ export async function ensureTenant(db: SupabaseClient, name: string): Promise<st
   const created = await db.from('tenants').insert({ name }).select('id').single()
   if (created.error) throw created.error
   return created.data.id as string
+}
+
+/**
+ * Persist de-identified corpus rows (service role only — the corpus has no tenant
+ * column, so it never goes through an authed/RLS client). The gate runs ONE more
+ * time at the write boundary: a row that is not de-identified throws, never
+ * writes. Upserts on the behavior cell so repeat runs refine rather than dupe.
+ */
+export async function persistCorpus(db: SupabaseClient, rows: CorpusRow[]): Promise<number> {
+  if (rows.length === 0) return 0
+  for (const row of rows) assertDeidentified(row) // breach-class bug must fail loudly, not write
+  const payerIds = new Map<string, string>()
+  for (const r of rows) {
+    if (!payerIds.has(r.payerExternalId)) {
+      payerIds.set(r.payerExternalId, await ensurePayer(db, r.payerExternalId, r.payerExternalId))
+    }
+  }
+  const dbRows = rows.map((r) => toCorpusRow(payerIds.get(r.payerExternalId) ?? null, r))
+  const ins = await db
+    .from('payer_behavior_corpus')
+    .upsert(dbRows, { onConflict: 'payer_id,region,specialty,cpt_hcpcs,modifier,contract_class' })
+  if (ins.error) throw ins.error
+  return dbRows.length
 }
 
 /** Find-or-create a payer in the shared catalog by its external EDI id. */

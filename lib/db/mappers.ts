@@ -1,5 +1,6 @@
 import type { Adjustment, Claim, ClaimLine, Finding, RemittanceLine } from '../canonical'
 import type { LedgerEntry } from '../ledger'
+import type { CorpusRow, CorpusStat } from '../corpus'
 
 /**
  * Pure canonical -> Supabase row mappers. No DB access here, so they are fully
@@ -140,6 +141,42 @@ export function toLedgerEntryRow(
     carc_code: e.carcCode ?? null,
     memo: e.memo,
     source: e.source,
+  }
+}
+
+/**
+ * De-identified corpus row -> DB row. Carries NO tenant/patient/claim column by
+ * construction — the payer is resolved to the shared payers catalog id. Column
+ * names match db/migrations/008_corpus.sql.
+ */
+export interface CorpusDbRow {
+  payer_id: string | null
+  region: string
+  specialty: string
+  cpt_hcpcs: string
+  modifier: string
+  contract_class: string
+  allowed_stat: CorpusStat
+  paid_stat: CorpusStat
+  days_to_pay_stat: CorpusStat | null
+  denial_rate: number
+  top_carc_codes: string[]
+  sample_n: number
+}
+export function toCorpusRow(payerId: string | null, r: CorpusRow): CorpusDbRow {
+  return {
+    payer_id: payerId,
+    region: r.region,
+    specialty: r.specialty,
+    cpt_hcpcs: r.cptHcpcs,
+    modifier: r.modifier,
+    contract_class: r.contractClass,
+    allowed_stat: r.allowedStat,
+    paid_stat: r.paidStat,
+    days_to_pay_stat: r.daysToPayStat,
+    denial_rate: r.denialRate,
+    top_carc_codes: r.topCarcCodes,
+    sample_n: r.sampleN,
   }
 }
 
