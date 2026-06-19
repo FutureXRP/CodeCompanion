@@ -2,6 +2,7 @@ import type { Claim } from '../canonical'
 import { canonicalToStediClaim } from './stedi-clearinghouse'
 import { scrubClaim, OKLAHOMA, type Jurisdiction } from '../scrub'
 import { payerById, type StediPayer } from './payers'
+import type { EnrollmentRegistry } from './enrollment'
 
 /**
  * Submit a batch of claims to Stedi and report per-claim outcomes — the billing
@@ -49,6 +50,14 @@ export interface SubmitBatchOptions {
    * instead of letting it round-trip to a PAYER_NOT_CONFIGURED rejection.
    */
   resolvePayer?: (payerExternalId: string) => StediPayer | undefined
+  /**
+   * Enrollment registry. When supplied, a payer that requires EDI enrollment is
+   * gated: the claim is blocked unless an approved (or not-required) enrollment is
+   * on file for (billing NPI × payer × claim). Fail safe — unknown means not live.
+   * The production submit path supplies this; sandbox callers may omit it (Stedi
+   * simulates without enrollment).
+   */
+  enrollment?: EnrollmentRegistry
 }
 
 interface StediBody {
@@ -132,6 +141,17 @@ export async function submitClaimBatch(
         continue
       }
       enrollmentRequired = networkPayer.professionalClaimEnrollmentRequired
+      // Enrollment gate: a payer that requires enrollment can't be transmitted to
+      // until enrollment is approved. Only enforced when a registry is supplied (the
+      // production path does); fail safe — no record means not enrolled.
+      if (enrollmentRequired && opts.enrollment) {
+        const npi = claim.billingProvider?.npi ?? claim.providerNpi ?? ''
+        const gate = opts.enrollment.canSubmit(npi, claim.payer.externalId, 'stedi', 'claim')
+        if (!gate.ok) {
+          results.push({ ...base, outcome: 'blocked', detail: gate.reason, enrollmentRequired })
+          continue
+        }
+      }
     }
 
     try {

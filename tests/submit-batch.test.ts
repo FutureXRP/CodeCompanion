@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import type { Claim } from '../lib/canonical'
 import { submitClaimBatch, classifyStediSubmission, type JsonSubmitter } from '../lib/rcm/submit-batch'
 import type { StediPayer } from '../lib/rcm/payers'
+import { EnrollmentRegistry, type EnrollmentRecord } from '../lib/rcm/enrollment'
 import { pullClaims } from '../lib/mock-ehr'
 
 const ACCEPT = { status: 200, body: { status: 'SUCCESS', x12: 'ST*277*0001~STC*A1:20:PR*~', controlNumber: 'X' } }
@@ -95,5 +96,34 @@ test('useTestPayer bypasses the payer-network check (routes to STEDITEST)', asyn
   const [r] = await submitClaimBatch([unknown], ch, { useTestPayer: true, resolvePayer })
   assert.equal(r.outcome, 'accepted')
   assert.equal(r.tradingPartnerServiceId, 'STEDITEST')
+  assert.equal(ch.calls.length, 1)
+})
+
+test('an enrollment-required payer is gated when no approved enrollment is on file', async () => {
+  const medicare: Claim = { ...pullClaims()[0], payer: { externalId: '04312', name: 'Medicare (Novitas JH)' } }
+  const ch = fakeCh(() => ACCEPT)
+  const [r] = await submitClaimBatch([medicare], ch, { resolvePayer, enrollment: new EnrollmentRegistry() })
+  assert.equal(r.outcome, 'blocked') // empty registry → fail safe, not live
+  assert.match(r.detail, /enrollment/i)
+  assert.equal(ch.calls.length, 0)
+})
+
+test('an approved enrollment lets an enrollment-required payer through', async () => {
+  const medicare: Claim = { ...pullClaims()[0], payer: { externalId: '04312', name: 'Medicare (Novitas JH)' } }
+  const npi = medicare.billingProvider?.npi ?? medicare.providerNpi ?? ''
+  const records: EnrollmentRecord[] = [
+    { providerNpi: npi, payerExternalId: '04312', clearinghouse: 'stedi', transaction: 'claim', state: 'approved', effectiveDate: '2026-01-01' },
+  ]
+  const ch = fakeCh(() => ACCEPT)
+  const [r] = await submitClaimBatch([medicare], ch, { resolvePayer, enrollment: new EnrollmentRegistry(records) })
+  assert.equal(r.outcome, 'accepted')
+  assert.equal(ch.calls.length, 1)
+})
+
+test('a payer that needs no enrollment is never gated, even with an empty registry', async () => {
+  const bcbs: Claim = { ...pullClaims()[0], payer: { externalId: '00840', name: 'BCBS Oklahoma' } }
+  const ch = fakeCh(() => ACCEPT)
+  const [r] = await submitClaimBatch([bcbs], ch, { resolvePayer, enrollment: new EnrollmentRegistry() })
+  assert.equal(r.outcome, 'accepted') // 00840 enrReq=false → gate skipped
   assert.equal(ch.calls.length, 1)
 })
