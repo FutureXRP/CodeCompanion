@@ -35,6 +35,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h2.5l2-5 2 10 2-6 1.5 3H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/analytics',  label: 'Analytics',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4 3 3 3-6L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+  { href: '/aging', label: 'A/R & Denials', badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><rect x="2.6" y="9" width="2.3" height="4" rx="0.6" fill="currentColor" opacity=".5"/><rect x="6.85" y="6" width="2.3" height="7" rx="0.6" fill="currentColor" opacity=".75"/><rect x="11.1" y="3" width="2.3" height="10" rx="0.6" fill="currentColor"/></svg> },
   { href: '/corpus',     label: 'Corpus',         badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/><circle cx="3" cy="3.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="3.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="3" cy="12.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="12.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><path d="M6.2 6.8L4.1 4.6M9.8 6.8l2.1-2.2M6.2 9.2L4.1 11.4M9.8 9.2l2.1 2.2" stroke="currentColor" strokeWidth="1.2"/></svg> },
   { href: '/predict',    label: 'Predict',        badge: { count: 'R2', color: '#7c3aed', bg: '#f3ecfe' },
