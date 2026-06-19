@@ -19,6 +19,7 @@ import {
   toRemittanceRow,
   lineMatchKey,
 } from './mappers'
+import { writeAudit } from './audit'
 
 /**
  * Persistence repository. Writes a canonical found-money run into the normalized
@@ -178,6 +179,13 @@ export async function persistRun(
     if (lgIns.error) throw lgIns.error
     ledgerEntryCount = ledgerRows.length
   }
+
+  // Audit the PHI write (COMPLIANCE.md). Counts only — no patient data.
+  await writeAudit(db, tenantId, null, {
+    action: 'write',
+    resource: 'persist_run',
+    detail: { claims: input.claims.length, remittances: remittanceCount, findings: findingCount, ledgerEntries: ledgerEntryCount },
+  })
 
   return {
     tenantId,

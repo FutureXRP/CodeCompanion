@@ -4,21 +4,30 @@ import { createClient } from '@/lib/supabase/server'
 import { pullClaims, adjudicate } from '@/lib/mock-ehr'
 import { buildLedger } from '@/lib/ledger'
 import { MockPaymentProvider, toPatientPayment, type PaymentMethod } from '@/lib/payments'
+import { recordPayment } from '@/lib/db/operational-repo'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
  * Record a patient payment. Charges via the MOCK provider (the demo never moves
- * real money — Stripe is gated behind ALLOW_REAL_CHARGES) and posts the result to
- * the ledger, returning the recomputed account balance so the UI shows it drop.
- * Stateless here (synthetic book each call); a real build persists to Supabase.
+ * real money — Stripe is gated behind ALLOW_REAL_CHARGES). When Supabase is
+ * configured, the payment + its ledger posting are persisted and audit-logged;
+ * without it, the demo runs stateless and returns the recomputed balance only.
  */
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null
+  let userId: string | null = null
+  let tenantId: string | null = null
+
   if (isSupabaseConfigured()) {
-    const supabase = await createClient()
+    supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 })
+    userId = user.id
+    const t = await supabase.from('tenant_users').select('tenant_id').eq('user_id', user.id).limit(1).maybeSingle()
+    if (t.error) return NextResponse.json({ error: t.error.message }, { status: 500 })
+    tenantId = (t.data?.tenant_id as string | undefined) ?? null
   }
 
   const body = (await request.json().catch(() => ({}))) as {
@@ -37,7 +46,14 @@ export async function POST(request: Request) {
     const result = await new MockPaymentProvider().charge(charge)
     if (!result.ok) return NextResponse.json({ error: result.error ?? 'Charge failed.' }, { status: 402 })
 
-    // Recompute the account with the payment posted, to return the new balance.
+    // Persist the payment + ledger posting + audit when wired.
+    let persisted = false
+    if (supabase && tenantId) {
+      await recordPayment(supabase, tenantId, userId, null, charge, result)
+      persisted = true
+    }
+
+    // Recompute the account balance for the response.
     const claims = pullClaims()
     const remittances = adjudicate(claims)
     const ledger = buildLedger({ claims, remittances, payments: [toPatientPayment(charge, result)] })
@@ -45,6 +61,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       result,
+      persisted,
       account: account
         ? { accountKey: account.accountKey, patientName: account.patientName, patientArCents: account.balance.patientArCents, standing: account.standing }
         : null,
