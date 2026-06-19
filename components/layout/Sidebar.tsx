@@ -17,6 +17,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l5.5 2.2v3.8c0 3-2.2 5.3-5.5 6.3-3.3-1-5.5-3.3-5.5-6.3V3.7L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M5.7 7.8l1.7 1.7 3-3.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/upload',      label: 'Upload & Test',  badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10.5V2.5M5 5.5L8 2.5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.5 10v2.5a1 1 0 001 1h9a1 1 0 001-1V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+  { href: '/eligibility', label: 'Eligibility', badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.8" stroke="currentColor" strokeWidth="1.5"/><circle cx="5" cy="7.2" r="1.4" stroke="currentColor" strokeWidth="1.2"/><path d="M8.5 6.4h4.2M8.5 8.8h4.2M3.4 10.4h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
   { href: '/clearinghouse', label: 'Clearinghouse', badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14.5 1.5L7 9M14.5 1.5L10 14.5 7 9 1.5 6 14.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/enrollments', label: 'Enrollments', badge: null,
