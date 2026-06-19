@@ -1,4 +1,5 @@
 import { EligibilityPanel } from '@/components/eligibility/EligibilityPanel'
+import { ScheduleSweep } from '@/components/eligibility/ScheduleSweep'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,6 +26,19 @@ export default function EligibilityPage() {
         synthetic test member — replace it to check any member. Eligibility needs no payer enrollment.
       </p>
       <EligibilityPanel configured={configured} sandbox={sandbox} />
+
+      <div style={{ marginTop: 36 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 6px' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tomorrow&apos;s schedule sweep</span>
+          <div style={{ height: 1, flex: 1, background: '#e9ecf2' }} />
+          <span style={{ fontSize: 11.5, color: '#9aa3b2' }}>batch-verify before the visits</span>
+        </div>
+        <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 14px', maxWidth: 660, lineHeight: 1.5 }}>
+          Verify the whole schedule ahead of time so terminated plans and unmet deductibles surface at the front desk, not as denials later.
+          In production this runs overnight as a Stedi batch (up to 10k checks per request).
+        </p>
+        <ScheduleSweep />
+      </div>
     </div>
   )
 }
