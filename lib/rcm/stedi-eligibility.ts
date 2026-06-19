@@ -61,6 +61,7 @@ interface StediEligError { description?: string; message?: string; code?: string
 interface StediPlanInfo { groupNumber?: string; groupDescription?: string; planNumber?: string }
 interface Stedi271 {
   controlNumber?: string
+  meta?: { applicationMode?: string }
   subscriber?: { memberId?: string; firstName?: string; lastName?: string }
   payer?: { name?: string }
   planInformation?: StediPlanInfo
@@ -182,6 +183,7 @@ export function mapEligibilityResponse(res: HttpResponse, request: EligibilityRe
     benefits,
     errors: extractErrors(body),
     checkedAt,
+    ...(body.meta?.applicationMode ? { mode: body.meta.applicationMode } : {}),
   }
 }
 

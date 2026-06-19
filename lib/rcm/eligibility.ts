@@ -95,6 +95,8 @@ export interface EligibilityResult extends EligibilitySummary {
   errors: string[]
   /** ISO timestamp the check was performed. */
   checkedAt: string
+  /** Stedi application mode from the 271 meta ('test' | 'production') — which payer was actually hit. */
+  mode?: string
 }
 
 export interface EligibilityService {

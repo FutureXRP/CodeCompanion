@@ -25,6 +25,7 @@ const REQ: EligibilityRequest = {
 /** A representative 271 body: active, with in- and out-of-network variants. */
 const SAMPLE_271 = {
   controlNumber: '123456789',
+  meta: { applicationMode: 'test' },
   subscriber: { memberId: 'TEST123', firstName: 'JANE', lastName: 'DOE' },
   payer: { name: 'AETNA' },
   planInformation: { groupDescription: 'GOLD PPO' },
@@ -52,6 +53,7 @@ test('mapEligibilityResponse: parses 271 into active coverage with in-network fi
   const r = mapEligibilityResponse({ status: 200, json: SAMPLE_271 }, REQ)
   assert.equal(r.status, 'active')
   assert.equal(r.active, true)
+  assert.equal(r.mode, 'test') // surfaced from the 271 meta — which payer was actually hit
   assert.equal(r.planName, 'GOLD PPO')
   assert.equal(r.payer.name, 'AETNA') // payer name from the 271 wins
   assert.equal(r.copayCents, 2500) // in-network ($25) preferred over OON ($50)

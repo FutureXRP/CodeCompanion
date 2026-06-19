@@ -198,7 +198,14 @@ function ResultView({ result, raw }: { result: EligibilityResult; raw: unknown }
           <span style={{ fontSize: 14, fontWeight: 700, color: status.fg }}>{status.label}</span>
           {member && <span style={{ fontSize: 13, color: INK }}>· {member}</span>}
         </div>
-        <span style={{ fontSize: 12, color: SUB }}>{safeStr(result.payer?.name)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {result.mode && (
+            <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: result.mode === 'production' ? '#c9302c' : '#1a7a45', background: result.mode === 'production' ? '#fff5f5' : '#e8f6ee', padding: '2px 8px', borderRadius: 999 }} title={result.mode === 'production' ? 'Your Stedi API key is a PRODUCTION key — this hit the real payer.' : 'Stedi ran this against the test payer.'}>
+              {result.mode}
+            </span>
+          )}
+          <span style={{ fontSize: 12, color: SUB }}>{safeStr(result.payer?.name)}</span>
+        </div>
       </div>
 
       {result.errors && result.errors.length > 0 && (
