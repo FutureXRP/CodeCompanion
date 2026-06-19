@@ -15,21 +15,25 @@ function safeStr(v: unknown): string {
   return JSON.stringify(v)
 }
 
-// The synthetic test member — pre-filled so a check works immediately in the sandbox.
-const TEST_MEMBER = {
-  memberId: '23051322',
-  firstName: 'Bernie',
-  lastName: 'Prohas',
-  dateOfBirth: '',
-  gender: '',
-  payerName: 'Stedi Test Payer',
-  payerId: 'STEDI',
-  serviceTypeCode: '30',
+// Stedi's documented "Eligibility mock requests" — each returns canned benefits
+// on a TEST API key. Exact values are required (Stedi rejects other names/ids/dobs).
+interface Scenario { label: string; payerName: string; payerId: string; memberId: string; firstName: string; lastName: string; dateOfBirth: string }
+const SCENARIOS: Scenario[] = [
+  { label: 'Active coverage — Aetna', payerName: 'Aetna', payerId: '60054', memberId: 'AETNA12345', firstName: 'Jane', lastName: 'Doe', dateOfBirth: '2004-04-04' },
+  { label: 'Active coverage — Cigna', payerName: 'Cigna', payerId: '62308', memberId: '23456789100', firstName: 'James', lastName: 'Jones', dateOfBirth: '1991-02-02' },
+  { label: 'Active coverage — Humana', payerName: 'Humana', payerId: '61101', memberId: 'HUMANA123', firstName: 'Jane', lastName: 'Doe', dateOfBirth: '1975-05-05' },
+  { label: 'Active coverage — Ambetter', payerName: 'Ambetter', payerId: '68069', memberId: 'AMBETTER123', firstName: 'John', lastName: 'Doe', dateOfBirth: '1994-04-04' },
+  { label: 'Inactive coverage — UnitedHealthcare', payerName: 'UnitedHealthcare', payerId: '87726', memberId: 'UHCINACTIVE', firstName: 'Jane', lastName: 'Doe', dateOfBirth: '1971-01-01' },
+  { label: 'Medicare — CMS', payerName: 'CMS', payerId: 'CMS', memberId: 'CMS12345678', firstName: 'Jane', lastName: 'Doe', dateOfBirth: '1955-05-05' },
+]
+function scenarioForm(s: Scenario) {
+  return { memberId: s.memberId, firstName: s.firstName, lastName: s.lastName, dateOfBirth: s.dateOfBirth, gender: '', payerName: s.payerName, payerId: s.payerId, serviceTypeCode: '30' }
 }
+const TEST_MEMBER = scenarioForm(SCENARIOS[0])
 
-// Stedi's documented mock provider — required for the mock member to resolve.
+// Provider for sandbox mocks: any name + any check-digit-valid NPI works (Stedi docs).
 // In production this comes from the signed-in practice, not the form.
-const TEST_PROVIDER = { npi: '1447848577', organizationName: 'STEDI' }
+const TEST_PROVIDER = { npi: '1999999984', organizationName: 'Provider Name' }
 
 const STATUS_STYLE: Record<string, { fg: string; bg: string; label: string }> = {
   active: { fg: '#1a7a45', bg: '#e8f6ee', label: 'Active coverage' },
@@ -45,6 +49,7 @@ const NETWORK_LABEL: Record<string, string> = {
 
 export function EligibilityPanel({ configured, sandbox }: { configured: boolean; sandbox: boolean }) {
   const [form, setForm] = useState(TEST_MEMBER)
+  const [scenario, setScenario] = useState(SCENARIOS[0].label)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<EligibilityResult | null>(null)
@@ -93,6 +98,16 @@ export function EligibilityPanel({ configured, sandbox }: { configured: boolean;
   return (
     <div>
       <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 12, padding: '18px 20px', marginBottom: 18 }}>
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Test scenario — Stedi documented mock</label>
+          <select
+            value={scenario}
+            onChange={(e) => { setScenario(e.target.value); const s = SCENARIOS.find((x) => x.label === e.target.value); if (s) setForm(scenarioForm(s)) }}
+            style={{ ...inputStyle, maxWidth: 380 }}
+          >
+            {SCENARIOS.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+          </select>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
           <Field label="Member ID" value={form.memberId} onChange={(v) => set('memberId', v)} />
           <Field label="First name" value={form.firstName} onChange={(v) => set('firstName', v)} />

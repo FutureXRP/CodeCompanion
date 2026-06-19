@@ -178,12 +178,13 @@ test('MockEligibilityService: an "inactive" member id returns terminated coverag
   assert.equal(r.active, false)
 })
 
-test('buildStediTestEligibility: Stedi documented mock member (returns active coverage)', () => {
+test('buildStediTestEligibility: Stedi documented active-coverage mock (Aetna)', () => {
   const req = buildStediTestEligibility()
-  assert.equal(req.payer.externalId, 'STEDI')
-  assert.equal(req.subscriber.memberId, '23051322')
-  assert.equal(req.subscriber.firstName, 'Bernie')
-  assert.equal(req.provider.npi, '1447848577')
+  assert.equal(req.payer.externalId, '60054')
+  assert.equal(req.subscriber.memberId, 'AETNA12345')
+  assert.equal(req.subscriber.firstName, 'Jane')
+  assert.equal(req.subscriber.dateOfBirth, '2004-04-04')
+  assert.equal(req.provider.npi, '1999999984')
   assert.deepEqual(req.serviceTypeCodes, ['30'])
 })
 

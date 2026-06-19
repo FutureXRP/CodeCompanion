@@ -245,16 +245,16 @@ export function stediEligibilityFromEnv(payerDirectory?: PayerDirectory): StediE
 }
 
 /**
- * Stedi's documented mock-request member (no real PHI): payer STEDI, member
- * 23051322 "Bernie Prohas", provider STEDI / 1447848577. With a TEST API key,
- * Stedi returns mock active coverage for this exact member — test mode is keyed
- * off the key, not a request flag. A real/invalid member returns AAA error 72.
+ * Stedi's documented "Medical — Active coverage" mock (Aetna). With a TEST API
+ * key, Stedi returns canned active coverage + benefits for this EXACT member
+ * (other names/ids/dobs error). Test mode is keyed off the API key, not a flag.
+ * See Stedi "Eligibility mock requests". No real PHI.
  */
-export function buildStediTestEligibility(payerExternalId = 'STEDI'): EligibilityRequest {
+export function buildStediTestEligibility(payerExternalId = '60054'): EligibilityRequest {
   return {
-    payer: { externalId: payerExternalId, name: 'Stedi Test Payer' },
-    subscriber: { memberId: '23051322', firstName: 'Bernie', lastName: 'Prohas' },
-    provider: { npi: '1447848577', organizationName: 'STEDI' },
+    payer: { externalId: payerExternalId, name: 'Aetna' },
+    subscriber: { memberId: 'AETNA12345', firstName: 'Jane', lastName: 'Doe', dateOfBirth: '2004-04-04' },
+    provider: { npi: '1999999984', organizationName: 'Provider Name' },
     serviceTypeCodes: ['30'],
   }
 }
