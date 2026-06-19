@@ -2,6 +2,21 @@ import { parse835, parse837 } from '../adapters/edi'
 import type { Address, Claim, Remittance } from '../canonical'
 import type { Clearinghouse, SubmissionAck, ClaimStatusResponse, ClaimStatusCategory } from './clearinghouse'
 import type { PayerDirectory } from './payer-directory'
+import {
+  fetchTransport,
+  normalizeBaseUrl,
+  stediAuthFromEnv,
+  stediHeaders,
+  usageIndicator as stediUsageIndicator,
+  type HttpRequest,
+  type HttpResponse,
+  type HttpTransport,
+  type StediAuth,
+} from './stedi-http'
+
+// Re-export the HTTP transport types so existing importers (and tests) that pull
+// them from this module keep resolving after the shared extraction to stedi-http.
+export type { HttpRequest, HttpResponse, HttpTransport } from './stedi-http'
 
 /**
  * Stedi sandbox clearinghouse adapter.
@@ -20,7 +35,6 @@ import type { PayerDirectory } from './payer-directory'
  * unit-tested without a network or an account.
  */
 
-const DEFAULT_BASE_URL = 'https://healthcare.us.stedi.com'
 const DEFAULT_PATHS = {
   submitJson: '/2024-04-01/change/medicalnetwork/professionalclaims/v3/submission',
   submitRawX12: '/2024-04-01/change/medicalnetwork/professionalclaims/v3/raw-x12-submission',
@@ -29,27 +43,9 @@ const DEFAULT_PATHS = {
 }
 type Paths = typeof DEFAULT_PATHS
 
-export interface HttpResponse {
-  status: number
-  json: unknown
-}
-export interface HttpRequest {
-  method: string
-  url: string
-  headers: Record<string, string>
-  body?: string
-}
-export type HttpTransport = (req: HttpRequest) => Promise<HttpResponse>
-
-export interface StediConfig {
-  apiKey: string
-  /** Sandbox uses test data + usageIndicator "T"; production uses "P". Default sandbox. */
-  sandbox?: boolean
-  baseUrl?: string
+export interface StediConfig extends StediAuth {
   payerDirectory?: PayerDirectory
   paths?: Partial<Paths>
-  /** Injectable for tests; defaults to a global-fetch transport. */
-  transport?: HttpTransport
 }
 
 // ── Loose shapes for Stedi's JSON (all fields optional — parsed defensively) ──
@@ -83,16 +79,6 @@ interface StediStatusBody {
 interface StediEraItem { rawX12?: string; x12?: string }
 interface StediEraBody { items?: (string | StediEraItem)[]; eras?: (string | StediEraItem)[] }
 
-const fetchTransport: HttpTransport = async (req) => {
-  const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body })
-  const text = await res.text()
-  let json: unknown = null
-  if (text) {
-    try { json = JSON.parse(text) } catch { json = { raw: text } }
-  }
-  return { status: res.status, json }
-}
-
 export class StediClearinghouse implements Clearinghouse {
   private readonly baseUrl: string
   private readonly paths: Paths
@@ -100,19 +86,17 @@ export class StediClearinghouse implements Clearinghouse {
 
   constructor(private readonly config: StediConfig) {
     if (!config.apiKey) throw new Error('StediClearinghouse requires an API key (STEDI_API_KEY).')
-    this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '')
+    this.baseUrl = normalizeBaseUrl(config.baseUrl)
     this.paths = { ...DEFAULT_PATHS, ...config.paths }
     this.transport = config.transport ?? fetchTransport
   }
 
   private headers(): Record<string, string> {
-    // Stedi expects the raw API key in Authorization (no "Bearer"/"Key" prefix).
-    return { Authorization: this.config.apiKey, 'Content-Type': 'application/json' }
+    return stediHeaders(this.config.apiKey)
   }
 
-  /** Sandbox by default — only "P" when production is explicitly requested. */
   private usageIndicator(): 'T' | 'P' {
-    return this.config.sandbox === false ? 'P' : 'T'
+    return stediUsageIndicator(this.config.sandbox)
   }
 
   async submit(edi837: string): Promise<SubmissionAck[]> {
@@ -241,14 +225,7 @@ function errText(errors: StediError[] | undefined): string | undefined {
 
 /** Build a Stedi config from environment. Defaults to sandbox; production is opt-in. */
 export function stediFromEnv(payerDirectory?: PayerDirectory): StediConfig {
-  const apiKey = process.env.STEDI_API_KEY
-  if (!apiKey) throw new Error('STEDI_API_KEY is not set — cannot build the Stedi clearinghouse adapter.')
-  return {
-    apiKey,
-    sandbox: process.env.STEDI_SANDBOX !== 'false', // must explicitly opt into production
-    baseUrl: process.env.STEDI_BASE_URL || undefined,
-    payerDirectory,
-  }
+  return { ...stediAuthFromEnv(), payerDirectory }
 }
 
 function stediAddress(a: Address): Record<string, unknown> {
