@@ -24,13 +24,14 @@ export const PAYERS: Record<PayerKey, RosterPayer> = {
   aetna: { id: '60054', name: 'Aetna', filing: 'CI', contractClass: 'commercial' },
 }
 
+// NPIs below pass the NPI check digit (Luhn over "80840" + the 9-digit base).
 export const PROVIDERS: Record<ProviderKey, { npi: string; first: string; last: string; specialty: string }> = {
   blair: { npi: '1234567893', first: 'MATTHEW', last: 'BLAIR', specialty: 'family_medicine' },
-  nguyen: { npi: '1083675445', first: 'LINH', last: 'NGUYEN', specialty: 'family_medicine' },
+  nguyen: { npi: '1083675441', first: 'LINH', last: 'NGUYEN', specialty: 'family_medicine' },
 }
 
 export const CLINIC = {
-  npi: '1326543210',
+  npi: '1326543216',
   taxId: '731234567',
   name: 'SquareOne Family Medicine',
   taxonomy: '207Q00000X',
@@ -89,9 +90,9 @@ export const PATIENTS: RosterPatient[] = [
     services: [{ cpt: '99213', charge: 110, dx: ['E03.9'] }, { cpt: '36415', charge: 25, dx: ['E03.9'] }] },
 
   { id: 'pt06', first: 'James', last: 'Okafor', dob: '1962-05-08', gender: 'male', city: 'Tulsa', payer: 'bcbsok', memberId: 'BCB880345112', provider: 'blair',
-    problems: ['I50.32', 'N18.3', 'E11.22'], visitDx: ['I50.32', 'N18.3', 'E11.22'],
+    problems: ['I50.32', 'N18.30', 'E11.22'], visitDx: ['I50.32', 'N18.30', 'E11.22'],
     // High-complexity visit → mock payer denies 99215 (auth) → appeal worklist.
-    services: [{ cpt: '99215', charge: 250, dx: ['I50.32', 'N18.3', 'E11.22'] }] },
+    services: [{ cpt: '99215', charge: 250, dx: ['I50.32', 'N18.30', 'E11.22'] }] },
 
   { id: 'pt07', first: 'Sofia', last: 'Ramirez', dob: '2016-04-19', gender: 'female', city: 'Sand Springs', payer: 'soonercare', memberId: 'SC0099142', provider: 'nguyen',
     problems: [], visitDx: ['Z00.129'],

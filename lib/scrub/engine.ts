@@ -36,6 +36,29 @@ const isEM = (cpt: string): boolean => EM_OFFICE.has(cpt)
 const isLabOrDraw = (cpt: string): boolean => cpt === '36415' || /^8\d{4}$/.test(cpt)
 const isProcedure = (cpt: string): boolean => Boolean(cpt) && !isEM(cpt) && !isLabOrDraw(cpt)
 
+/** NPI check digit: Luhn over the constant prefix "80840" + the 10-digit NPI. */
+function isValidNpi(npi: string): boolean {
+  if (!/^\d{10}$/.test(npi)) return false
+  const s = '80840' + npi
+  let sum = 0
+  for (let i = 0; i < s.length; i++) {
+    let d = Number(s[s.length - 1 - i])
+    if (i % 2 === 1) {
+      d *= 2
+      if (d > 9) d -= 9
+    }
+    sum += d
+  }
+  return sum % 10 === 0
+}
+
+// Known non-billable ICD-10 category codes (dotless) → their billable subdivisions.
+// Seed; the full billable-code set is a data-acquisition task, like the NCCI tables.
+const NONBILLABLE_DX: Record<string, string> = {
+  N183: 'N18.30 / N18.31 / N18.32',
+  M545: 'M54.50 / M54.51 / M54.59',
+}
+
 function requiredFields(claim: Claim): ScrubFinding[] {
   const out: ScrubFinding[] = []
   if (!claim.payer.externalId) out.push({ severity: 'error', source: 'required', code: 'REQ-PAYER', message: 'Missing payer id.' })
@@ -137,10 +160,48 @@ function telehealthModifier(claim: Claim): ScrubFinding[] {
     }))
 }
 
+/** Provider NPIs must pass the NPI check digit — a clearinghouse rejects invalid ones. */
+function npiChecksum(claim: Claim): ScrubFinding[] {
+  const out: ScrubFinding[] = []
+  const checks: [string, string | undefined][] = [
+    ['billing provider', claim.billingProvider?.npi ?? claim.providerNpi],
+    ['rendering provider', claim.renderingProvider?.npi],
+  ]
+  for (const [label, npi] of checks) {
+    if (npi && !isValidNpi(npi)) {
+      out.push({ severity: 'error', source: 'required', code: 'NPI-INVALID', message: `The ${label} NPI ${npi} fails the NPI check digit — it is not a valid NPI.`, hint: 'Use the provider’s real 10-digit NPI (it must pass the Luhn check digit).' })
+    }
+  }
+  return out
+}
+
+/** A service date can't be later than the submission date — payers reject future dates. */
+function futureServiceDate(claim: Claim): ScrubFinding[] {
+  if (!claim.dateOfService) return []
+  const dos = new Date(`${claim.dateOfService}T00:00:00Z`).getTime()
+  if (Number.isFinite(dos) && dos > Date.now()) {
+    return [{ severity: 'error', source: 'required', code: 'DOS-FUTURE', cptHcpcs: undefined, message: `Service date ${claim.dateOfService} is in the future — it can't be later than the submission date.`, hint: 'Date the encounter on or before today.' }]
+  }
+  return []
+}
+
+/** Diagnosis codes must be billable (highest specificity), not category codes. */
+function nonBillableDx(claim: Claim): ScrubFinding[] {
+  const out: ScrubFinding[] = []
+  for (const dx of claim.diagnoses) {
+    const sub = NONBILLABLE_DX[dx]
+    if (sub) out.push({ severity: 'error', source: 'diagnosis', code: 'DX-NONBILLABLE', message: `Diagnosis ${dx} is a non-billable category code.`, hint: `Code to the highest specificity (${sub}).` })
+  }
+  return out
+}
+
 const NATIONAL_RULES: ScrubRule[] = [
   requiredFields,
+  npiChecksum,
   diagnoses,
+  nonBillableDx,
   frequencyIcn,
+  futureServiceDate,
   mueCaps,
   cciPairs,
   modifier25,

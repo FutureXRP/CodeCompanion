@@ -85,6 +85,28 @@ test('telehealth POS requires a telehealth modifier', () => {
   assert.ok(!withMod.findings.some((f) => f.code === 'TELEHEALTH-MOD'))
 })
 
+test('an invalid NPI (bad check digit) is blocked; a valid one passes', () => {
+  const bad = scrubClaim(claim([line('99214')], { providerNpi: '1326543210' })) // fails the check digit
+  assert.ok(bad.findings.some((f) => f.code === 'NPI-INVALID'))
+  assert.equal(bad.ok, false)
+  const good = scrubClaim(claim([line('99214')], { providerNpi: '1326543216' })) // valid
+  assert.ok(!good.findings.some((f) => f.code === 'NPI-INVALID'))
+})
+
+test('a future service date is blocked', () => {
+  const future = scrubClaim(claim([line('99214')], { dateOfService: '2099-01-01' }))
+  assert.ok(future.findings.some((f) => f.code === 'DOS-FUTURE'))
+  assert.equal(future.ok, false)
+  const past = scrubClaim(claim([line('99214')], { dateOfService: '2020-01-01' }))
+  assert.ok(!past.findings.some((f) => f.code === 'DOS-FUTURE'))
+})
+
+test('a non-billable category diagnosis is blocked', () => {
+  const r = scrubClaim(claim([line('99214')], { diagnoses: ['N183'] })) // N18.3 — subdivided, non-billable
+  assert.ok(r.findings.some((f) => f.code === 'DX-NONBILLABLE'))
+  assert.equal(r.ok, false)
+})
+
 test('the jurisdiction layer applies Oklahoma notes by filing type, and is empty for an unmodeled state', () => {
   const mb = scrubClaim(claim([line('99214')], { claimFilingCode: 'MB' }), OKLAHOMA)
   assert.ok(mb.findings.some((f) => f.code === 'OK-MAC-JH' && f.source === 'jurisdiction'))

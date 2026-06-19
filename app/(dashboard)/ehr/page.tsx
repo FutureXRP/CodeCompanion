@@ -57,7 +57,7 @@ export default function EhrPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, margin: '18px 0 18px' }}>
-        <StatCard label="Patients pulled" value={String(claims.length)} delta={`${DEFAULT_DATE} · SquareOne FM`} />
+        <StatCard label="Patients pulled" value={String(claims.length)} delta={`${claims[0]?.dateOfService ?? DEFAULT_DATE} · SquareOne FM`} />
         <StatCard label="Charged" value={formatCents(ledger.totals.chargedCents)} delta={`${formatCents(ledger.totals.insurancePaidCents)} insurance paid`} />
         <StatCard label="Patient balances" value={formatCents(ledger.totals.patientArCents)} delta={`${formatCents(ledger.totals.contractualAdjCents)} written off`} accent={ledger.totals.patientArCents > 0 ? 'warning' : 'default'} />
         <StatCard label="To work" value={String(findings.length)} delta={`${formatCents(findings.reduce((s, f) => s + f.recoverableCents, 0))} recoverable`} accent={findings.length > 0 ? 'warning' : 'default'} />

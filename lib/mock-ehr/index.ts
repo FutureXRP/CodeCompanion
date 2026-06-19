@@ -13,7 +13,14 @@ import { CLINIC, PATIENTS, PAYERS, PROVIDERS, type RosterPatient } from './roste
  * diff, worklist, corpus — runs end to end on synthetic data, no network, no PHI.
  */
 
-export const DEFAULT_DATE = '2026-06-19'
+/** A realistic recent service date — always in the past, so the clearinghouse
+ *  never rejects it for predating its own transaction (clock/timezone safe). */
+export function defaultServiceDate(daysAgo = 7): string {
+  const d = new Date()
+  d.setUTCDate(d.getUTCDate() - daysAgo)
+  return d.toISOString().slice(0, 10)
+}
+export const DEFAULT_DATE = defaultServiceDate()
 export const MOCK_EHR_REGION = 'OK'
 export const MOCK_EHR_SPECIALTY = 'family_medicine'
 
@@ -24,7 +31,7 @@ const PAYER_ID = 'http://codecompanion.dev/payer-id'
 const TAX = 'http://terminology.hl7.org/CodeSystem/v2-0203/tax'
 
 // ── FHIR bundle (the EHR's native output) ────────────────────────────────────
-export function mockEhrDay(date: string = DEFAULT_DATE): FhirBundle {
+export function mockEhrDay(date: string = defaultServiceDate()): FhirBundle {
   const resources: FhirResource[] = []
 
   resources.push({
@@ -105,12 +112,12 @@ export function mockEhrDay(date: string = DEFAULT_DATE): FhirBundle {
 }
 
 /** Pull the day from the (mock) EHR as canonical encounters. */
-export function pullDay(date: string = DEFAULT_DATE): EhrEncounter[] {
+export function pullDay(date: string = defaultServiceDate()): EhrEncounter[] {
   return ingestFhirBundle(mockEhrDay(date))
 }
 
 /** Pull the day as canonical, submittable claims. */
-export function pullClaims(date: string = DEFAULT_DATE): Claim[] {
+export function pullClaims(date: string = defaultServiceDate()): Claim[] {
   return pullDay(date).map((e) => encounterToClaim(e, 'fhir'))
 }
 

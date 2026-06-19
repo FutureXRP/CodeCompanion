@@ -20,7 +20,7 @@ test('FHIR → canonical maps payer, subscriber, provider, and dotless diagnoses
   assert.equal(enc.subscriber.firstName, 'Eleanor')
   assert.equal(enc.subscriber.lastName, 'Whitfield')
   assert.equal(enc.subscriber.gender, 'F')
-  assert.equal(enc.billingProvider.npi, '1326543210')
+  assert.equal(enc.billingProvider.npi, '1326543216') // valid NPI (passes the check digit)
   assert.equal(enc.billingProvider.taxId, '731234567')
   assert.equal(enc.renderingProvider?.npi, '1234567893')
   assert.equal(enc.dateOfService, '2026-06-19')
