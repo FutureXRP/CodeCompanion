@@ -8,7 +8,7 @@ const INK = '#16213a'
 const SUB = '#5a6473'
 
 export default function EligibilityPage() {
-  const configured = Boolean(process.env.STEDI_API_KEY)
+  const configured = Boolean(process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY)
   const sandbox = process.env.STEDI_SANDBOX !== 'false'
   const mode = !configured ? 'Mock' : sandbox ? 'Sandbox' : 'Production'
   const modeColor = mode === 'Production' ? '#c9302c' : mode === 'Sandbox' ? '#1a7a45' : '#92400e'

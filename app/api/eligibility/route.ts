@@ -27,7 +27,10 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as { provider?: string; request?: EligibilityRequest }
-  const provider = body.provider ?? (process.env.STEDI_API_KEY ? 'stedi' : 'mock')
+  // Eligibility may use a dedicated test key (STEDI_ELIGIBILITY_API_KEY) separate
+  // from claims (STEDI_API_KEY); either one enables the Stedi provider.
+  const stediKey = process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY
+  const provider = body.provider ?? (stediKey ? 'stedi' : 'mock')
   const req = body.request ?? buildStediTestEligibility()
 
   try {
@@ -36,9 +39,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ provider, sandbox: true, result })
     }
 
-    if (!process.env.STEDI_API_KEY) {
+    if (!stediKey) {
       return NextResponse.json(
-        { error: 'Stedi not configured. Set STEDI_API_KEY (and STEDI_SANDBOX=true), or POST { "provider": "mock" }.' },
+        { error: 'Stedi not configured. Set STEDI_ELIGIBILITY_API_KEY (a test key) or STEDI_API_KEY, or POST { "provider": "mock" }.' },
         { status: 400 },
       )
     }

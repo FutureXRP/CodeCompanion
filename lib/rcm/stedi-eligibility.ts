@@ -4,7 +4,6 @@ import type { PayerDirectory } from './payer-directory'
 import {
   fetchTransport,
   normalizeBaseUrl,
-  stediAuthFromEnv,
   stediHeaders,
   type HttpResponse,
   type HttpTransport,
@@ -241,9 +240,26 @@ function randomControlNumber(): string {
 
 // ── Env + test fixture ───────────────────────────────────────────────────────
 
-/** Build a Stedi eligibility config from environment. Defaults to sandbox. */
+/**
+ * Build a Stedi eligibility config from environment. Defaults to sandbox.
+ *
+ * Eligibility can use a SEPARATE Stedi key (STEDI_ELIGIBILITY_API_KEY) from
+ * claims (STEDI_API_KEY): the documented eligibility mocks only return canned
+ * data on a TEST key, while claims may need a production key. Falls back to
+ * STEDI_API_KEY when the dedicated key isn't set.
+ */
 export function stediEligibilityFromEnv(payerDirectory?: PayerDirectory): StediEligibilityConfig {
-  return { ...stediAuthFromEnv(), payerDirectory, path: process.env.STEDI_ELIGIBILITY_PATH || undefined }
+  const apiKey = process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY
+  if (!apiKey) {
+    throw new Error('Set STEDI_ELIGIBILITY_API_KEY (a test key for mock checks) or STEDI_API_KEY — neither is set.')
+  }
+  return {
+    apiKey,
+    sandbox: process.env.STEDI_SANDBOX !== 'false',
+    baseUrl: process.env.STEDI_BASE_URL || undefined,
+    payerDirectory,
+    path: process.env.STEDI_ELIGIBILITY_PATH || undefined,
+  }
 }
 
 /**

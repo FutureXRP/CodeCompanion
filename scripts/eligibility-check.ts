@@ -9,7 +9,7 @@ import { StediEligibilityService, stediEligibilityFromEnv, buildStediTestEligibi
 import { formatCents } from '../lib/canonical'
 
 async function main(): Promise<void> {
-  const useMock = process.argv.includes('--mock') || !process.env.STEDI_API_KEY
+  const useMock = process.argv.includes('--mock') || !(process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY)
   if (!useMock && process.env.STEDI_SANDBOX === 'false') {
     console.error('Refusing to run: STEDI_SANDBOX=false. This script is sandbox/test only.')
     process.exit(1)

@@ -12,6 +12,7 @@ import {
   canonicalToStedi270,
   mapEligibilityResponse,
   buildStediTestEligibility,
+  stediEligibilityFromEnv,
 } from '../lib/rcm/stedi-eligibility'
 import { PayerDirectory } from '../lib/rcm/payer-directory'
 import type { HttpRequest, HttpResponse, HttpTransport } from '../lib/rcm/stedi-http'
@@ -178,6 +179,20 @@ test('MockEligibilityService: an "inactive" member id returns terminated coverag
   })
   assert.equal(r.status, 'inactive')
   assert.equal(r.active, false)
+})
+
+test('stediEligibilityFromEnv prefers the dedicated eligibility key, falls back to the claims key', () => {
+  const prevElig = process.env.STEDI_ELIGIBILITY_API_KEY
+  const prevMain = process.env.STEDI_API_KEY
+  process.env.STEDI_API_KEY = 'prod-claims-key'
+  process.env.STEDI_ELIGIBILITY_API_KEY = 'test-elig-key'
+  assert.equal(stediEligibilityFromEnv().apiKey, 'test-elig-key') // dedicated key wins
+  delete process.env.STEDI_ELIGIBILITY_API_KEY
+  assert.equal(stediEligibilityFromEnv().apiKey, 'prod-claims-key') // falls back to claims key
+  if (prevElig === undefined) delete process.env.STEDI_ELIGIBILITY_API_KEY
+  else process.env.STEDI_ELIGIBILITY_API_KEY = prevElig
+  if (prevMain === undefined) delete process.env.STEDI_API_KEY
+  else process.env.STEDI_API_KEY = prevMain
 })
 
 test('buildStediTestEligibility: Stedi documented active-coverage mock (Aetna)', () => {
