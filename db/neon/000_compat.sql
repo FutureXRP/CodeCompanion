@@ -28,3 +28,15 @@ create table if not exists auth.users (
 create or replace function auth.uid() returns uuid
 language sql stable
 as $$ select nullif(current_setting('app.current_user_id', true), '')::uuid $$;
+
+-- auth.role(): Supabase returns the JWT role ('authenticated' / 'anon' / 'service_role').
+-- Default to 'authenticated' so "authenticated-only" read policies (e.g. the shared
+-- payers catalog in 005) are valid and permissive under the GUC model.
+create or replace function auth.role() returns text
+language sql stable
+as $$ select coalesce(nullif(current_setting('app.current_role', true), ''), 'authenticated') $$;
+
+-- auth.jwt(): Supabase returns the decoded JWT claims. Empty-object stand-in.
+create or replace function auth.jwt() returns jsonb
+language sql stable
+as $$ select coalesce(nullif(current_setting('app.current_jwt', true), '')::jsonb, '{}'::jsonb) $$;

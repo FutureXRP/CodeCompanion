@@ -49,6 +49,13 @@ export function migrationPaths(root: string): string[] {
 async function run(): Promise<void> {
   const root = process.cwd()
   const pool = getPool()
+  if (process.argv.includes('--reset')) {
+    // Clean slate — drop everything so non-idempotent statements (CREATE POLICY)
+    // re-apply. Safe for a fresh/test database; it deletes ALL data in public + auth.
+    process.stdout.write('-- reset: dropping schema public + auth (clean slate) … ')
+    await pool.query('drop schema if exists public cascade; drop schema if exists auth cascade; create schema public;')
+    console.log('ok')
+  }
   for (const file of migrationPaths(root)) {
     const sql = readFileSync(file, 'utf8')
     process.stdout.write(`-- applying ${path.relative(root, file)} … `)

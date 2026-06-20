@@ -17,6 +17,7 @@
     "readiness": "tsx scripts/readiness.ts",
     "athena-pdf": "tsx scripts/athena-integration-pdf.ts",
     "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:reset": "tsx scripts/db-migrate.ts --reset",
     "test": "tsx --test tests/found-money.test.ts tests/appeal.test.ts tests/rcm.test.ts tests/analyze.test.ts tests/rcm-framework.test.ts tests/clearinghouse-stedi.test.ts tests/eligibility.test.ts tests/command-center.test.ts tests/analytics.test.ts tests/payments.test.ts tests/eligibility-sweep.test.ts tests/tasks.test.ts tests/admin.test.ts tests/athena.test.ts tests/db-operational.test.ts tests/db-mappers.test.ts tests/ehr.test.ts tests/ledger.test.ts tests/parse-837.test.ts tests/correction.test.ts tests/worklist.test.ts tests/scrub.test.ts tests/cob.test.ts tests/corpus.test.ts tests/predict.test.ts tests/fhir.test.ts tests/mock-ehr.test.ts tests/submit-batch.test.ts tests/db-neon.test.ts"
   },
   "dependencies": {
