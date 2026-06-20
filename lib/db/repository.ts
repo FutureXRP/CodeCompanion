@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Claim, Finding, Remittance } from '../canonical'
 import {
   postClaimCharges,
@@ -20,12 +19,13 @@ import {
   lineMatchKey,
 } from './mappers'
 import { writeAudit } from './audit'
+import { type Queryable, insertReturning, insertMany, upsertMany } from './sql'
 
 /**
- * Persistence repository. Writes a canonical found-money run into the normalized
- * tables and reads findings back. Works with any Supabase client: the authed
- * client (RLS enforces the tenant) or the service client (server ingestion).
- * Money stays integer cents; tenant isolation is the schema's job (RLS).
+ * Persistence repository (Neon / Postgres). Writes a canonical found-money run into
+ * the normalized tables and reads findings back. Takes a Queryable (the pool, a
+ * withTenant() client, or pg-mem in tests). Money stays integer cents; tenant
+ * isolation is the schema's job (RLS) plus the explicit tenant_id on every row.
  */
 
 export interface PersistResult {
@@ -38,22 +38,27 @@ export interface PersistResult {
 }
 
 /** Find-or-create a tenant by name (single-practice bootstrap). */
-export async function ensureTenant(db: SupabaseClient, name: string): Promise<string> {
-  const found = await db.from('tenants').select('id').eq('name', name).limit(1).maybeSingle()
-  if (found.error) throw found.error
-  if (found.data) return found.data.id as string
-  const created = await db.from('tenants').insert({ name }).select('id').single()
-  if (created.error) throw created.error
-  return created.data.id as string
+export async function ensureTenant(db: Queryable, name: string): Promise<string> {
+  const found = await db.query('select id from tenants where name = $1 limit 1', [name])
+  if (found.rows[0]) return found.rows[0].id as string
+  const created = await db.query('insert into tenants (name) values ($1) returning id', [name])
+  return created.rows[0].id as string
+}
+
+/** Find-or-create a payer in the shared catalog by its external EDI id. */
+export async function ensurePayer(db: Queryable, externalId: string, name: string): Promise<string> {
+  const found = await db.query('select id from payers where payer_id_external = $1 limit 1', [externalId])
+  if (found.rows[0]) return found.rows[0].id as string
+  const created = await db.query('insert into payers (name, payer_id_external) values ($1, $2) returning id', [name, externalId])
+  return created.rows[0].id as string
 }
 
 /**
- * Persist de-identified corpus rows (service role only — the corpus has no tenant
- * column, so it never goes through an authed/RLS client). The gate runs ONE more
- * time at the write boundary: a row that is not de-identified throws, never
- * writes. Upserts on the behavior cell so repeat runs refine rather than dupe.
+ * Persist de-identified corpus rows (service path — the corpus has no tenant column).
+ * The gate runs ONE more time at the write boundary: a row that is not de-identified
+ * throws, never writes. Upserts on the behavior cell so repeat runs refine, not dupe.
  */
-export async function persistCorpus(db: SupabaseClient, rows: CorpusRow[]): Promise<number> {
+export async function persistCorpus(db: Queryable, rows: CorpusRow[]): Promise<number> {
   if (rows.length === 0) return 0
   for (const row of rows) assertDeidentified(row) // breach-class bug must fail loudly, not write
   const payerIds = new Map<string, string>()
@@ -63,30 +68,17 @@ export async function persistCorpus(db: SupabaseClient, rows: CorpusRow[]): Prom
     }
   }
   const dbRows = rows.map((r) => toCorpusRow(payerIds.get(r.payerExternalId) ?? null, r))
-  const ins = await db
-    .from('payer_behavior_corpus')
-    .upsert(dbRows, { onConflict: 'payer_id,region,specialty,cpt_hcpcs,modifier,contract_class' })
-  if (ins.error) throw ins.error
+  await upsertMany(db, 'payer_behavior_corpus', dbRows, ['payer_id', 'region', 'specialty', 'cpt_hcpcs', 'modifier', 'contract_class'])
   return dbRows.length
-}
-
-/** Find-or-create a payer in the shared catalog by its external EDI id. */
-export async function ensurePayer(db: SupabaseClient, externalId: string, name: string): Promise<string> {
-  const found = await db.from('payers').select('id').eq('payer_id_external', externalId).limit(1).maybeSingle()
-  if (found.error) throw found.error
-  if (found.data) return found.data.id as string
-  const created = await db.from('payers').insert({ name, payer_id_external: externalId }).select('id').single()
-  if (created.error) throw created.error
-  return created.data.id as string
 }
 
 /**
  * Persist a full run: claims + lines, remittances + lines + adjustments, and the
- * diff findings — wiring foreign keys as it goes. Findings reference the claim
- * line they were detected on, matched via the canonical line id.
+ * diff findings — wiring foreign keys as it goes. Findings reference the claim line
+ * they were detected on, matched via the canonical line id.
  */
 export async function persistRun(
-  db: SupabaseClient,
+  db: Queryable,
   tenantId: string,
   input: { claims: Claim[]; remittances: Remittance[]; findings: Finding[] },
 ): Promise<PersistResult> {
@@ -100,22 +92,17 @@ export async function persistRun(
 
   // 2. Claims + claim lines
   const claimIdByControl = new Map<string, string>()
-  const lineIdByCanonical = new Map<string, string>() // canonical `${cn}:${lineNo}` -> db uuid
+  const lineIdByCanonical = new Map<string, string>() // canonical line id -> db uuid
   let claimLineCount = 0
   for (const claim of input.claims) {
     const payerId = payerIds.get(claim.payer.externalId) ?? null
-    const cIns = await db.from('claims').insert(toClaimRow(tenantId, payerId, claim)).select('id').single()
-    if (cIns.error) throw cIns.error
-    const claimId = cIns.data.id as string
+    const c = await insertReturning(db, 'claims', toClaimRow(tenantId, payerId, claim), 'id')
+    const claimId = c.id as string
     claimIdByControl.set(claim.controlNumber, claimId)
 
     if (claim.lines.length > 0) {
-      const lIns = await db
-        .from('claim_lines')
-        .insert(claim.lines.map((l) => toClaimLineRow(claimId, l)))
-        .select('id, line_number')
-      if (lIns.error) throw lIns.error
-      for (const row of lIns.data as { id: string; line_number: number }[]) {
+      const lines = await insertMany(db, 'claim_lines', claim.lines.map((l) => toClaimLineRow(claimId, l)), 'id, line_number')
+      for (const row of lines as { id: string; line_number: number }[]) {
         lineIdByCanonical.set(`${claim.controlNumber}:${row.line_number}`, row.id)
       }
       claimLineCount += claim.lines.length
@@ -127,9 +114,8 @@ export async function persistRun(
   for (const remit of input.remittances) {
     const claimId = claimIdByControl.get(remit.claimControlNumber) ?? null
     const payerId = payerIds.get(remit.payer.externalId) ?? null
-    const rIns = await db.from('remittances').insert(toRemittanceRow(tenantId, claimId, payerId)).select('id').single()
-    if (rIns.error) throw rIns.error
-    const remittanceId = rIns.data.id as string
+    const r = await insertReturning(db, 'remittances', toRemittanceRow(tenantId, claimId, payerId), 'id')
+    const remittanceId = r.id as string
     remittanceCount += 1
 
     const claim = input.claims.find((c) => c.controlNumber === remit.claimControlNumber)
@@ -139,21 +125,18 @@ export async function persistRun(
         const match = claim.lines.find((cl) => lineMatchKey(cl.cptHcpcs, cl.modifiers) === lineMatchKey(rl.cptHcpcs, rl.modifiers))
         if (match) claimLineId = lineIdByCanonical.get(match.id) ?? null
       }
-      const rlIns = await db.from('remittance_lines').insert(toRemittanceLineRow(remittanceId, claimLineId, rl)).select('id').single()
-      if (rlIns.error) throw rlIns.error
+      const rlRow = await insertReturning(db, 'remittance_lines', toRemittanceLineRow(remittanceId, claimLineId, rl), 'id')
       if (rl.adjustments.length > 0) {
-        const aIns = await db.from('adjustments').insert(rl.adjustments.map((a) => toAdjustmentRow(rlIns.data.id as string, a)))
-        if (aIns.error) throw aIns.error
+        await insertMany(db, 'adjustments', rl.adjustments.map((a) => toAdjustmentRow(rlRow.id as string, a)))
       }
     }
   }
 
   // 4. Findings (reference the claim line they were found on)
-  let findingCount = 0
   const findingRows = input.findings.map((f) => toFindingRow(tenantId, lineIdByCanonical.get(f.claimLineId) ?? null, f))
+  let findingCount = 0
   if (findingRows.length > 0) {
-    const fIns = await db.from('findings').insert(findingRows)
-    if (fIns.error) throw fIns.error
+    await insertMany(db, 'findings', findingRows)
     findingCount = findingRows.length
   }
 
@@ -165,7 +148,6 @@ export async function persistRun(
   for (const remit of input.remittances) {
     ledgerEntries.push(...postRemittance(remit, claimByControl.get(remit.claimControlNumber)))
   }
-  let ledgerEntryCount = 0
   const ledgerRows = ledgerEntries.map((e) =>
     toLedgerEntryRow(
       tenantId,
@@ -174,9 +156,9 @@ export async function persistRun(
       e,
     ),
   )
+  let ledgerEntryCount = 0
   if (ledgerRows.length > 0) {
-    const lgIns = await db.from('ledger_entries').insert(ledgerRows)
-    if (lgIns.error) throw lgIns.error
+    await insertMany(db, 'ledger_entries', ledgerRows)
     ledgerEntryCount = ledgerRows.length
   }
 
@@ -197,28 +179,6 @@ export async function persistRun(
   }
 }
 
-interface FindingJoinRow {
-  id: string
-  type: string
-  expected_cents: number
-  actual_cents: number
-  delta_cents: number
-  appealable: boolean
-  status: string
-  claim_lines: { cpt_hcpcs: string | null } | { cpt_hcpcs: string | null }[] | null
-}
-
-export interface StoredFinding {
-  id: string
-  type: string
-  cptHcpcs: string | null
-  expectedCents: number
-  actualCents: number
-  deltaCents: number
-  appealable: boolean
-  status: string
-}
-
 interface LedgerEntryRowRead {
   account_key: string
   type: LedgerEntry['type']
@@ -235,15 +195,12 @@ interface LedgerEntryRowRead {
  * accounts are keyed by account_key; balances reuse the same engine as the
  * in-memory ledger, so the numbers are identical.
  */
-export async function loadLedger(db: SupabaseClient, tenantId: string): Promise<PatientAccount[]> {
-  const res = await db
-    .from('ledger_entries')
-    .select('account_key, type, insurance_delta_cents, patient_delta_cents, carc_code, memo, source')
-    .eq('tenant_id', tenantId)
-  if (res.error) throw res.error
-
-  const rows = (res.data ?? []) as unknown as LedgerEntryRowRead[]
-  const entries: LedgerEntry[] = rows.map((r, i) => ({
+export async function loadLedger(db: Queryable, tenantId: string): Promise<PatientAccount[]> {
+  const res = await db.query(
+    'select account_key, type, insurance_delta_cents, patient_delta_cents, carc_code, memo, source from ledger_entries where tenant_id = $1',
+    [tenantId],
+  )
+  const entries: LedgerEntry[] = (res.rows as LedgerEntryRowRead[]).map((r, i) => ({
     id: `db:${i}`,
     type: r.type,
     claimControlNumber: '',
@@ -258,28 +215,46 @@ export async function loadLedger(db: SupabaseClient, tenantId: string): Promise<
   return accountsFromEntries(entries)
 }
 
-/** Read persisted findings for a tenant, ranked by recoverable delta. */
-export async function loadFindings(db: SupabaseClient, tenantId: string): Promise<StoredFinding[]> {
-  const res = await db
-    .from('findings')
-    .select('id, type, expected_cents, actual_cents, delta_cents, appealable, status, claim_lines(cpt_hcpcs)')
-    .eq('tenant_id', tenantId)
-    .order('delta_cents', { ascending: false })
-  if (res.error) throw res.error
+export interface StoredFinding {
+  id: string
+  type: string
+  cptHcpcs: string | null
+  expectedCents: number
+  actualCents: number
+  deltaCents: number
+  appealable: boolean
+  status: string
+}
 
-  const rows = (res.data ?? []) as unknown as FindingJoinRow[]
-  return rows.map((r) => {
-    const cl = r.claim_lines
-    const cptHcpcs = Array.isArray(cl) ? cl[0]?.cpt_hcpcs ?? null : cl?.cpt_hcpcs ?? null
-    return {
-      id: r.id,
-      type: r.type,
-      cptHcpcs,
-      expectedCents: r.expected_cents,
-      actualCents: r.actual_cents,
-      deltaCents: r.delta_cents,
-      appealable: r.appealable,
-      status: r.status,
-    }
-  })
+interface FindingRowRead {
+  id: string
+  type: string
+  expected_cents: number
+  actual_cents: number
+  delta_cents: number
+  appealable: boolean
+  status: string
+  cpt_hcpcs: string | null
+}
+
+/** Read persisted findings for a tenant, ranked by recoverable delta. */
+export async function loadFindings(db: Queryable, tenantId: string): Promise<StoredFinding[]> {
+  const res = await db.query(
+    `select f.id, f.type, f.expected_cents, f.actual_cents, f.delta_cents, f.appealable, f.status, cl.cpt_hcpcs
+     from findings f
+     left join claim_lines cl on cl.id = f.claim_line_id
+     where f.tenant_id = $1
+     order by f.delta_cents desc`,
+    [tenantId],
+  )
+  return (res.rows as FindingRowRead[]).map((r) => ({
+    id: r.id,
+    type: r.type,
+    cptHcpcs: r.cpt_hcpcs ?? null,
+    expectedCents: r.expected_cents,
+    actualCents: r.actual_cents,
+    deltaCents: r.delta_cents,
+    appealable: r.appealable,
+    status: r.status,
+  }))
 }

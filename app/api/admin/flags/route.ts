@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { isSupabaseConfigured } from '@/lib/db/config'
+import { isNeonConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
+import { withTenant, withService } from '@/lib/db/sql'
+import { resolveTenantId } from '@/lib/db/tenant'
 import { setFeatureFlags } from '@/lib/db/flags-repo'
 import { FLAGS_COOKIE } from '@/lib/admin/server'
 import { applyPreset, PRESETS, parseOverrides, resolveFlags, serializeOverrides, type FlagMap, type PresetId } from '@/lib/admin/flags'
@@ -31,14 +33,13 @@ export async function POST(request: Request) {
 
   // Durable per-tenant persistence when wired (best-effort + audited); the cookie
   // stays the runtime source of truth so the demo works with zero infra.
-  if (isSupabaseConfigured()) {
+  if (isNeonConfigured()) {
     try {
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const t = await supabase.from('tenant_users').select('tenant_id').eq('user_id', user.id).limit(1).maybeSingle()
-        const tenantId = (t.data?.tenant_id as string | undefined) ?? null
-        if (tenantId) await setFeatureFlags(supabase, tenantId, user.id, flags)
+        const tenantId = await withService((db) => resolveTenantId(db, user.id))
+        if (tenantId) await withTenant(tenantId, (db) => setFeatureFlags(db, tenantId, user.id, flags))
       }
     } catch { /* keep the cookie even if the DB write fails */ }
   }

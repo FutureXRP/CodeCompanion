@@ -68,3 +68,58 @@ export async function closePool(): Promise<void> {
     pool = null
   }
 }
+
+// ── Generic row helpers ──────────────────────────────────────────────────────
+// The repos build snake_case row objects (via lib/db/mappers); these turn them
+// into parameterized SQL. Column/table names are code-controlled (guarded by
+// ident()); every value is a bound parameter.
+
+type ResultRow = Record<string, unknown>
+// Accept `object` (the mapper interfaces) and normalize internally — TS does not
+// treat an interface as assignable to Record<string, unknown> (it could be merged).
+const asRow = (o: object) => o as Record<string, unknown>
+
+function ident(name: string): string {
+  if (!/^[a-z_][a-z0-9_]*$/i.test(name)) throw new Error(`unsafe SQL identifier: ${name}`)
+  return `"${name}"`
+}
+/** jsonb columns: pass a JSON string so both node-postgres and pg-mem store it cleanly. */
+export function jsonb(v: unknown): string | null {
+  return v == null ? null : JSON.stringify(v)
+}
+
+/** INSERT one row, RETURNING the named columns (default `id`). */
+export async function insertReturning(db: Queryable, table: string, row: object, returning = 'id'): Promise<ResultRow> {
+  const r = asRow(row)
+  const keys = Object.keys(r)
+  const cols = keys.map(ident).join(', ')
+  const ph = keys.map((_, i) => `$${i + 1}`).join(', ')
+  const res = await db.query(`insert into ${ident(table)} (${cols}) values (${ph}) returning ${returning}`, keys.map((k) => r[k]))
+  return res.rows[0] as ResultRow
+}
+
+/** Bulk INSERT (all rows share the first row's keys); optional RETURNING. */
+export async function insertMany(db: Queryable, table: string, rows: object[], returning?: string): Promise<ResultRow[]> {
+  if (rows.length === 0) return []
+  const rs = rows.map(asRow)
+  const keys = Object.keys(rs[0])
+  const cols = keys.map(ident).join(', ')
+  const values: unknown[] = []
+  const tuples = rs.map((r, ri) => `(${keys.map((k, ki) => { values.push(r[k]); return `$${ri * keys.length + ki + 1}` }).join(', ')})`)
+  const ret = returning ? ` returning ${returning}` : ''
+  const res = await db.query(`insert into ${ident(table)} (${cols}) values ${tuples.join(', ')}${ret}`, values)
+  return res.rows as ResultRow[]
+}
+
+/** Bulk UPSERT on `conflictCols`; updates `updateCols` (default: all non-conflict columns). */
+export async function upsertMany(db: Queryable, table: string, rows: object[], conflictCols: string[], updateCols?: string[]): Promise<void> {
+  if (rows.length === 0) return
+  const rs = rows.map(asRow)
+  const keys = Object.keys(rs[0])
+  const cols = keys.map(ident).join(', ')
+  const values: unknown[] = []
+  const tuples = rs.map((r, ri) => `(${keys.map((k, ki) => { values.push(r[k]); return `$${ri * keys.length + ki + 1}` }).join(', ')})`)
+  const upd = (updateCols ?? keys.filter((k) => !conflictCols.includes(k)))
+  const action = upd.length ? `do update set ${upd.map((c) => `${ident(c)} = excluded.${ident(c)}`).join(', ')}` : 'do nothing'
+  await db.query(`insert into ${ident(table)} (${cols}) values ${tuples.join(', ')} on conflict (${conflictCols.map(ident).join(', ')}) ${action}`, values)
+}

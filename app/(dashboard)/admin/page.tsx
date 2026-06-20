@@ -1,5 +1,5 @@
 import { readModuleFlags } from '@/lib/admin/server'
-import { isSupabaseConfigured } from '@/lib/db/config'
+import { isNeonConfigured } from '@/lib/db/config'
 import { AdminPanel } from '@/components/admin/AdminPanel'
 
 export const runtime = 'nodejs'
@@ -25,7 +25,7 @@ export default async function AdminPage() {
         <em>Clinical only</em> preset. If instead your EHR handles the clinical side, use{' '}
         <em>Billing &amp; RCM only</em>.
       </p>
-      <AdminPanel initial={flags} persisted={isSupabaseConfigured()} />
+      <AdminPanel initial={flags} persisted={isNeonConfigured()} />
     </div>
   )
 }

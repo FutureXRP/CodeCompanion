@@ -29,12 +29,12 @@ HIPAA tiers.
 - **Env template** — `.env.local.example` documents `DATABASE_URL` (Neon) + Supabase-Auth-only.
 - **Polite API client** — the athena adapter backs off on 429/503 (rate-limit safe).
 
-**Pending — Phase 2b (the repository port)**
-The `lib/db/` repositories still use the **Supabase JS query builder** (`.from(...)`). The
-connection layer, GUC/RLS model, and migration tooling are now in place; the remaining step is
-swapping those ~32 calls to SQL over the new pool (and the callers from a Supabase data handle to
-`withTenant(...)`). They move together because they share `writeAudit` + the DB handle, so it lands
-as one tested commit — checklist below.
+**Done — Phase 2b (the repository port)**
+The `lib/db/` repositories now run on the Neon pool: the `.from(...)` calls became parameterized
+SQL, and the four routes + the account page resolve the tenant and call repos via
+`withTenant(...)` / `withService(...)` (Supabase is used only for `auth.getUser()`). Verified with a
+pg-mem round-trip of the real repo code. To go live: `npm run db:migrate`, set `DATABASE_URL`, sign
+the BAAs, and flip `ALLOW_REAL_PHI=true`.
 
 ---
 
@@ -87,5 +87,5 @@ docker run -p 8080:8080 --env-file .env.local codecompanion
 - [x] `current_tenant_id()` reads the request GUC (`db/neon/zzz_rls_guc.sql`); corpus stays on the service path.
 - [x] `scripts/db-migrate.ts` + `npm run db:migrate` (a compat shim makes the Supabase migrations apply to Neon).
 - [x] `pg-mem` test harness proven (`tests/db-neon.test.ts`) for the SQL repos.
-- [ ] Port `repository.ts`, `operational-repo.ts`, `tenant.ts`, `flags-repo.ts`, `audit.ts` from `.from(...)` to the pool + update callers.
-- [ ] Repo round-trip tests against pg-mem; keep `db-operational.test.ts` green.
+- [x] Port `repository.ts`, `operational-repo.ts`, `tenant.ts`, `flags-repo.ts`, `audit.ts` to the pool + update callers.
+- [x] Repo round-trip test against pg-mem (`tests/db-neon.test.ts`); `db-operational.test.ts` still green.

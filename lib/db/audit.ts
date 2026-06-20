@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { type Queryable, jsonb } from './sql'
 
 /**
  * Audit logging — the COMPLIANCE.md requirement that every PHI access is recorded:
@@ -22,18 +22,14 @@ export interface AuditEvent {
 }
 
 export async function writeAudit(
-  db: SupabaseClient,
+  db: Queryable,
   tenantId: string,
   userId: string | null,
   event: AuditEvent,
 ): Promise<void> {
-  const ins = await db.from('audit_log').insert({
-    tenant_id: tenantId,
-    user_id: userId,
-    action: event.action,
-    resource: event.resource,
-    resource_id: event.resourceId ?? null,
-    detail: event.detail ?? null,
-  })
-  if (ins.error) throw ins.error
+  await db.query(
+    `insert into audit_log (tenant_id, user_id, action, resource, resource_id, detail)
+     values ($1, $2, $3, $4, $5, $6)`,
+    [tenantId, userId, event.action, event.resource, event.resourceId ?? null, jsonb(event.detail)],
+  )
 }

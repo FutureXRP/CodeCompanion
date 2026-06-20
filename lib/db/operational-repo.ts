@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { postPatientPayment } from '../ledger'
 import { toPatientPayment, type PaymentRequest, type PaymentResult } from '../payments'
 import type { EnrollmentRecord } from '../rcm/enrollment'
@@ -7,47 +6,48 @@ import type { Task } from '../tasks'
 import { toLedgerEntryRow } from './mappers'
 import { toEligibilityCheckRow, toEnrollmentRow, toPaymentTransactionRow, toTaskRow } from './operational-mappers'
 import { writeAudit } from './audit'
+import { type Queryable, insertReturning, insertMany, upsertMany } from './sql'
 
 /**
- * Persistence for the operational modules. Every PHI write is paired with an
- * audit-log entry (COMPLIANCE.md). Works with the authed client (RLS enforces the
- * tenant) or the service client. Money stays integer cents.
+ * Persistence for the operational modules (Neon / Postgres). Every PHI write is
+ * paired with an audit-log entry (COMPLIANCE.md). Takes a Queryable. Money stays
+ * integer cents.
  */
 
 /** Record a patient payment: the processor record + the ledger posting + an audit row. */
 export async function recordPayment(
-  db: SupabaseClient,
+  db: Queryable,
   tenantId: string,
   userId: string | null,
   claimId: string | null,
   req: PaymentRequest,
   result: PaymentResult,
 ): Promise<{ paymentTransactionId: string }> {
-  const txn = await db.from('payment_transactions').insert(toPaymentTransactionRow(tenantId, claimId, req, result)).select('id').single()
-  if (txn.error) throw txn.error
+  const txn = await insertReturning(db, 'payment_transactions', toPaymentTransactionRow(tenantId, claimId, req, result), 'id')
 
   // A successful charge draws down patient A/R via an append-only ledger entry.
   if (result.ok) {
     const entry = postPatientPayment({ ...toPatientPayment(req, result), accountKey: req.accountKey })
-    const lg = await db.from('ledger_entries').insert(toLedgerEntryRow(tenantId, claimId, null, entry))
-    if (lg.error) throw lg.error
+    await insertMany(db, 'ledger_entries', [toLedgerEntryRow(tenantId, claimId, null, entry)])
   }
 
   await writeAudit(db, tenantId, userId, {
     action: 'payment',
     resource: 'payment_transactions',
-    resourceId: txn.data.id as string,
+    resourceId: txn.id as string,
     detail: { amountCents: req.amountCents, method: req.method, provider: result.provider, posted: result.ok },
   })
-  return { paymentTransactionId: txn.data.id as string }
+  return { paymentTransactionId: txn.id as string }
 }
 
 /** Upsert an enrollment record (provider × payer × transaction state). */
-export async function upsertEnrollment(db: SupabaseClient, tenantId: string, rec: EnrollmentRecord): Promise<void> {
-  const ins = await db
-    .from('transaction_enrollments')
-    .upsert(toEnrollmentRow(tenantId, rec), { onConflict: 'tenant_id,provider_npi,payer_external_id,clearinghouse,transaction' })
-  if (ins.error) throw ins.error
+export async function upsertEnrollment(db: Queryable, tenantId: string, rec: EnrollmentRecord): Promise<void> {
+  await upsertMany(
+    db,
+    'transaction_enrollments',
+    [toEnrollmentRow(tenantId, rec)],
+    ['tenant_id', 'provider_npi', 'payer_external_id', 'clearinghouse', 'transaction'],
+  )
 }
 
 interface EnrollmentRowRead {
@@ -61,13 +61,12 @@ interface EnrollmentRowRead {
 }
 
 /** Load a tenant's enrollments, ready to seed an EnrollmentRegistry. */
-export async function loadEnrollments(db: SupabaseClient, tenantId: string): Promise<EnrollmentRecord[]> {
-  const res = await db
-    .from('transaction_enrollments')
-    .select('provider_npi, payer_external_id, clearinghouse, transaction, state, effective_date, note')
-    .eq('tenant_id', tenantId)
-  if (res.error) throw res.error
-  return ((res.data ?? []) as unknown as EnrollmentRowRead[]).map((r) => ({
+export async function loadEnrollments(db: Queryable, tenantId: string): Promise<EnrollmentRecord[]> {
+  const res = await db.query(
+    'select provider_npi, payer_external_id, clearinghouse, transaction, state, effective_date, note from transaction_enrollments where tenant_id = $1',
+    [tenantId],
+  )
+  return (res.rows as EnrollmentRowRead[]).map((r) => ({
     providerNpi: r.provider_npi,
     payerExternalId: r.payer_external_id,
     clearinghouse: r.clearinghouse,
@@ -80,22 +79,21 @@ export async function loadEnrollments(db: SupabaseClient, tenantId: string): Pro
 
 /** Record an eligibility (270/271) result + an audit row. */
 export async function recordEligibilityCheck(
-  db: SupabaseClient,
+  db: Queryable,
   tenantId: string,
   userId: string | null,
   payerId: string | null,
   result: EligibilityResult,
   source: 'mock' | 'stedi',
 ): Promise<string> {
-  const ins = await db.from('eligibility_checks').insert(toEligibilityCheckRow(tenantId, payerId, result, source)).select('id').single()
-  if (ins.error) throw ins.error
+  const ins = await insertReturning(db, 'eligibility_checks', toEligibilityCheckRow(tenantId, payerId, result, source), 'id')
   await writeAudit(db, tenantId, userId, {
     action: 'eligibility',
     resource: 'eligibility_checks',
-    resourceId: ins.data.id as string,
+    resourceId: ins.id as string,
     detail: { status: result.status },
   })
-  return ins.data.id as string
+  return ins.id as string
 }
 
 const MS_PER_DAY = 86_400_000
@@ -104,11 +102,10 @@ function isoDate(d: Date): string {
 }
 
 /** Persist a generated task queue (with concrete due dates derived from the SLA). */
-export async function saveTasks(db: SupabaseClient, tenantId: string, tasks: Task[], asOf: Date = new Date()): Promise<number> {
+export async function saveTasks(db: Queryable, tenantId: string, tasks: Task[], asOf: Date = new Date()): Promise<number> {
   if (tasks.length === 0) return 0
   const rows = tasks.map((t) => toTaskRow(tenantId, t, isoDate(new Date(asOf.getTime() + t.dueInDays * MS_PER_DAY))))
-  const ins = await db.from('tasks').insert(rows)
-  if (ins.error) throw ins.error
+  await insertMany(db, 'tasks', rows)
   return rows.length
 }
 
@@ -137,14 +134,12 @@ interface TaskRowRead {
 }
 
 /** Load a tenant's tasks, highest dollars first. */
-export async function loadTasks(db: SupabaseClient, tenantId: string): Promise<StoredTask[]> {
-  const res = await db
-    .from('tasks')
-    .select('id, source, title, detail, dollars_cents, assignee, status, priority, due_date')
-    .eq('tenant_id', tenantId)
-    .order('dollars_cents', { ascending: false })
-  if (res.error) throw res.error
-  return ((res.data ?? []) as unknown as TaskRowRead[]).map((r) => ({
+export async function loadTasks(db: Queryable, tenantId: string): Promise<StoredTask[]> {
+  const res = await db.query(
+    'select id, source, title, detail, dollars_cents, assignee, status, priority, due_date from tasks where tenant_id = $1 order by dollars_cents desc',
+    [tenantId],
+  )
+  return (res.rows as TaskRowRead[]).map((r) => ({
     id: r.id,
     source: r.source,
     title: r.title,

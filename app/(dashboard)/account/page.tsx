@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
-import { isSupabaseConfigured } from '@/lib/db/config'
+import { isSupabaseConfigured, isNeonConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
+import { withService } from '@/lib/db/sql'
+import { resolveTenantId, loadTenantName } from '@/lib/db/tenant'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,12 +37,18 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // RLS returns only the caller's own tenant (via current_tenant_id()).
-  const { data: tenant } = await supabase.from('tenants').select('name').limit(1).maybeSingle()
+  // The practice name lives in Neon now (Supabase is auth-only).
+  let practiceName: string | null = null
+  if (isNeonConfigured()) {
+    try {
+      const tenantId = await withService((db) => resolveTenantId(db, user.id))
+      practiceName = tenantId ? await withService((db) => loadTenantName(db, tenantId)) : null
+    } catch { /* demo / DB unavailable */ }
+  }
 
   const rows: { label: string; value: string; mono?: boolean }[] = [
     { label: 'Email', value: user.email ?? '—' },
-    { label: 'Practice', value: (tenant?.name as string | undefined) ?? 'Provisioned on first save' },
+    { label: 'Practice', value: practiceName ?? 'Provisioned on first save' },
     { label: 'Signed up', value: fmtDate(user.created_at) },
     { label: 'Last sign-in', value: fmtDate(user.last_sign_in_at) },
     { label: 'Auth method', value: user.app_metadata?.provider ?? 'email' },

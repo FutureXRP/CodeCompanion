@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { isServiceRoleConfigured } from '@/lib/db/config'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { isNeonConfigured } from '@/lib/db/config'
+import { createClient } from '@/lib/supabase/server'
+import { withService } from '@/lib/db/sql'
 import { ensureTenantForUser } from '@/lib/db/tenant'
 import { loadFindings } from '@/lib/db/repository'
 
@@ -9,8 +10,8 @@ export const dynamic = 'force-dynamic'
 
 /** Read the authenticated user's persisted findings — the read side of /api/persist. */
 export async function GET() {
-  if (!isServiceRoleConfigured()) {
-    return NextResponse.json({ error: 'Supabase not configured.' }, { status: 400 })
+  if (!isNeonConfigured()) {
+    return NextResponse.json({ error: 'Database not configured (DATABASE_URL).' }, { status: 400 })
   }
   try {
     const authed = await createClient()
@@ -19,9 +20,10 @@ export async function GET() {
     } = await authed.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 })
 
-    const service = createServiceClient()
-    const tenantId = await ensureTenantForUser(service, user.id, user.email ?? 'My Practice')
-    const findings = await loadFindings(service, tenantId)
+    const { tenantId, findings } = await withService(async (db) => {
+      const tid = await ensureTenantForUser(db, user.id, user.email ?? 'My Practice', user.email)
+      return { tenantId: tid, findings: await loadFindings(db, tid) }
+    })
 
     return NextResponse.json({ tenantId, count: findings.length, findings })
   } catch (e) {

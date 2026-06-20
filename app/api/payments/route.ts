@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import { isSupabaseConfigured } from '@/lib/db/config'
+import { isNeonConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
+import { withTenant, withService } from '@/lib/db/sql'
+import { resolveTenantId } from '@/lib/db/tenant'
 import { pullClaims, adjudicate } from '@/lib/mock-ehr'
 import { buildLedger } from '@/lib/ledger'
 import { MockPaymentProvider, toPatientPayment, type PaymentMethod } from '@/lib/payments'
@@ -11,23 +13,20 @@ export const dynamic = 'force-dynamic'
 
 /**
  * Record a patient payment. Charges via the MOCK provider (the demo never moves
- * real money — Stripe is gated behind ALLOW_REAL_CHARGES). When Supabase is
- * configured, the payment + its ledger posting are persisted and audit-logged;
- * without it, the demo runs stateless and returns the recomputed balance only.
+ * real money — Stripe is gated behind ALLOW_REAL_CHARGES). When Neon is configured,
+ * the payment + its ledger posting are persisted and audit-logged; without it, the
+ * demo runs stateless and returns the recomputed balance only.
  */
 export async function POST(request: Request) {
-  let supabase: Awaited<ReturnType<typeof createClient>> | null = null
   let userId: string | null = null
   let tenantId: string | null = null
 
-  if (isSupabaseConfigured()) {
-    supabase = await createClient()
+  if (isNeonConfigured()) {
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Not authenticated.' }, { status: 401 })
     userId = user.id
-    const t = await supabase.from('tenant_users').select('tenant_id').eq('user_id', user.id).limit(1).maybeSingle()
-    if (t.error) return NextResponse.json({ error: t.error.message }, { status: 500 })
-    tenantId = (t.data?.tenant_id as string | undefined) ?? null
+    tenantId = await withService((db) => resolveTenantId(db, user.id))
   }
 
   const body = (await request.json().catch(() => ({}))) as {
@@ -48,8 +47,9 @@ export async function POST(request: Request) {
 
     // Persist the payment + ledger posting + audit when wired.
     let persisted = false
-    if (supabase && tenantId) {
-      await recordPayment(supabase, tenantId, userId, null, charge, result)
+    if (isNeonConfigured() && tenantId) {
+      const tid = tenantId
+      await withTenant(tid, (db) => recordPayment(db, tid, userId, null, charge, result))
       persisted = true
     }
 
