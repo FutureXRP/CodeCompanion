@@ -48,12 +48,18 @@ export interface AthenaClientConfig {
   baseUrl?: string
   scope?: string
   transport?: HttpTransport
+  /** Max attempts on athena throttling (HTTP 429) / transient 503. Default 4. */
+  maxAttempts?: number
+  /** Injectable backoff sleep (tests pass a no-op). Default real setTimeout. */
+  sleep?: (ms: number) => Promise<void>
 }
 
 export class AthenaClient implements AthenaSource {
   private token: { value: string; expiresAt: number } | null = null
   private readonly base: string
   private readonly transport: HttpTransport
+  private readonly maxAttempts: number
+  private readonly sleep: (ms: number) => Promise<void>
 
   constructor(private readonly cfg: AthenaClientConfig) {
     if (!cfg.clientId || !cfg.clientSecret || !cfg.practiceId) {
@@ -61,6 +67,24 @@ export class AthenaClient implements AthenaSource {
     }
     this.base = (cfg.baseUrl ?? ATHENA_PREVIEW_BASE).replace(/\/+$/, '')
     this.transport = cfg.transport ?? fetchTransport
+    this.maxAttempts = Math.max(1, cfg.maxAttempts ?? 4)
+    this.sleep = cfg.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))
+  }
+
+  /**
+   * Transport with exponential backoff on athena throttling (HTTP 429) and
+   * transient 503s. athena does not publish numeric rate limits, so the daily
+   * pull must stay polite (API ToS §1(b)). Waits 0.5s, 1s, 2s, … between tries.
+   */
+  private async send(req: HttpRequest): Promise<HttpResponse> {
+    for (let attempt = 0; ; attempt++) {
+      const res = await this.transport(req)
+      if ((res.status === 429 || res.status === 503) && attempt < this.maxAttempts - 1) {
+        await this.sleep(2 ** attempt * 500)
+        continue
+      }
+      return res
+    }
   }
 
   /** OAuth2 client-credentials token, cached until ~60s before expiry. */
@@ -68,7 +92,7 @@ export class AthenaClient implements AthenaSource {
     const now = Date.now()
     if (this.token && this.token.expiresAt > now + 60_000) return this.token.value
     const basic = Buffer.from(`${this.cfg.clientId}:${this.cfg.clientSecret}`).toString('base64')
-    const res = await this.transport({
+    const res = await this.send({
       method: 'POST',
       url: `${this.base}/oauth2/v1/token`,
       headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -85,7 +109,7 @@ export class AthenaClient implements AthenaSource {
     const qs = query
       ? '?' + Object.entries(query).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v!)}`).join('&')
       : ''
-    const res = await this.transport({ method: 'GET', url: `${this.base}/v1/${this.cfg.practiceId}${path}${qs}`, headers: { Authorization: `Bearer ${token}` } })
+    const res = await this.send({ method: 'GET', url: `${this.base}/v1/${this.cfg.practiceId}${path}${qs}`, headers: { Authorization: `Bearer ${token}` } })
     if (res.status >= 300) throw new Error(`Athena GET ${path} failed (HTTP ${res.status}).`)
     return res.json as T
   }

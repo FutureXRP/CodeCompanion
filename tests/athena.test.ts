@@ -97,3 +97,22 @@ test('AthenaClient.getEncounterBundles joins claims + patient + insurance + prov
   assert.equal(e.subscriber.memberId, 'M123')
   assert.equal(e.lines[0].cptHcpcs, '99214')
 })
+
+test('AthenaClient backs off on 429 throttling, then succeeds (ToS §1(b))', async () => {
+  let claimCalls = 0
+  const slept: number[] = []
+  const client = new AthenaClient({
+    clientId: 'c', clientSecret: 's', practiceId: '195900',
+    sleep: async (ms) => { slept.push(ms) }, // no real wait in tests
+    transport: async (req) => {
+      if (req.url.endsWith('/oauth2/v1/token')) return { status: 200, json: { access_token: 't', expires_in: 3600 } }
+      claimCalls++
+      if (claimCalls < 3) return { status: 429, json: {} } // throttled twice, then OK
+      return { status: 200, json: { claims: [] } }
+    },
+  })
+  const bundles = await client.getEncounterBundles({ serviceDateFrom: '2026-01-15' })
+  assert.equal(bundles.length, 0)
+  assert.equal(claimCalls, 3) // two retries + success
+  assert.deepEqual(slept, [500, 1000]) // exponential backoff
+})
