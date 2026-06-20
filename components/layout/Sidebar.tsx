@@ -47,14 +47,17 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13l3-5 3 2.5L14 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M11 3h3v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/schedule',   label: 'Schedule',       badge: { count: 2, color: '#cf5547', bg: '#f3d9d3' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+  { href: '/admin',      label: 'Admin',          badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4.5h5M11 4.5h3M2 11.5h3M9 11.5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="8.5" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.4"/><circle cx="6.5" cy="11.5" r="1.7" stroke="currentColor" strokeWidth="1.4"/></svg> },
   { href: '/account',    label: 'Account',        badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2.5 14c0-2.8 2.5-4.6 5.5-4.6s5.5 1.8 5.5 4.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
   { href: '/settings',   label: 'Settings',       badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.7 3.3l-1.1 1.1M4.4 11.6l-1.1 1.1M12.7 12.7l-1.1-1.1M4.4 4.4L3.3 3.3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
 ]
 
-export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled?: boolean; userEmail?: string | null }) {
+export function Sidebar({ authEnabled = false, userEmail = null, disabledModules = [] }: { authEnabled?: boolean; userEmail?: string | null; disabledModules?: string[] }) {
   const pathname = usePathname()
+  const off = new Set(disabledModules)
   return (
     <aside style={{ width: '220px', flexShrink: 0, background: '#fff', borderRight: '1px solid #ece7dd', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #f0ece3' }}>
@@ -67,7 +70,7 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
         <p style={{ fontSize: '11px', color: '#9aa69f', marginLeft: '36px', marginTop: '0' }}>Revenue Intelligence</p>
       </div>
       <nav style={{ flex: 1, padding: '10px' }}>
-        {nav.map(item => {
+        {nav.filter(item => !off.has(item.href.slice(1))).map(item => {
           const active = pathname === item.href
           return (
             <Link key={item.href} href={item.href} style={{
