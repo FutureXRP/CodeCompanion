@@ -240,11 +240,16 @@ table(
 para('*Stripe needs a BAA only if card activity is tied to PHI. Confirm scope with counsel.', FAINT, 8.6)
 h2('athena-specific compliance notes')
 bullets([
-  ['Minimum necessary.', 'The adapter requests only the MDP service scope (athena/service/Athenanet.MDP.*) and pulls only the encounter, charge, insurance, and provider fields needed to build a claim — nothing more.'],
+  ['Minimum necessary.', 'The adapter requests only the MDP (“More Disruption Please”) service scope (athena/service/Athenanet.MDP.*) and pulls only the encounter, charge, insurance, and provider fields needed to build a claim — nothing more.'],
   ['The adapter boundary contains PHI.', 'athena field names never leave lib/adapters/athena; everything normalizes into the canonical model, which stays tenant-isolated under RLS.'],
-  ['The de-id corpus gate is untouched.', 'athena data is individual-claim PHI and can never reach the behavioral corpus — that path is structurally blocked and tested.'],
-  ['Diligence before sign-off.', 'Review athena’s marketplace data terms and security posture as part of the BAA. Note athena exposes structured charge/payment objects, not raw X12 837/835 files.'],
+  ['The de-id corpus gate is untouched (in code).', 'athena data is individual-claim PHI and can never reach the behavioral corpus — that path is structurally blocked and tested. A separate contractual question is flagged below.'],
+  ['Read the agreements before signing.', 'Review athena’s data terms, the Master Services Agreement Third-Party Terms, and the athenaOne Service Description alongside the BAA. Note athena exposes structured charge/payment objects, not raw X12 837/835 files.'],
+  ['HITRUST (only if you distribute).', 'If you later offer CodeCompanion to other athena practices via the Marketplace, athena requires a HITRUST self-assessment within 90 days of going live. Reading your own practice’s data does not trigger this.'],
 ])
+callout(
+  'A contract layer on the behavioral corpus — clear it with counsel',
+  'athena’s Third-Party Terms restrict third parties from building derivative works on athena data, and athena reserves de-identification and aggregation rights to itself. HIPAA may permit sharing de-identified aggregates, but athena’s contract could separately limit using athena-sourced data to build the cross-tenant behavioral corpus (Rung 2). The PHI-to-corpus gate is clean in code; this is a contractual layer on top. Get counsel to clear it before athena data ever feeds lib/corpus.',
+  'warn')
 callout(
   'Not legal advice',
   'This is engineering guidance to keep the build compliant-by-construction. It is not a substitute for a HIPAA ' +
@@ -260,13 +265,24 @@ bullets([
   ['Your practice + department.', 'The athenaNet practiceid (the Preview sandbox practice is 195900) and at least one departmentid.'],
   ['The MDP scope.', 'Enable the athena/service/Athenanet.MDP.* scope on the app.'],
 ])
+callout(
+  'Two access paths — know which one you are on',
+  'Reading your OWN practice’s data (the goal now): Preview/sandbox is instant and free (practice 195900, dummy data); production needs athena-issued production credentials, but not a full Marketplace listing.\n' +
+  'Distributing CodeCompanion to OTHER athena practices (later, Rung 1): the full Marketplace path — API certification, a data-security review, and a workflow assessment (~6–12 weeks), HITRUST, and a 15–30% revenue share on Marketplace-channeled revenue (no setup or interface fees).',
+  'info')
 para('You will set six environment variables in Vercel — see the reference table in section 5.', SUB)
 
 // ---- 4. STEPS ---------------------------------------------------------------
 h1('4.  API integration steps')
 
 h2('Step 1 — Register the app in Preview')
-para('At developer.athenahealth.com, create an application, record its client_id and client_secret, and enable the MDP scope. Preview data is synthetic, so connecting to it is safe before any BAA is signed.')
+para('At developer.athenahealth.com, open the Developer Console → Create New Application, then record the client_id and client_secret. Preview data is synthetic, so connecting is safe before any BAA. The form asks two questions that decide whether the app can even reach billing data — set them like this:')
+callout(
+  'Create-Application choices that match this build',
+  'API Access — choose “1+ non-Certified APIs.” The billing/charge/claim data lives in athena’s non-Certified proprietary REST (athenaCollector); the Certified (g)(8)–(g)(10) FHIR APIs are clinical-only and will NOT carry it, so “Certified APIs only” locks you out of the data you need.\n' +
+  'App Category — choose “2-Legged OAuth” (service-to-service / client_credentials), exactly what the adapter uses. (3-legged is for SMART-on-FHIR provider/patient login, which we do not use.)\n' +
+  'Do NOT check “I am building a CAPI app” — that is for ONC-Certified API apps, not a non-certified service app. On App Details, request the athena/service/Athenanet.MDP.* scope.',
+  'info')
 
 h2('Step 2 — Identify practice + department')
 para('Use Preview practiceid 195900 to start. For production, use your real practiceid and department id(s).')
@@ -322,6 +338,7 @@ table(
 
 h2('Step 7 — Go to production')
 para('When the BAA gate is closed: sign the athenahealth BAA (and the rest), point ATHENA_BASE_URL at production, use your real practiceid, set ATHENA_USE_MOCK=false and ALLOW_REAL_PHI=true, apply the Supabase migrations, and run the readiness check until green.')
+para('Production access is not just a URL swap: athena issues separate production credentials — distinct from your Preview keys — through its partner / MDP process. Request them early; that approval is the long pole on the timeline.', SUB)
 codeBox([
   'ATHENA_BASE_URL=https://api.platform.athenahealth.com   # production',
   'ATHENA_PRACTICE_ID=<your real practiceid>',
@@ -374,6 +391,7 @@ bullets([
   ['Wire EHR Pull to a sync.', 'Connect pullAthenaEncounters to the EHR Pull screen and/or a scheduled job (Inngest) so encounters land daily.'],
   ['Payer-id crosswalk.', 'Resolve athena insurancepackageid → EDI payer id at the eligibility edge so one-click eligibility works on athena patients.'],
   ['Phase 2 — pull payments.', 'Pull athena payment/remittance objects and map them to the canonical remittance to power the Found-Money diff (submitted vs. paid vs. contracted) on athena’s own data. This is the high-ROI “found money” proof, and it is read-only.'],
+  ['Add 429 backoff to the sync.', 'athena’s production rate limits are not published numerically (HTTP 429 on throttle), so the daily pull should retry with exponential backoff. The token is already cached for its one-hour life.'],
 ])
 para('Effort is small-to-medium and stays entirely behind the mock + ALLOW_REAL_PHI gates.', SUB)
 
