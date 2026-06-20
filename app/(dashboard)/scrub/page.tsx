@@ -24,7 +24,7 @@ export default function ScrubPage() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1080, margin: '0 auto' }}>
       <div style={{ marginBottom: 4 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Claim Scrubber</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Claim Scrubber</h1>
         <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 720, lineHeight: 1.5 }}>
           Catches what a payer would reject or deny — <em>before</em> the claim goes out. Deterministic rules, no AI. Rules
           layer in three tiers: national correct-coding (NCCI/CCI, MUE, modifiers), then the state jurisdiction, then payer policy.
@@ -55,12 +55,12 @@ export default function ScrubPage() {
         {results.map(({ claim, result }) => {
           const status = !result.ok ? { label: 'errors', variant: 'red' as const } : result.warningCount > 0 ? { label: 'warnings', variant: 'amber' as const } : { label: 'clean', variant: 'green' as const }
           return (
-            <div key={claim.controlNumber} style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px', borderBottom: result.findings.length ? '1px solid #f1f3f7' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div key={claim.controlNumber} style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', borderBottom: result.findings.length ? '1px solid #f0ece3' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 600, color: '#1e2533' }}>{claim.controlNumber}</span>
-                  <span style={{ fontSize: 12, color: '#9aa3b2', fontFamily: 'DM Mono, monospace' }}>{claim.lines.map((l) => l.cptHcpcs).join(' · ')}</span>
-                  <span style={{ fontSize: 11, color: '#9aa3b2' }}>filing {claim.claimFilingCode ?? '—'}</span>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>{claim.controlNumber}</span>
+                  <span style={{ fontSize: 12, color: '#9aa69f', fontFamily: 'DM Mono, monospace' }}>{claim.lines.map((l) => l.cptHcpcs).join(' · ')}</span>
+                  <span style={{ fontSize: 11, color: '#9aa69f' }}>filing {claim.claimFilingCode ?? '—'}</span>
                 </div>
                 <Badge label={status.label} variant={status.variant} />
               </div>
@@ -70,7 +70,7 @@ export default function ScrubPage() {
                     <div key={i} style={{ display: 'flex', gap: 10, padding: '9px 16px', alignItems: 'flex-start' }}>
                       <span style={{ marginTop: 1 }}><Badge label={`${f.severity} · ${f.code}`} variant={SEV_BADGE[f.severity]} /></span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, color: '#333d4d', lineHeight: 1.5 }}>{f.message}</div>
+                        <div style={{ fontSize: 13, color: '#3a4640', lineHeight: 1.5 }}>{f.message}</div>
                         {f.hint && <div style={{ fontSize: 12, color: '#8a94a6', marginTop: 2, lineHeight: 1.5 }}>{f.hint}</div>}
                       </div>
                       <span style={{ fontSize: 10.5, color: '#b6bdca', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 3 }}>{f.source}</span>
@@ -83,7 +83,7 @@ export default function ScrubPage() {
         })}
       </div>
 
-      <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 16, lineHeight: 1.55 }}>
+      <p style={{ fontSize: 12, color: '#9aa69f', marginTop: 16, lineHeight: 1.55 }}>
         Errors block submission; warnings advise. The same scrub runs in the clearinghouse submit path, so a claim that fails
         here never reaches the payer. Seed NCCI/MUE tables and Oklahoma rules are illustrative — the full CMS NCCI tables and
         OHCA/Novitas policy load behind the same interface without changing rule code.

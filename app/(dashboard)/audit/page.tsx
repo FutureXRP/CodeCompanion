@@ -1,13 +1,13 @@
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED   = '#c9302c'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED   = '#cf5547'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -19,7 +19,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -108,7 +108,7 @@ const statusLabel: Record<string, { label: string; variant: 'red' | 'amber' | 'b
   monitor:         { label: 'Monitor',         variant: 'blue' },
 }
 
-const severityAccent: Record<string, string> = { high: RED, medium: AMBER, low: '#2d5de8' }
+const severityAccent: Record<string, string> = { high: RED, medium: AMBER, low: '#3f7d6a' }
 
 const RAC_TARGETS = ['99215', '99214', 'G0439', 'G0438', '99490', '99213', 'Mod-25', 'Mod-59']
 const OIG_2025 = ['G0438/G0439', '99490', '99215', 'Telehealth E&M', 'Chronic pain management']
@@ -121,7 +121,7 @@ export default function AuditPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
       `}</style>
 
       {/* Header */}
@@ -149,7 +149,7 @@ export default function AuditPage() {
           },
           {
             label: 'Claims at risk', value: `${totalClaims}`, sub: 'Across all flag types',
-            numColor: INK, accent: '#5a6473',
+            numColor: INK, accent: '#65726b',
             icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
           },
         ].map((s, i) => (
@@ -189,7 +189,7 @@ export default function AuditPage() {
               <div style={{ padding: '16px 20px' }}>
                 {/* Rate comparison bar (only for pattern-based risks) */}
                 {r.barYours > 0 && (
-                  <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f8f9fb', borderRadius: 10, border: `1px solid ${LINE}` }}>
+                  <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f7f5f0', borderRadius: 10, border: `1px solid ${LINE}` }}>
                     <div style={{ display: 'flex', gap: 24 }}>
                       {[
                         { label: 'Your rate', value: r.rateYours, bar: r.barYours, color: r.severity === 'high' ? RED : AMBER },
@@ -214,8 +214,8 @@ export default function AuditPage() {
 
                 <p style={{ fontSize: 13, color: SUB, lineHeight: 1.6, margin: '0 0 12px' }}>{r.description}</p>
 
-                <div style={{ padding: '10px 14px', background: '#f5f8ff', borderRadius: 10, border: '1px solid #dce6ff' }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Recommendation</p>
+                <div style={{ padding: '10px 14px', background: '#eef3f0', borderRadius: 10, border: '1px solid #e6efe9' }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: '#3f7d6a', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Recommendation</p>
                   <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.5 }}>{r.recommendation}</p>
                 </div>
               </div>
@@ -234,7 +234,7 @@ export default function AuditPage() {
           <div style={{ padding: '14px 20px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
               {RAC_TARGETS.map((t, i) => (
-                <span key={i} style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, background: '#f3f5f9', color: SUB, padding: '3px 10px', borderRadius: 6, border: `1px solid ${LINE}` }}>{t}</span>
+                <span key={i} style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, background: '#f0ece3', color: SUB, padding: '3px 10px', borderRadius: 6, border: `1px solid ${LINE}` }}>{t}</span>
               ))}
             </div>
             <p style={{ fontSize: 11, color: FAINT, margin: 0 }}>Source: CMS RAC Activity Report 2025</p>

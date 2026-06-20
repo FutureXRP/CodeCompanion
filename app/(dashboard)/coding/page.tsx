@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -18,7 +18,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -87,7 +87,7 @@ export default function CodingPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
       `}</style>
 
       {/* Header */}
@@ -120,7 +120,7 @@ export default function CodingPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{s.patient}</span>
                 <span style={{ fontSize: 12, color: FAINT }}>{s.date}</span>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: SUB, background: '#f3f5f9', padding: '2px 7px', borderRadius: 5 }}>{s.encounterId}</span>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: SUB, background: '#f0ece3', padding: '2px 7px', borderRadius: 5 }}>{s.encounterId}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 12, color: FAINT }}>Confidence: <strong style={{ color: s.confidence >= 90 ? GREEN : AMBER }}>{s.confidence}%</strong></span>
@@ -132,12 +132,12 @@ export default function CodingPage() {
               {/* Code comparison */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 16,
-                padding: '12px 16px', background: '#f8f9fb', borderRadius: 10,
+                padding: '12px 16px', background: '#f7f5f0', borderRadius: 10,
                 marginBottom: 18, border: `1px solid ${LINE}`,
               }}>
                 <div>
                   <p style={{ fontSize: 11, color: FAINT, margin: '0 0 5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Currently billed</p>
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 500, background: '#e9ecf2', color: SUB, padding: '4px 12px', borderRadius: 6, display: 'inline-block' }}>{s.billedEm}</span>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 15, fontWeight: 500, background: '#ece7dd', color: SUB, padding: '4px 12px', borderRadius: 6, display: 'inline-block' }}>{s.billedEm}</span>
                 </div>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ color: FAINT, flexShrink: 0 }}>
                   <path d="M4 10h12M12 6l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -158,8 +158,8 @@ export default function CodingPage() {
                   <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>ICD-10 diagnoses</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {s.icd10.map((c, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '6px 10px', background: '#f8f9fb', borderRadius: 6 }}>
-                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11.5, fontWeight: 500, color: '#2d5de8', flexShrink: 0 }}>{c.code}</span>
+                      <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '6px 10px', background: '#f7f5f0', borderRadius: 6 }}>
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11.5, fontWeight: 500, color: '#3f7d6a', flexShrink: 0 }}>{c.code}</span>
                         <span style={{ fontSize: 12, color: SUB }}>{c.desc}</span>
                       </div>
                     ))}
@@ -169,13 +169,13 @@ export default function CodingPage() {
                   <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>CPT procedure codes</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {s.cpt.map((c, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '6px 10px', background: '#f8f9fb', borderRadius: 6 }}>
-                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11.5, fontWeight: 500, color: '#2d5de8', flexShrink: 0 }}>{c.code}</span>
+                      <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '6px 10px', background: '#f7f5f0', borderRadius: 6 }}>
+                        <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11.5, fontWeight: 500, color: '#3f7d6a', flexShrink: 0 }}>{c.code}</span>
                         <span style={{ fontSize: 12, color: SUB }}>{c.desc}</span>
                       </div>
                     ))}
                   </div>
-                  <div style={{ marginTop: 8, padding: '6px 10px', background: '#f8f9fb', borderRadius: 6 }}>
+                  <div style={{ marginTop: 8, padding: '6px 10px', background: '#f7f5f0', borderRadius: 6 }}>
                     <span style={{ fontSize: 12, color: SUB }}>MDM level: <strong style={{ color: INK }}>{s.mdmLevel}</strong></span>
                     {s.timeMinutes && <span style={{ fontSize: 12, color: SUB, marginLeft: 12 }}>Time: <strong style={{ color: INK }}>{s.timeMinutes} min</strong></span>}
                   </div>
@@ -184,10 +184,10 @@ export default function CodingPage() {
 
               {/* AI Reasoning */}
               <div style={{
-                padding: '12px 14px', background: '#f5f8ff',
-                borderRadius: 10, border: `1px solid #dce6ff`, marginBottom: 12,
+                padding: '12px 14px', background: '#eef3f0',
+                borderRadius: 10, border: `1px solid #e6efe9`, marginBottom: 12,
               }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', margin: '0 0 5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#3f7d6a', margin: '0 0 5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   AI reasoning
                 </p>
                 <p style={{ fontSize: 12.5, color: SUB, lineHeight: 1.6, margin: 0 }}>{s.reasoning}</p>
@@ -209,7 +209,7 @@ export default function CodingPage() {
               {/* Actions */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button style={{
-                  padding: '8px 18px', background: '#2d5de8', color: '#fff',
+                  padding: '8px 18px', background: '#3f7d6a', color: '#fff',
                   fontSize: 13, fontWeight: 500, borderRadius: 8,
                   border: 'none', cursor: 'pointer', letterSpacing: '-0.01em',
                 }}>

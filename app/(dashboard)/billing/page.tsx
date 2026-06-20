@@ -40,7 +40,7 @@ export default function BillingPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
         <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>Patient Billing</h1>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#1a7a45', background: '#e8f6ee', padding: '3px 10px', borderRadius: 999 }}>Mock payments</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#2f8a5b', background: '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>Mock payments</span>
       </div>
       <p style={{ fontSize: 13.5, color: FAINT, margin: '0 0 22px', maxWidth: 660, lineHeight: 1.55 }}>
         The patient side of the ledger: statements derived from the 835, and payments recorded against the balance.

@@ -1,13 +1,13 @@
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED   = '#c9302c'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED   = '#cf5547'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -19,7 +19,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -107,7 +107,7 @@ export default function SchedulePage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
       `}</style>
 
       {/* Header */}
@@ -128,12 +128,12 @@ export default function SchedulePage() {
           },
           {
             label: 'Medium risk slots', value: `${medRisk}`, sub: 'Monitor closely',
-            numColor: INK, accent: '#5a6473',
+            numColor: INK, accent: '#65726b',
             icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
           },
           {
             label: 'Avg no-show risk', value: `${avgNoShow}%`, sub: "Across today's schedule",
-            numColor: INK, accent: '#5a6473',
+            numColor: INK, accent: '#65726b',
             icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
           },
         ].map((s, i) => (
@@ -175,10 +175,10 @@ export default function SchedulePage() {
 
                 {/* History pills */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: a.level !== 'low' ? 10 : 0 }}>
-                  <span style={{ fontSize: 11, background: '#f3f5f9', color: SUB, padding: '2px 8px', borderRadius: 99 }}>
+                  <span style={{ fontSize: 11, background: '#f0ece3', color: SUB, padding: '2px 8px', borderRadius: 99 }}>
                     {a.history.noShows}/{a.history.total} no-shows
                   </span>
-                  <span style={{ fontSize: 11, background: '#f3f5f9', color: SUB, padding: '2px 8px', borderRadius: 99 }}>
+                  <span style={{ fontSize: 11, background: '#f0ece3', color: SUB, padding: '2px 8px', borderRadius: 99 }}>
                     Last visit: {a.history.lastVisit}
                   </span>
                   <span style={{ fontSize: 11, background: a.history.lastStatus === 'No Show' ? `${AMBER}12` : `${GREEN}12`, color: a.history.lastStatus === 'No Show' ? AMBER : GREEN, padding: '2px 8px', borderRadius: 99 }}>
@@ -189,14 +189,14 @@ export default function SchedulePage() {
                 {/* Risk factors & recommendation (high/medium only) */}
                 {a.level !== 'low' && (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div style={{ padding: '8px 12px', background: '#f8f9fb', borderRadius: 9, border: `1px solid ${LINE}` }}>
+                    <div style={{ padding: '8px 12px', background: '#f7f5f0', borderRadius: 9, border: `1px solid ${LINE}` }}>
                       <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 5px' }}>Risk factors</p>
                       {a.factors.map((f, j) => (
                         <p key={j} style={{ fontSize: 12, color: SUB, margin: j < a.factors.length - 1 ? '0 0 2px' : 0 }}>• {f}</p>
                       ))}
                     </div>
-                    <div style={{ padding: '8px 12px', background: '#f5f8ff', borderRadius: 9, border: '1px solid #dce6ff' }}>
-                      <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 5px' }}>Recommendation</p>
+                    <div style={{ padding: '8px 12px', background: '#eef3f0', borderRadius: 9, border: '1px solid #e6efe9' }}>
+                      <p style={{ fontSize: 11, fontWeight: 600, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 5px' }}>Recommendation</p>
                       <p style={{ fontSize: 12, color: SUB, margin: 0, lineHeight: 1.5 }}>{a.recommendation}</p>
                     </div>
                   </div>
@@ -207,7 +207,7 @@ export default function SchedulePage() {
               <div style={{ textAlign: 'center', flexShrink: 0, width: 64 }}>
                 <div style={{
                   width: 56, height: 56, borderRadius: '50%',
-                  background: `conic-gradient(${levelColor[a.level]} ${a.noShowPct * 3.6}deg, #f1f3f7 0deg)`,
+                  background: `conic-gradient(${levelColor[a.level]} ${a.noShowPct * 3.6}deg, #f0ece3 0deg)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   margin: '0 auto 4px',
                 }}>
@@ -230,15 +230,15 @@ export default function SchedulePage() {
       {/* Waitlist tip */}
       <div style={{
         marginTop: 16, padding: '12px 16px',
-        background: '#f5f8ff', borderRadius: 12, border: '1px solid #dce6ff',
+        background: '#eef3f0', borderRadius: 12, border: '1px solid #e6efe9',
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="7" stroke="#3b6ef8" strokeWidth="1.5"/>
-          <path d="M8 5v3.5l2 1.5" stroke="#3b6ef8" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="8" cy="8" r="7" stroke="#57997f" strokeWidth="1.5"/>
+          <path d="M8 5v3.5l2 1.5" stroke="#57997f" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
         <p style={{ fontSize: 12.5, color: SUB, margin: 0 }}>
-          <strong style={{ color: '#2d5de8' }}>Tip:</strong> The 10:00 AM and 11:30 AM slots are high risk. Consider maintaining a 2-patient same-day waitlist to fill gaps if either no-shows.
+          <strong style={{ color: '#3f7d6a' }}>Tip:</strong> The 10:00 AM and 11:30 AM slots are high risk. Consider maintaining a 2-patient same-day waitlist to fill gaps if either no-shows.
         </p>
       </div>
 

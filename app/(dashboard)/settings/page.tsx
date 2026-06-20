@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -18,7 +18,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -30,7 +30,7 @@ function SectionLabel({ children, meta }: { children: string; meta?: string }) {
 // Section icon tiles — matched to section accent
 const sectionIcons: Record<string, { icon: React.ReactNode; accent: string }> = {
   'Athena EHR connection': {
-    accent: '#2d5de8',
+    accent: '#3f7d6a',
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   },
   'Subscription': {
@@ -56,7 +56,7 @@ const sections = [
       { label: 'Last sync', value: 'N/A', badge: null },
       { label: 'API version', value: 'FHIR R4 + Proprietary', badge: null },
     ],
-    action: { label: 'Connect Athena', color: '#2d5de8', bg: '#f5f8ff', border: '#dce6ff' },
+    action: { label: 'Connect Athena', color: '#3f7d6a', bg: '#eef3f0', border: '#e6efe9' },
     note: 'Register at docs.athenahealth.com for developer credentials. Sandbox access is immediate.',
   },
   {
@@ -67,7 +67,7 @@ const sections = [
       { label: 'Next renewal', value: 'June 3, 2026', badge: null },
       { label: 'Modules', value: 'All 5 modules enabled', badge: null },
     ],
-    action: { label: 'Manage billing', color: SUB, bg: '#f8f9fb', border: LINE },
+    action: { label: 'Manage billing', color: SUB, bg: '#f7f5f0', border: LINE },
     note: null,
   },
   {
@@ -99,7 +99,7 @@ export default function SettingsPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
       `}</style>
 
       {/* Header */}
@@ -135,7 +135,7 @@ export default function SettingsPage() {
               </div>
               <div style={{ padding: '4px 0' }}>
                 {section.items.map((item, j) => (
-                  <div key={j} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: j < section.items.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+                  <div key={j} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: j < section.items.length - 1 ? `1px solid #f7f5f0` : 'none' }}>
                     <span style={{ fontSize: 13, color: SUB }}>{item.label}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 13, color: INK, fontWeight: 500 }}>{item.value}</span>
@@ -145,7 +145,7 @@ export default function SettingsPage() {
                 ))}
               </div>
               {section.note && (
-                <div style={{ padding: '10px 20px', borderTop: `1px solid ${LINE}`, background: '#f8f9fb' }}>
+                <div style={{ padding: '10px 20px', borderTop: `1px solid ${LINE}`, background: '#f7f5f0' }}>
                   <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{section.note}</p>
                 </div>
               )}

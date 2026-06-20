@@ -8,11 +8,11 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const th: React.CSSProperties = {
-  textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa3b2',
-  textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 12px', borderBottom: '1px solid #e4e8ef',
+  textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa69f',
+  textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 12px', borderBottom: '1px solid #ece7dd',
 }
 const td: React.CSSProperties = {
-  fontSize: 13, color: '#333d4d', padding: '11px 12px', borderBottom: '1px solid #f1f3f7', verticalAlign: 'top',
+  fontSize: 13, color: '#3a4640', padding: '11px 12px', borderBottom: '1px solid #f0ece3', verticalAlign: 'top',
 }
 const num: React.CSSProperties = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
 
@@ -22,7 +22,7 @@ export default function CorpusPage() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 4 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Behavioral Corpus</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Behavioral Corpus</h1>
         <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 740, lineHeight: 1.5 }}>
           The moat: how each payer <em>actually</em> behaves per code and region, learned across every practice — allowed, paid,
           days-to-pay, denial rate. It is what trains Rung 2 (predictive adjudication). Built by a one-way de-identification
@@ -30,8 +30,8 @@ export default function CorpusPage() {
         </p>
       </div>
 
-      <div style={{ background: '#e8f6ee', border: '1px solid #bfe6cf', borderRadius: 12, padding: '13px 16px', margin: '16px 0 20px' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a7a45', marginBottom: 4 }}>De-identified · no PHI · no patient or tenant id</div>
+      <div style={{ background: '#e6f4ec', border: '1px solid #bfe6cf', borderRadius: 12, padding: '13px 16px', margin: '16px 0 20px' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: '#2f8a5b', marginBottom: 4 }}>De-identified · no PHI · no patient or tenant id</div>
         <div style={{ fontSize: 12.5, color: '#33614a', lineHeight: 1.6 }}>
           Rows carry only aggregate statistics keyed by payer, region, specialty, and code — structurally incapable of holding a
           person. Cells with fewer than {MIN_SAMPLE_N} observations are suppressed so no single patient&apos;s behavior is inferable.
@@ -46,10 +46,10 @@ export default function CorpusPage() {
         <StatCard label="Tenant ids stored" value="0" delta="by construction" />
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
-        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Payer behavior</span>
-          <span style={{ fontSize: 12, color: '#9aa3b2' }}>synthetic aggregates · medians shown</span>
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>Payer behavior</span>
+          <span style={{ fontSize: 12, color: '#9aa69f' }}>synthetic aggregates · medians shown</span>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -78,14 +78,14 @@ export default function CorpusPage() {
                 <td style={{ ...td, ...num }}>
                   <Badge label={`${Math.round(r.denialRate * 100)}%`} variant={r.denialRate >= 0.1 ? 'amber' : 'green'} />
                 </td>
-                <td style={{ ...td, ...num, color: '#9aa3b2' }}>{r.sampleN}</td>
+                <td style={{ ...td, ...num, color: '#9aa69f' }}>{r.sampleN}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 16, lineHeight: 1.55 }}>
+      <p style={{ fontSize: 12, color: '#9aa69f', marginTop: 16, lineHeight: 1.55 }}>
         Synthetic data. In production this aggregates adjudicated lines across all practices through the de-id transform
         (<code>lib/corpus</code>). The corpus table has no <code>tenant_id</code> and no foreign key to any patient-bearing table; a
         database <code>CHECK</code> enforces the same {MIN_SAMPLE_N}-sample floor. This cross-practice view is what no incumbent has —

@@ -2,13 +2,13 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 
 // Calm palette, shared with the landing page.
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED = '#c9302c'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED = '#cf5547'
 
 // ── Mock data ─────────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -134,9 +134,9 @@ export default function DashboardPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
         .pc-row { transition: background .12s ease; }
-        .pc-row:hover { background: #fafbfd; }
+        .pc-row:hover { background: #faf7f1; }
       `}</style>
 
       {/* Header */}
@@ -176,7 +176,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 10px', lineHeight: 1.5 }}>{a.detail}</p>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#2d5de8' }}>{a.cta} →</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3f7d6a' }}>{a.cta} →</span>
                 </div>
               </div>
             </Link>
@@ -221,13 +221,13 @@ export default function DashboardPage() {
                   <p style={{ fontSize: 13, fontWeight: 600, color: INK, margin: '0 0 2px' }}>{g.patient}</p>
                   <p style={{ fontSize: 12, color: SUB, margin: 0 }}>{g.type}</p>
                 </div>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, background: '#f3f5f9', color: SUB, padding: '2px 7px', borderRadius: 5 }}>{g.code}</span>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, background: '#f0ece3', color: SUB, padding: '2px 7px', borderRadius: 5 }}>{g.code}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: GREEN, minWidth: 62, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{g.revenue}</span>
                 <Badge label={g.priority} variant={g.priority === 'high' ? 'red' : 'amber'} />
               </div>
             ))}
             <div style={{ padding: '11px 18px' }}>
-              <Link href="/gaps" style={{ fontSize: 12.5, color: '#2d5de8', fontWeight: 600, textDecoration: 'none' }}>View all 8 care gaps →</Link>
+              <Link href="/gaps" style={{ fontSize: 12.5, color: '#3f7d6a', fontWeight: 600, textDecoration: 'none' }}>View all 8 care gaps →</Link>
             </div>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
         <div className="pc-card" style={{ ...card, padding: '14px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <span style={{ fontSize: 13.5, fontWeight: 600, color: INK }}>Monthly revenue</span>
-            <Link href="/analytics" style={{ fontSize: 12.5, color: '#2d5de8', fontWeight: 600, textDecoration: 'none' }}>Full analytics →</Link>
+            <Link href="/analytics" style={{ fontSize: 12.5, color: '#3f7d6a', fontWeight: 600, textDecoration: 'none' }}>Full analytics →</Link>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 104, marginBottom: 12 }}>
             {monthlyRevenue.map((w, i) => {
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                   <span style={{ fontSize: 10.5, fontWeight: 600, color: w.projected ? '#34d399' : GREEN, fontVariantNumeric: 'tabular-nums' }}>
                     ${(w.v / 1000).toFixed(0)}k
                   </span>
-                  <div style={{ width: '100%', height: h, borderRadius: '5px 5px 0 0', background: w.projected ? 'transparent' : 'linear-gradient(180deg, #5b86f5, #2d5de8)', position: 'relative', minHeight: 4 }}>
+                  <div style={{ width: '100%', height: h, borderRadius: '5px 5px 0 0', background: w.projected ? 'transparent' : 'linear-gradient(180deg, #57997f, #3f7d6a)', position: 'relative', minHeight: 4 }}>
                     {w.projected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '5px 5px 0 0' }} />}
                   </div>
                   <span style={{ fontSize: 11, color: w.projected ? '#34d399' : FAINT, fontWeight: w.projected ? 600 : 400 }}>{w.label}</span>

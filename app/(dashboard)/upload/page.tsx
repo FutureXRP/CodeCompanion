@@ -20,7 +20,7 @@ export default function UploadPage() {
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Upload &amp; Test</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Upload &amp; Test</h1>
       <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 18px' }}>
         Drop in your own 837 (claims), 835 (remittance), and fee schedule to run the full pipeline on your data —
         the found-money worklist (Rung 0) and each claim&apos;s paid/denied lifecycle (Rung 1). Prefilled with the

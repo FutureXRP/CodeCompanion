@@ -8,26 +8,26 @@ export const metadata: Metadata = {
 }
 
 // Brand palette (matches the app shell)
-const INK = '#1e2533'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
 
 const leakage = [
   {
     title: 'Underpayments',
     body: 'Paid below your contracted rate, after crediting legitimate patient responsibility. Recovered to the cent.',
-    color: '#2d5de8',
+    color: '#3f7d6a',
   },
   {
     title: 'Un-appealed denials',
     body: 'Classified by CARC into appealable vs. true write-off, then ranked by recoverable dollars.',
-    color: '#c9302c',
+    color: '#cf5547',
   },
   {
     title: 'Timely-filing write-offs',
     body: 'Claims submitted with no remittance on file — aging silently toward a permanent write-off until someone acts.',
-    color: '#b45309',
+    color: '#b8862a',
   },
   {
     title: 'Undercoding',
@@ -41,32 +41,32 @@ const ladder = [
     rung: 'Rung 0',
     name: 'Found Money',
     status: 'Live',
-    statusColor: '#1a7a45',
-    statusBg: '#e8f6ee',
+    statusColor: '#2f8a5b',
+    statusBg: '#e6f4ec',
     body: 'Diff what you billed (837) vs. what was paid (835) vs. your contracted rate. Contingency-priced — it pays for itself or it costs nothing.',
   },
   {
     rung: 'Rung 1',
     name: 'Full RCM, in-house',
     status: 'Building',
-    statusColor: '#b45309',
-    statusBg: '#fdf4e3',
+    statusColor: '#b8862a',
+    statusBg: '#f6efdd',
     body: 'Submit claims, work denials, and post payments yourself at flat, transparent pricing — displacing the billing company that takes a cut of every dollar.',
   },
   {
     rung: 'Rung 2',
     name: 'Predictive adjudication',
     status: 'Planned',
-    statusColor: '#5a6473',
-    statusBg: '#f1f3f7',
+    statusColor: '#65726b',
+    statusBg: '#f0ece3',
     body: 'A pre-submission scrubber and point-of-care payment prediction, trained on a de-identified corpus of payer behavior.',
   },
   {
     rung: 'Rung 3',
     name: 'Instant settlement',
     status: 'Future',
-    statusColor: '#5a6473',
-    statusBg: '#f1f3f7',
+    statusColor: '#65726b',
+    statusBg: '#f0ece3',
     body: 'Advance the practice cash on day one against predicted adjudication. Fintech, not software — built only once prediction is calibrated.',
   },
 ]
@@ -104,11 +104,11 @@ export default function LandingPage() {
         .pc-cta { transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
         .pc-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(45,93,232,.28); }
         .pc-ghost { transition: border-color .15s ease, color .15s ease, background .15s ease; }
-        .pc-ghost:hover { border-color: #b9c6ee; background: #f5f8ff; }
+        .pc-ghost:hover { border-color: #b9c6ee; background: #eef3f0; }
         .pc-card { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
         .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15,21,32,.08); border-color: #d7deea; }
         .pc-mod { transition: background .12s ease, border-color .12s ease, transform .12s ease; }
-        .pc-mod:hover { background: #f5f8ff; border-color: #cdd9f6; transform: translateY(-1px); }
+        .pc-mod:hover { background: #eef3f0; border-color: #cdd9f6; transform: translateY(-1px); }
         .pc-link { transition: gap .12s ease; }
       `}</style>
 
@@ -121,7 +121,7 @@ export default function LandingPage() {
       >
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '13px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(45,93,232,.32)' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(45,93,232,.32)' }}>
               <svg width="15" height="15" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em' }}>CodeCompanion</span>
@@ -130,7 +130,7 @@ export default function LandingPage() {
             <Link href="/upload" style={{ fontSize: 13.5, fontWeight: 500, color: SUB, textDecoration: 'none' }}>Upload &amp; test</Link>
             <Link
               href="/dashboard" className="pc-cta"
-              style={{ fontSize: 13.5, fontWeight: 600, color: '#fff', textDecoration: 'none', background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', padding: '8px 16px', borderRadius: 9, boxShadow: '0 4px 14px rgba(45,93,232,.22)' }}
+              style={{ fontSize: 13.5, fontWeight: 600, color: '#fff', textDecoration: 'none', background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', padding: '8px 16px', borderRadius: 9, boxShadow: '0 4px 14px rgba(45,93,232,.22)' }}
             >
               Open the platform →
             </Link>
@@ -141,30 +141,30 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section style={{ position: 'relative', overflow: 'hidden', borderBottom: `1px solid ${LINE}`, background: 'radial-gradient(1100px 520px at 50% -160px, #eaf0ff 0%, rgba(234,240,255,0) 60%), #ffffff' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '76px 24px 70px', textAlign: 'center' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: '#2d5de8', background: '#eef3ff', border: '1px solid #dbe5fb', padding: '5px 12px', borderRadius: 999, letterSpacing: '0.01em' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: '#3f7d6a', background: '#eef3ff', border: '1px solid #dbe5fb', padding: '5px 12px', borderRadius: 999, letterSpacing: '0.01em' }}>
             <span style={{ width: 6, height: 6, borderRadius: 999, background: '#34d399', boxShadow: '0 0 0 3px rgba(52,211,153,.25)' }} />
             EHR-agnostic revenue intelligence for independent primary care
           </span>
-          <h1 style={{ fontSize: 52, lineHeight: 1.05, fontWeight: 600, letterSpacing: '-0.035em', margin: '22px auto 0', maxWidth: 760, color: '#16213a' }}>
+          <h1 style={{ fontSize: 52, lineHeight: 1.05, fontWeight: 600, letterSpacing: '-0.035em', margin: '22px auto 0', maxWidth: 760, color: '#1f2d27' }}>
             Recover the revenue your{' '}
-            <span style={{ background: 'linear-gradient(120deg, #1a7a45, #16a34a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>billing leaves behind.</span>
+            <span style={{ background: 'linear-gradient(120deg, #2f8a5b, #16a34a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>billing leaves behind.</span>
           </h1>
           <p style={{ fontSize: 17.5, lineHeight: 1.6, color: SUB, margin: '20px auto 0', maxWidth: 600 }}>
             CodeCompanion diffs what you billed against what was paid and what you were contracted —
             then surfaces every underpayment, un-appealed denial, and timely-filing write-off the rest of the industry leaves on the table.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 30, flexWrap: 'wrap' }}>
-            <Link href="/dashboard" className="pc-cta" style={{ fontSize: 14.5, fontWeight: 600, color: '#fff', textDecoration: 'none', background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', padding: '12px 24px', borderRadius: 11, boxShadow: '0 6px 18px rgba(45,93,232,.26)' }}>
+            <Link href="/dashboard" className="pc-cta" style={{ fontSize: 14.5, fontWeight: 600, color: '#fff', textDecoration: 'none', background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', padding: '12px 24px', borderRadius: 11, boxShadow: '0 6px 18px rgba(45,93,232,.26)' }}>
               Open the platform →
             </Link>
-            <Link href="/upload" className="pc-ghost" style={{ fontSize: 14.5, fontWeight: 600, color: '#2d4a7a', textDecoration: 'none', background: '#fff', border: '1px solid #d7e0f5', padding: '12px 22px', borderRadius: 11 }}>
+            <Link href="/upload" className="pc-ghost" style={{ fontSize: 14.5, fontWeight: 600, color: '#2d4a7a', textDecoration: 'none', background: '#fff', border: '1px solid #d6e2da', padding: '12px 22px', borderRadius: 11 }}>
               Upload &amp; test your claims
             </Link>
           </div>
 
           {/* proof strip */}
           <div style={{ display: 'inline-flex', flexWrap: 'wrap', justifyContent: 'center', gap: 0, marginTop: 46, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, boxShadow: '0 4px 20px rgba(15,21,32,.05)', overflow: 'hidden' }}>
-            <Proof value="$287.50" label="recovered on 4 sample claims" accent="#1a7a45" />
+            <Proof value="$287.50" label="recovered on 4 sample claims" accent="#2f8a5b" />
             <Proof value="4 leak types" label="found in one deterministic pass" />
             <Proof value="100%" label="auditable — zero LLM in the math" />
           </div>
@@ -212,7 +212,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
           {principles.map((p, i) => (
             <div key={p.title}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#2d5de8', fontFamily: 'DM Mono, monospace', marginBottom: 9 }}>0{i + 1}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#3f7d6a', fontFamily: 'DM Mono, monospace', marginBottom: 9 }}>0{i + 1}</div>
               <h3 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 8px', letterSpacing: '-0.01em' }}>{p.title}</h3>
               <p style={{ fontSize: 13.5, lineHeight: 1.6, color: SUB, margin: 0 }}>{p.body}</p>
             </div>
@@ -235,7 +235,7 @@ export default function LandingPage() {
       {/* ── CTA band ── */}
       <section style={{ padding: '8px 24px 64px' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '46px 40px', textAlign: 'center', background: 'linear-gradient(135deg, #2b4fd6 0%, #1e4acc 55%, #16308f 100%)', boxShadow: '0 18px 50px rgba(30,74,204,.30)' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '46px 40px', textAlign: 'center', background: 'linear-gradient(135deg, #2b4fd6 0%, #34685a 55%, #16308f 100%)', boxShadow: '0 18px 50px rgba(30,74,204,.30)' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px 240px at 80% -40px, rgba(255,255,255,.18), transparent 60%)' }} />
             <div style={{ position: 'relative' }}>
               <h2 style={{ fontSize: 28, fontWeight: 600, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>See what your billing has been leaving behind.</h2>
@@ -259,7 +259,7 @@ export default function LandingPage() {
       <footer style={{ borderTop: `1px solid ${LINE}`, background: '#fafbfc' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '24px', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 7, background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 24, height: 24, borderRadius: 7, background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <span style={{ fontSize: 13, fontWeight: 600, color: INK }}>CodeCompanion</span>
@@ -284,10 +284,10 @@ function Proof({ value, label, accent }: { value: string; label: string; accent?
 
 function Section({ eyebrow, title, children, tint }: { eyebrow: string; title: string; children: React.ReactNode; tint?: boolean }) {
   return (
-    <section style={{ background: tint ? '#f8f9fb' : '#fff', borderBottom: `1px solid ${LINE}` }}>
+    <section style={{ background: tint ? '#f7f5f0' : '#fff', borderBottom: `1px solid ${LINE}` }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '56px 24px' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 9px' }}>{eyebrow}</p>
-        <h2 style={{ fontSize: 27, fontWeight: 600, letterSpacing: '-0.025em', margin: '0 0 26px', color: '#16213a', maxWidth: 620, lineHeight: 1.2 }}>{title}</h2>
+        <p style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 9px' }}>{eyebrow}</p>
+        <h2 style={{ fontSize: 27, fontWeight: 600, letterSpacing: '-0.025em', margin: '0 0 26px', color: '#1f2d27', maxWidth: 620, lineHeight: 1.2 }}>{title}</h2>
         {children}
       </div>
     </section>

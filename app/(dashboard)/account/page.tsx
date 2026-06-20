@@ -5,10 +5,10 @@ import { createClient } from '@/lib/supabase/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '—'
@@ -21,7 +21,7 @@ export default async function AccountPage() {
     return (
       <div style={{ padding: '34px 40px 48px', maxWidth: 720, margin: '0 auto' }}>
         <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: '0 0 6px', letterSpacing: '-0.025em' }}>Account</h1>
-        <div style={{ marginTop: 16, background: '#fdf4e3', border: '1px solid #f6e0b5', borderRadius: 12, padding: '16px 18px', fontSize: 13.5, color: '#92400e', lineHeight: 1.55 }}>
+        <div style={{ marginTop: 16, background: '#f6efdd', border: '1px solid #f6e0b5', borderRadius: 12, padding: '16px 18px', fontSize: 13.5, color: '#92400e', lineHeight: 1.55 }}>
           This deployment is running in <strong>demo mode</strong> — accounts aren&apos;t enabled. Set the Supabase
           environment variables to turn on login and accounts.
         </div>
@@ -53,17 +53,17 @@ export default async function AccountPage() {
       <p style={{ fontSize: 13.5, color: SUB, margin: '0 0 22px' }}>Your sign-in and practice details.</p>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 13, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: '16px 18px', boxShadow: '0 1px 3px rgba(15,21,32,0.04)', marginBottom: 16 }}>
-        <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', flexShrink: 0 }}>
+        <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#e6efe9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', flexShrink: 0 }}>
           {(user.email ?? '?').charAt(0)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 15, fontWeight: 600, color: INK, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
-          <p style={{ fontSize: 12.5, color: '#1a7a45', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <p style={{ fontSize: 12.5, color: '#2f8a5b', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 7, height: 7, borderRadius: 999, background: '#34d399', display: 'inline-block' }} /> Signed in
           </p>
         </div>
         <form action="/auth/signout" method="post" style={{ margin: 0 }}>
-          <button type="submit" style={{ fontSize: 13, fontWeight: 600, color: '#c9302c', background: '#fff5f5', border: '1px solid #ffe0e0', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
+          <button type="submit" style={{ fontSize: 13, fontWeight: 600, color: '#cf5547', background: '#fae9e6', border: '1px solid #f3d9d3', borderRadius: 9, padding: '9px 16px', cursor: 'pointer' }}>
             Sign out
           </button>
         </form>

@@ -29,13 +29,13 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14.5 1.5L7 9M14.5 1.5L10 14.5 7 9 1.5 6 14.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/enrollments', label: 'Enrollments', badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="1.5" width="11" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 5.5h6M5 8h6M5 10.5h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M9.5 11l1.2 1.2L13 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-  { href: '/coding',     label: 'Coding',         badge: { count: 3, color: '#b45309', bg: '#fef3d0' },
+  { href: '/coding',     label: 'Coding',         badge: { count: 3, color: '#b8862a', bg: '#f6efdd' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 4l-3 4 3 4M11 4l3 4-3 4M9 2l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-  { href: '/gaps',       label: 'Care Gaps',      badge: { count: 8, color: '#4a5366', bg: '#f1f3f7' },
+  { href: '/gaps',       label: 'Care Gaps',      badge: { count: 8, color: '#5a6b62', bg: '#f0ece3' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
-  { href: '/audit',      label: 'Audit Shield',   badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
+  { href: '/audit',      label: 'Audit Shield',   badge: { count: 2, color: '#cf5547', bg: '#f3d9d3' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg> },
-  { href: '/pulse',      label: 'Practice Pulse', badge: { count: 7, color: '#c9302c', bg: '#ffe0e0' },
+  { href: '/pulse',      label: 'Practice Pulse', badge: { count: 7, color: '#cf5547', bg: '#f3d9d3' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h2.5l2-5 2 10 2-6 1.5 3H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/analytics',  label: 'Analytics',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l3.5-4 3 3 3-6L15 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
@@ -45,7 +45,7 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/><circle cx="3" cy="3.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="3.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="3" cy="12.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="12.5" r="1.4" stroke="currentColor" strokeWidth="1.3"/><path d="M6.2 6.8L4.1 4.6M9.8 6.8l2.1-2.2M6.2 9.2L4.1 11.4M9.8 9.2l2.1 2.2" stroke="currentColor" strokeWidth="1.2"/></svg> },
   { href: '/predict',    label: 'Predict',        badge: { count: 'R2', color: '#7c3aed', bg: '#f3ecfe' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13l3-5 3 2.5L14 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M11 3h3v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-  { href: '/schedule',   label: 'Schedule',       badge: { count: 2, color: '#c9302c', bg: '#ffe0e0' },
+  { href: '/schedule',   label: 'Schedule',       badge: { count: 2, color: '#cf5547', bg: '#f3d9d3' },
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M5 1v3M11 1v3M1.5 6.5h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
   { href: '/account',    label: 'Account',        badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2.5 14c0-2.8 2.5-4.6 5.5-4.6s5.5 1.8 5.5 4.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
@@ -56,15 +56,15 @@ const nav = [
 export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled?: boolean; userEmail?: string | null }) {
   const pathname = usePathname()
   return (
-    <aside style={{ width: '220px', flexShrink: 0, background: '#fff', borderRight: '1px solid #e4e8ef', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #f1f3f7' }}>
+    <aside style={{ width: '220px', flexShrink: 0, background: '#fff', borderRight: '1px solid #ece7dd', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #f0ece3' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#1f2d27', letterSpacing: '-0.01em' }}>CodeCompanion</span>
         </div>
-        <p style={{ fontSize: '11px', color: '#9aa3b2', marginLeft: '36px', marginTop: '0' }}>Revenue Intelligence</p>
+        <p style={{ fontSize: '11px', color: '#9aa69f', marginLeft: '36px', marginTop: '0' }}>Revenue Intelligence</p>
       </div>
       <nav style={{ flex: 1, padding: '10px' }}>
         {nav.map(item => {
@@ -89,18 +89,18 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
           )
         })}
       </nav>
-      <div style={{ padding: '14px 16px', borderTop: '1px solid #f1f3f7' }}>
+      <div style={{ padding: '14px 16px', borderTop: '1px solid #f0ece3' }}>
         {authEnabled && userEmail ? (
           <div>
             <Link href="/account" style={{ display: 'flex', alignItems: 'center', gap: '9px', textDecoration: 'none', marginBottom: '8px' }}>
               <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#e6efe9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#3f7d6a', flexShrink: 0, textTransform: 'uppercase' }}>{userEmail.charAt(0)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '12px', fontWeight: '500', color: '#333d4d', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
-                <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>View account</p>
+                <p style={{ fontSize: '12px', fontWeight: '500', color: '#3a4640', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
+                <p style={{ fontSize: '11px', color: '#9aa69f', margin: 0 }}>View account</p>
               </div>
             </Link>
             <form action="/auth/signout" method="post" style={{ margin: 0 }}>
-              <button type="submit" style={{ width: '100%', fontSize: '12px', fontWeight: '600', color: '#4a5366', background: '#f3f5f9', border: '1px solid #e4e8ef', borderRadius: '8px', padding: '7px 0', cursor: 'pointer' }}>Sign out</button>
+              <button type="submit" style={{ width: '100%', fontSize: '12px', fontWeight: '600', color: '#5a6b62', background: '#f0ece3', border: '1px solid #ece7dd', borderRadius: '8px', padding: '7px 0', cursor: 'pointer' }}>Sign out</button>
             </form>
           </div>
         ) : (
@@ -109,8 +109,8 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
               <span style={{ width: '7px', height: '7px', borderRadius: '999px', background: '#34d399', display: 'block' }} />
             </div>
             <div>
-              <p style={{ fontSize: '12.5px', fontWeight: '500', color: '#333d4d', margin: 0 }}>Demo mode</p>
-              <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>synthetic data</p>
+              <p style={{ fontSize: '12.5px', fontWeight: '500', color: '#3a4640', margin: 0 }}>Demo mode</p>
+              <p style={{ fontSize: '11px', color: '#9aa69f', margin: 0 }}>synthetic data</p>
             </div>
           </div>
         )}

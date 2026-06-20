@@ -26,11 +26,11 @@ const STATUS_BADGE: Record<ClaimStatus, { variant: 'green' | 'red' | 'amber' | '
 }
 
 const th: React.CSSProperties = {
-  textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa3b2',
-  textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 12px', borderBottom: '1px solid #e4e8ef',
+  textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa69f',
+  textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 12px', borderBottom: '1px solid #ece7dd',
 }
 const td: React.CSSProperties = {
-  fontSize: 13, color: '#333d4d', padding: '11px 12px', borderBottom: '1px solid #f1f3f7', verticalAlign: 'top',
+  fontSize: 13, color: '#3a4640', padding: '11px 12px', borderBottom: '1px solid #f0ece3', verticalAlign: 'top',
 }
 
 export default async function ClaimsPage() {
@@ -45,8 +45,8 @@ export default async function ClaimsPage() {
   if (!report) {
     return (
       <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1e2533', margin: '0 0 4px' }}>Claims (RCM)</h1>
-        <div style={{ marginTop: 16, background: '#fff5f5', border: '1px solid #ffe0e0', borderRadius: 12, padding: '14px 18px', color: '#c9302c', fontSize: 13 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1f2d27', margin: '0 0 4px' }}>Claims (RCM)</h1>
+        <div style={{ marginTop: 16, background: '#fae9e6', border: '1px solid #f3d9d3', borderRadius: 12, padding: '14px 18px', color: '#cf5547', fontSize: 13 }}>
           Could not run the RCM cycle: {error}
         </div>
       </div>
@@ -58,7 +58,7 @@ export default async function ClaimsPage() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ marginBottom: 4 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Claims (RCM)</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Claims (RCM)</h1>
         <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
           In-house billing: generate the 837, submit, post the 835, and work denials — instead of paying a billing company a percentage of revenue.
         </p>
@@ -71,10 +71,10 @@ export default async function ClaimsPage() {
         <StatCard label="Recovery worklist" value={formatCents(totals.recoverableCents)} delta={`${report.findings.length} findings`} accent="warning" />
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
-        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Claim lifecycle</span>
-          <span style={{ fontSize: 12, color: '#9aa3b2' }}>mock clearinghouse · synthetic data</span>
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>Claim lifecycle</span>
+          <span style={{ fontSize: 12, color: '#9aa69f' }}>mock clearinghouse · synthetic data</span>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -94,7 +94,7 @@ export default async function ClaimsPage() {
                 <td style={{ ...td, color: '#6b7280' }}>{c.payerClaimControlNumber ?? '—'}</td>
                 <td style={td}><Badge label={c.status.replace('_', ' ')} variant={STATUS_BADGE[c.status].variant} /></td>
                 <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCents(c.billedCents)}</td>
-                <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: c.paidCents > 0 ? '#1a7a45' : '#9aa3b2' }}>{formatCents(c.paidCents)}</td>
+                <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: c.paidCents > 0 ? '#2f8a5b' : '#9aa69f' }}>{formatCents(c.paidCents)}</td>
                 <td style={{ ...td, color: '#6b7280' }}>{c.status === 'rejected' ? c.rejectReason : c.status === 'denied' ? 'Appealable — see Found Money' : ''}</td>
               </tr>
             ))}
@@ -102,12 +102,12 @@ export default async function ClaimsPage() {
         </table>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginTop: 22 }}>
-        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Action worklist</span>
-          <span style={{ fontSize: 12, color: '#9aa3b2' }}>{worklist.length} items · ranked by recoverable</span>
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginTop: 22 }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>Action worklist</span>
+          <span style={{ fontSize: 12, color: '#9aa69f' }}>{worklist.length} items · ranked by recoverable</span>
         </div>
-        <p style={{ fontSize: 12, color: '#6b7280', margin: 0, padding: '10px 16px', borderBottom: '1px solid #f1f3f7', lineHeight: 1.5, background: '#fbfcfe' }}>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: 0, padding: '10px 16px', borderBottom: '1px solid #f0ece3', lineHeight: 1.5, background: '#fbfcfe' }}>
           A <strong>rejection</strong> (pre-adjudication) has no claim on file — fix it and resend as a new original. A <strong>denial</strong> (on the 835)
           does — appeal it, or correct &amp; replace it as a frequency-7 claim that references the payer ICN. The worklist routes each automatically.
         </p>
@@ -130,12 +130,12 @@ export default async function ClaimsPage() {
                 <tr key={`${w.claimControlNumber}:${w.cptHcpcs ?? ''}:${i}`}>
                   <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{w.claimControlNumber}</td>
                   <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{w.cptHcpcs ?? '—'}</td>
-                  <td style={{ ...td, textTransform: 'capitalize' }}>{w.kind}{w.carcCode ? <span style={{ color: '#9aa3b2' }}> · CARC {w.carcCode}</span> : null}</td>
+                  <td style={{ ...td, textTransform: 'capitalize' }}>{w.kind}{w.carcCode ? <span style={{ color: '#9aa69f' }}> · CARC {w.carcCode}</span> : null}</td>
                   <td style={td}><Badge label={WORK_ACTION_LABEL[w.action]} variant={ACTION_BADGE[w.action]} /></td>
-                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12, color: w.needsIcn ? '#333d4d' : '#c0c6d0' }}>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12, color: w.needsIcn ? '#3a4640' : '#c0c6d0' }}>
                     {w.needsIcn ? w.payerClaimControlNumber ?? 'needed' : 'n/a'}
                   </td>
-                  <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: w.recoverableCents > 0 ? 600 : 400, color: w.recoverableCents > 0 ? '#b45309' : '#9aa3b2' }}>
+                  <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: w.recoverableCents > 0 ? 600 : 400, color: w.recoverableCents > 0 ? '#b8862a' : '#9aa69f' }}>
                     {w.recoverableCents > 0 ? formatCents(w.recoverableCents) : '—'}
                   </td>
                 </tr>
@@ -145,7 +145,7 @@ export default async function ClaimsPage() {
         )}
       </div>
 
-      <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 14, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12, color: '#9aa69f', marginTop: 14, lineHeight: 1.5 }}>
         Running against a <strong>mock clearinghouse</strong> on synthetic data (the <code>ATHENA_USE_MOCK</code> posture). A real clearinghouse adapter (Availity / Change / Claim.MD / Stedi / Office Ally) swaps in behind the same interface — gated on payer EDI enrollment and a signed BAA (<code>ALLOW_REAL_PHI=true</code>).
       </p>
     </div>

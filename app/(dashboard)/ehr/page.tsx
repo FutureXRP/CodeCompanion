@@ -11,11 +11,11 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const th: React.CSSProperties = {
-  textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa3b2',
-  textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 12px', borderBottom: '1px solid #e4e8ef',
+  textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa69f',
+  textTransform: 'uppercase', letterSpacing: '0.04em', padding: '8px 12px', borderBottom: '1px solid #ece7dd',
 }
 const td: React.CSSProperties = {
-  fontSize: 13, color: '#333d4d', padding: '10px 12px', borderBottom: '1px solid #f1f3f7', verticalAlign: 'top',
+  fontSize: 13, color: '#3a4640', padding: '10px 12px', borderBottom: '1px solid #f0ece3', verticalAlign: 'top',
 }
 const num: React.CSSProperties = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
 
@@ -48,7 +48,7 @@ export default function EhrPage() {
   return (
     <div style={{ padding: '28px 32px', maxWidth: 1120, margin: '0 auto' }}>
       <div style={{ marginBottom: 4 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1e2533', margin: '0 0 4px', letterSpacing: '-0.02em' }}>EHR Integration</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>EHR Integration</h1>
         <p style={{ fontSize: 13, color: '#6b7280', margin: 0, maxWidth: 760, lineHeight: 1.5 }}>
           A synthetic clinic-day pulled from a mock EHR as <strong>FHIR R4</strong> and normalized through the <code>fhir</code> adapter —
           the same path a real EHR (Epic, athenahealth, the 2027 CMS mandate) would take. Proof the whole pipeline runs on
@@ -69,18 +69,18 @@ export default function EhrPage() {
         <strong> found-money</strong> ({findings.length}) → <strong>corpus</strong> (suppressed — one day is below the de-id floor).
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginBottom: 18 }}>
-        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Submit to clearinghouse</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: sandbox ? '#1a7a45' : '#c9302c', background: sandbox ? '#e8f6ee' : '#fff5f5', padding: '3px 10px', borderRadius: 999 }}>{sandbox ? 'Stedi Sandbox' : 'Production'}</span>
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginBottom: 18 }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>Submit to clearinghouse</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: sandbox ? '#2f8a5b' : '#cf5547', background: sandbox ? '#e6f4ec' : '#fae9e6', padding: '3px 10px', borderRadius: 999 }}>{sandbox ? 'Stedi Sandbox' : 'Production'}</span>
         </div>
         <div style={{ padding: '16px' }}>
           <DaySubmitPanel claims={claimRows} configured={configured} sandbox={sandbox} />
         </div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
-        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f1f3f7', fontSize: 13, fontWeight: 600, color: '#1e2533' }}>Today&apos;s schedule</div>
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden' }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>Today&apos;s schedule</div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
@@ -103,8 +103,8 @@ export default function EhrPage() {
               return (
                 <tr key={c.controlNumber}>
                   <td style={td}>
-                    <div style={{ fontWeight: 500, color: '#1e2533' }}>{c.subscriber ? `${c.subscriber.firstName} ${c.subscriber.lastName}` : c.controlNumber}</div>
-                    <div style={{ fontSize: 11, color: '#9aa3b2', fontFamily: 'DM Mono, monospace' }}>{c.subscriber?.memberId}</div>
+                    <div style={{ fontWeight: 500, color: '#1f2d27' }}>{c.subscriber ? `${c.subscriber.firstName} ${c.subscriber.lastName}` : c.controlNumber}</div>
+                    <div style={{ fontSize: 11, color: '#9aa69f', fontFamily: 'DM Mono, monospace' }}>{c.subscriber?.memberId}</div>
                   </td>
                   <td style={{ ...td, color: '#6b7280' }}>{c.payer.name}</td>
                   <td style={{ ...td, color: '#6b7280' }}>{rp ? `${rp.firstName?.[0] ?? ''}. ${rp.lastName ?? ''}` : '—'}</td>
@@ -112,7 +112,7 @@ export default function EhrPage() {
                   <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 11.5, color: '#6b7280' }}>{c.diagnoses.join(', ')}</td>
                   <td style={{ ...td, ...num }}>{formatCents(c.totalBilledCents)}</td>
                   <td style={td}><Badge label={status.label} variant={status.variant} /></td>
-                  <td style={{ ...td, ...num, fontWeight: owes > 0 ? 600 : 400, color: owes > 0 ? '#b45309' : '#9aa3b2' }}>{owes > 0 ? formatCents(owes) : '—'}</td>
+                  <td style={{ ...td, ...num, fontWeight: owes > 0 ? 600 : 400, color: owes > 0 ? '#b8862a' : '#9aa69f' }}>{owes > 0 ? formatCents(owes) : '—'}</td>
                 </tr>
               )
             })}
@@ -120,7 +120,7 @@ export default function EhrPage() {
         </table>
       </div>
 
-      <p style={{ fontSize: 12, color: '#9aa3b2', marginTop: 16, lineHeight: 1.55 }}>
+      <p style={{ fontSize: 12, color: '#9aa69f', marginTop: 16, lineHeight: 1.55 }}>
         Synthetic FHIR data — no PHI. The mock EHR (<code>lib/mock-ehr</code>) renders this day as a FHIR bundle and a mock payer
         adjudicates it; swap either for a real FHIR endpoint + clearinghouse behind the same adapters (gated by
         <code> ALLOW_REAL_PHI</code>). To run the full pipeline in the terminal: <code>npm run ehr-day</code>.

@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -18,7 +18,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -98,13 +98,13 @@ const priorityBadge = { high: 'red', medium: 'amber', low: 'gray' } as const
 
 // Icon accent per gap type — small tinted tile, exactly like dashboard
 const typeAccent: Record<string, string> = {
-  'Annual Wellness Visit': '#2d5de8',
+  'Annual Wellness Visit': '#3f7d6a',
   'CCM Enrollment':        GREEN,
   'HCC Recapture':         AMBER,
   'HbA1c overdue':         AMBER,
   'Depression screening':  '#7c3aed',
-  'Colorectal screening':  '#5a6473',
-  'Immunization gap':      '#5a6473',
+  'Colorectal screening':  '#65726b',
+  'Immunization gap':      '#65726b',
 }
 
 const totalRevenue = gaps.filter(g => g.revenue > 0).reduce((s, g) => s + g.revenue, 0)
@@ -115,9 +115,9 @@ export default function GapsPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
         .pc-row { transition: background .12s ease; }
-        .pc-row:hover { background: #fafbfd; }
+        .pc-row:hover { background: #faf7f1; }
       `}</style>
 
       {/* Header */}
@@ -133,7 +133,7 @@ export default function GapsPage() {
       {/* Summary KPIs — white cards, color only on numbers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 34 }}>
         {[
-          { label: 'Open gaps',          value: `${gaps.length}`,               sub: 'Across 8 patients',              numColor: INK,   icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: '#5a6473' },
+          { label: 'Open gaps',          value: `${gaps.length}`,               sub: 'Across 8 patients',              numColor: INK,   icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: '#65726b' },
           { label: 'High priority',      value: `${highCount}`,                 sub: 'Needs attention now',            numColor: AMBER, icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 12H2L8 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: AMBER },
           { label: 'Recoverable revenue', value: `$${totalRevenue.toLocaleString()}`, sub: 'Direct billing + recurring', numColor: GREEN, icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>, accent: GREEN },
         ].map((s, i) => (
@@ -156,7 +156,7 @@ export default function GapsPage() {
       <SectionLabel meta={`${gaps.length} gaps`}>All care gaps</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {gaps.map((g, i) => {
-          const accent = typeAccent[g.type] || '#5a6473'
+          const accent = typeAccent[g.type] || '#65726b'
           return (
             <div key={i} className="pc-card" style={card}>
               <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -185,16 +185,16 @@ export default function GapsPage() {
                   <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 8px', lineHeight: 1.5 }}>{g.detail}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     {g.conditions.map((c, j) => (
-                      <span key={j} style={{ fontSize: 11, background: '#f3f5f9', color: SUB, padding: '2px 8px', borderRadius: 99 }}>{c}</span>
+                      <span key={j} style={{ fontSize: 11, background: '#f0ece3', color: SUB, padding: '2px 8px', borderRadius: 99 }}>{c}</span>
                     ))}
                   </div>
                 </div>
 
                 {/* Action */}
                 <button style={{
-                  padding: '7px 14px', background: '#f5f8ff', color: '#2d5de8',
+                  padding: '7px 14px', background: '#eef3f0', color: '#3f7d6a',
                   fontSize: 12.5, fontWeight: 500, borderRadius: 8,
-                  border: '1px solid #dce6ff', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+                  border: '1px solid #e6efe9', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
                 }}>
                   {g.action}
                 </button>

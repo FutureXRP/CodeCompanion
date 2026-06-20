@@ -113,7 +113,7 @@ function AccountRow({ account, balance, isOpen, isLast, onToggle, onPaid }: {
           <p style={{ fontSize: 13.5, fontWeight: 600, color: INK, margin: '0 0 2px' }}>{account.patientName ?? account.accountKey}</p>
           <p style={{ fontSize: 12, color: SUB, margin: 0 }}>{account.payerName ?? '—'}</p>
         </div>
-        <span style={{ fontSize: 10.5, fontWeight: 700, color: paid ? GREEN : AMBER, background: paid ? '#e8f6ee' : '#fdf4e3', padding: '2px 9px', borderRadius: 999 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: paid ? GREEN : AMBER, background: paid ? '#e6f4ec' : '#f6efdd', padding: '2px 9px', borderRadius: 999 }}>
           {paid ? 'Paid' : 'Patient owes'}
         </span>
         <span style={{ fontSize: 15, fontWeight: 700, color: paid ? GREEN : INK, minWidth: 84, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCents(balance)}</span>
@@ -121,7 +121,7 @@ function AccountRow({ account, balance, isOpen, isLast, onToggle, onPaid }: {
       </div>
 
       {isOpen && (
-        <div style={{ padding: '0 18px 16px', background: '#fafbfd' }}>
+        <div style={{ padding: '0 18px 16px', background: '#faf7f1' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14 }}>
             <thead>
               <tr>
@@ -162,7 +162,7 @@ function AccountRow({ account, balance, isOpen, isLast, onToggle, onPaid }: {
             </div>
           )}
           {msg && <p style={{ fontSize: 12, color: GREEN, margin: '10px 0 0' }}>✓ {msg}</p>}
-          {error && <p style={{ fontSize: 12, color: '#c9302c', margin: '10px 0 0' }}>{error}</p>}
+          {error && <p style={{ fontSize: 12, color: '#cf5547', margin: '10px 0 0' }}>{error}</p>}
         </div>
       )}
     </div>

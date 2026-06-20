@@ -11,9 +11,9 @@ const AMBER = '#b8862a'
 const RED = '#cf5547'
 
 const STATUS: Record<string, { fg: string; bg: string; label: string }> = {
-  active: { fg: GREEN, bg: '#e8f6ee', label: 'Active' },
-  inactive: { fg: RED, bg: '#fff5f5', label: 'Inactive' },
-  unknown: { fg: AMBER, bg: '#fdf4e3', label: 'Unknown' },
+  active: { fg: GREEN, bg: '#e6f4ec', label: 'Active' },
+  inactive: { fg: RED, bg: '#fae9e6', label: 'Inactive' },
+  unknown: { fg: AMBER, bg: '#f6efdd', label: 'Unknown' },
 }
 
 /**
@@ -25,7 +25,7 @@ export async function ScheduleSweep() {
   const sweep = await buildScheduleSweep(sampleSchedule(), new MockEligibilityService())
 
   const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, fontWeight: 600, color: FAINT, padding: '8px 14px', borderBottom: `1px solid ${LINE}`, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }
-  const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '9px 14px', borderBottom: `1px solid #f3f5f9`, verticalAlign: 'middle' }
+  const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '9px 14px', borderBottom: `1px solid #f0ece3`, verticalAlign: 'middle' }
 
   return (
     <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, overflow: 'hidden' }}>
@@ -58,7 +58,7 @@ export async function ScheduleSweep() {
                   <td style={{ ...td, color: SUB }}>
                     {item.flags.length === 0 ? <span style={{ color: GREEN }}>✓ clear</span> : item.flags.map((f, j) => {
                       const danger = /inactive|unverified/i.test(f)
-                      return <span key={j} style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 600, color: danger ? RED : AMBER, background: danger ? '#fff5f5' : '#fdf4e3', padding: '1px 7px', borderRadius: 999, marginRight: 5, marginBottom: 3 }}>{f}</span>
+                      return <span key={j} style={{ display: 'inline-block', fontSize: 10.5, fontWeight: 600, color: danger ? RED : AMBER, background: danger ? '#fae9e6' : '#f6efdd', padding: '1px 7px', borderRadius: 999, marginRight: 5, marginBottom: 3 }}>{f}</span>
                     })}
                   </td>
                 </tr>

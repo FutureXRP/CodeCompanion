@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED   = '#c9302c'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED   = '#cf5547'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -21,7 +21,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -137,7 +137,7 @@ const severityBadge = { critical: 'red', high: 'red', medium: 'amber', low: 'blu
 const statusLabel: Record<string, { label: string; color: string; bg: string }> = {
   OPEN:   { label: 'Open',   color: RED,   bg: `${RED}12` },
   REVIEW: { label: 'Review', color: AMBER, bg: `${AMBER}12` },
-  HOLD:   { label: 'Hold',   color: '#2d5de8', bg: '#dce6ff' },
+  HOLD:   { label: 'Hold',   color: '#3f7d6a', bg: '#e6efe9' },
 }
 
 const blockLabel: Record<string, string> = {
@@ -173,7 +173,7 @@ function IssueCard({ children }: { children: React.ReactNode }) {
 function ActionButtons() {
   return (
     <div style={{ display: 'flex', gap: 7, marginTop: 12 }}>
-      <button style={{ padding: '6px 14px', background: '#2d5de8', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 7, border: 'none', cursor: 'pointer' }}>Mark in progress</button>
+      <button style={{ padding: '6px 14px', background: '#3f7d6a', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 7, border: 'none', cursor: 'pointer' }}>Mark in progress</button>
       <button style={{ padding: '6px 14px', background: `${GREEN}12`, color: GREEN, fontSize: 12, fontWeight: 500, borderRadius: 7, border: `1px solid ${GREEN}28`, cursor: 'pointer' }}>Resolved</button>
       <button style={{ padding: '6px 14px', background: '#fff', color: FAINT, fontSize: 12, borderRadius: 7, border: `1px solid ${LINE}`, cursor: 'pointer' }}>Dismiss</button>
     </div>
@@ -209,7 +209,7 @@ export default function PulsePage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
       `}</style>
 
       {/* Header */}
@@ -217,7 +217,7 @@ export default function PulsePage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>Practice Pulse</h1>
-            <span style={{ fontSize: 12, color: FAINT, background: '#f3f5f9', padding: '2px 10px', borderRadius: 99 }}>Last scan: 2:04am today</span>
+            <span style={{ fontSize: 12, color: FAINT, background: '#f0ece3', padding: '2px 10px', borderRadius: 99 }}>Last scan: 2:04am today</span>
           </div>
           <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>AI office manager — nightly scan across billing, unpostables, labs, balances, recalls, messages, and schedule.</p>
         </div>
@@ -228,7 +228,7 @@ export default function PulsePage() {
         {[
           {
             label: 'Total issues', value: `${totalIssues}`, sub: 'Across all categories',
-            numColor: INK, accent: '#5a6473',
+            numColor: INK, accent: '#65726b',
             icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h2.5l2-5 2 10 2-6 1.5 3H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
           },
           {
@@ -258,7 +258,7 @@ export default function PulsePage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: '#f3f5f9', padding: 4, borderRadius: 10, overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: '#f0ece3', padding: 4, borderRadius: 10, overflowX: 'auto' }}>
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ flex: 1, padding: '7px 6px', fontSize: 11.5, fontWeight: activeTab === tab.key ? 600 : 400, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? INK : SUB, border: 'none', borderRadius: 7, cursor: 'pointer', boxShadow: activeTab === tab.key ? '0 1px 3px rgba(15,21,32,0.08)' : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
             {tab.label}
@@ -287,12 +287,12 @@ export default function PulsePage() {
                   {issue.daysInQueue > 0 && <span style={{ fontSize: 12, color: FAINT }}>Age: <strong style={{ color: issue.daysInQueue > 45 ? AMBER : INK }}>{issue.daysInQueue} days</strong></span>}
                   {issue.denialCode && <span style={{ fontSize: 12, color: FAINT }}>Code: <strong style={{ fontFamily: 'DM Mono, monospace', color: AMBER }}>{issue.denialCode}</strong></span>}
                 </div>
-                <div style={{ padding: '10px 12px', background: '#f8f9fb', borderRadius: 8, marginBottom: 8 }}>
+                <div style={{ padding: '10px 12px', background: '#f7f5f0', borderRadius: 8, marginBottom: 8 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>What happened</p>
                   <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{issue.plainEnglish}</p>
                 </div>
-                <div style={{ padding: '10px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
+                <div style={{ padding: '10px 12px', background: '#eef3f0', borderRadius: 8, border: '1px solid #e6efe9' }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
                   <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{issue.action}</p>
                 </div>
                 <ActionButtons />
@@ -332,12 +332,12 @@ export default function PulsePage() {
                     <span style={{ fontSize: 12, color: FAINT }}>Block: <strong style={{ color: AMBER }}>{blockLabel[u.blockReason]}</strong></span>
                     <span style={{ fontSize: 12, color: FAINT }}>Filing deadline: <strong style={{ color: INK }}>{u.filingDeadline}</strong></span>
                   </div>
-                  <div style={{ padding: '10px 12px', background: '#f8f9fb', borderRadius: 8, marginBottom: 8 }}>
+                  <div style={{ padding: '10px 12px', background: '#f7f5f0', borderRadius: 8, marginBottom: 8 }}>
                     <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Why it's blocked</p>
                     <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{u.plainEnglish}</p>
                   </div>
-                  <div style={{ padding: '10px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
+                  <div style={{ padding: '10px 12px', background: '#eef3f0', borderRadius: 8, border: '1px solid #e6efe9' }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Exact fix</p>
                     <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.6 }}>{u.action}</p>
                   </div>
                   <ActionButtons />
@@ -345,9 +345,9 @@ export default function PulsePage() {
               </IssueCard>
             )
           })}
-          <div style={{ marginTop: 14, padding: '12px 16px', background: '#f5f8ff', borderRadius: 10, border: '1px solid #dce6ff' }}>
+          <div style={{ marginTop: 14, padding: '12px 16px', background: '#eef3f0', borderRadius: 10, border: '1px solid #e6efe9' }}>
             <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.5 }}>
-              <strong style={{ color: '#2d5de8' }}>How unpostables are detected:</strong> Every night at 2am, CodeCompanion pulls all encounters with status OPEN, REVIEW, or HOLD from Athena that are more than 24 hours old. Any encounter that should have been billed but hasn't appears here with a specific fix.
+              <strong style={{ color: '#3f7d6a' }}>How unpostables are detected:</strong> Every night at 2am, CodeCompanion pulls all encounters with status OPEN, REVIEW, or HOLD from Athena that are more than 24 hours old. Any encounter that should have been billed but hasn't appears here with a specific fix.
             </p>
           </div>
         </div>
@@ -361,10 +361,10 @@ export default function PulsePage() {
             <IssueCard key={lab.id}>
               <div style={{ padding: '14px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <div style={{ padding: '10px 14px', background: lab.flag === 'HIGH' ? `${AMBER}12` : '#f5f8ff', borderRadius: 10, textAlign: 'center', flexShrink: 0, minWidth: 90, border: `1px solid ${lab.flag === 'HIGH' ? `${AMBER}28` : '#dce6ff'}` }}>
+                  <div style={{ padding: '10px 14px', background: lab.flag === 'HIGH' ? `${AMBER}12` : '#eef3f0', borderRadius: 10, textAlign: 'center', flexShrink: 0, minWidth: 90, border: `1px solid ${lab.flag === 'HIGH' ? `${AMBER}28` : '#e6efe9'}` }}>
                     <p style={{ fontSize: 11, fontWeight: 600, color: FAINT, margin: '0 0 3px', textTransform: 'uppercase' }}>{lab.test}</p>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: lab.flag === 'HIGH' ? AMBER : '#2d5de8', margin: '0 0 2px', fontVariantNumeric: 'tabular-nums' }}>{lab.result}</p>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: lab.flag === 'HIGH' ? AMBER : '#2d5de8', background: lab.flag === 'HIGH' ? `${AMBER}12` : '#dce6ff', padding: '1px 6px', borderRadius: 99 }}>{lab.flag}</span>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: lab.flag === 'HIGH' ? AMBER : '#3f7d6a', margin: '0 0 2px', fontVariantNumeric: 'tabular-nums' }}>{lab.result}</p>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: lab.flag === 'HIGH' ? AMBER : '#3f7d6a', background: lab.flag === 'HIGH' ? `${AMBER}12` : '#e6efe9', padding: '1px 6px', borderRadius: 99 }}>{lab.flag}</span>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -373,7 +373,7 @@ export default function PulsePage() {
                       <span style={{ marginLeft: 'auto', fontSize: 12, color: FAINT }}>Resulted {lab.resultedAt}</span>
                     </div>
                     <p style={{ fontSize: 12, color: FAINT, margin: '0 0 8px' }}>Normal range: <strong style={{ color: INK }}>{lab.normalRange}</strong></p>
-                    <div style={{ padding: '8px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
+                    <div style={{ padding: '8px 12px', background: '#eef3f0', borderRadius: 8, border: '1px solid #e6efe9' }}>
                       <p style={{ fontSize: 12.5, color: SUB, margin: 0, lineHeight: 1.5 }}>{lab.action}</p>
                     </div>
                     <ActionButtons />
@@ -392,7 +392,7 @@ export default function PulsePage() {
           <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
             <table style={{ width: '100%', fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${LINE}`, background: '#fafbfd' }}>
+                <tr style={{ borderBottom: `1px solid ${LINE}`, background: '#faf7f1' }}>
                   {['Patient', 'Appt time', 'Balance', 'Days', 'Insurance', 'Action'].map((h, i) => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: i >= 2 && i <= 3 ? 'right' : 'left', fontSize: 11, fontWeight: 600, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                   ))}
@@ -400,18 +400,18 @@ export default function PulsePage() {
               </thead>
               <tbody>
                 {patientBalances.sort((a, b) => b.balance - a.balance).map((b, i) => (
-                  <tr key={b.id} style={{ borderBottom: i < patientBalances.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+                  <tr key={b.id} style={{ borderBottom: i < patientBalances.length - 1 ? `1px solid #f7f5f0` : 'none' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 600, color: INK }}>{b.patient}</td>
                     <td style={{ padding: '12px 16px', color: SUB }}>{b.time}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: b.balance > 100 ? AMBER : INK, fontVariantNumeric: 'tabular-nums' }}>${b.balance.toFixed(2)}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', color: b.daysOutstanding > 60 ? AMBER : SUB, fontVariantNumeric: 'tabular-nums' }}>{b.daysOutstanding}d</td>
                     <td style={{ padding: '12px 16px', color: SUB }}>{b.insurance}</td>
-                    <td style={{ padding: '12px 16px' }}><button style={{ padding: '4px 12px', background: '#f5f8ff', color: '#2d5de8', fontSize: 12, fontWeight: 500, borderRadius: 6, border: '1px solid #dce6ff', cursor: 'pointer' }}>Collect at check-in</button></td>
+                    <td style={{ padding: '12px 16px' }}><button style={{ padding: '4px 12px', background: '#eef3f0', color: '#3f7d6a', fontSize: 12, fontWeight: 500, borderRadius: 6, border: '1px solid #e6efe9', cursor: 'pointer' }}>Collect at check-in</button></td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ borderTop: `1px solid ${LINE}`, background: '#fafbfd' }}>
+                <tr style={{ borderTop: `1px solid ${LINE}`, background: '#faf7f1' }}>
                   <td colSpan={2} style={{ padding: '10px 16px', fontWeight: 600, color: INK }}>Total</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>${patientBalances.reduce((s, b) => s + b.balance, 0).toFixed(2)}</td>
                   <td colSpan={3} />
@@ -440,7 +440,7 @@ export default function PulsePage() {
                     <Badge label={r.severity} variant={severityBadge[r.severity]} />
                   </div>
                   <p style={{ fontSize: 13, fontWeight: 500, color: INK, margin: '0 0 8px' }}>{r.dueFor}</p>
-                  <div style={{ padding: '8px 12px', background: '#f5f8ff', borderRadius: 8, border: '1px solid #dce6ff' }}>
+                  <div style={{ padding: '8px 12px', background: '#eef3f0', borderRadius: 8, border: '1px solid #e6efe9' }}>
                     <p style={{ fontSize: 12.5, color: SUB, margin: 0 }}>{r.action}</p>
                   </div>
                   <ActionButtons />
@@ -459,7 +459,7 @@ export default function PulsePage() {
             <IssueCard key={msg.id}>
               <div style={{ padding: '14px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#2d5de8', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e6efe9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#3f7d6a', flexShrink: 0 }}>
                     {msg.patient.split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -470,7 +470,7 @@ export default function PulsePage() {
                     </div>
                     <p style={{ fontSize: 13, fontWeight: 500, color: INK, margin: '0 0 4px' }}>{msg.subject}</p>
                     <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 10px', fontStyle: 'italic' }}>"{msg.preview}"</p>
-                    <div style={{ padding: '8px 12px', background: msg.severity === 'high' ? `${AMBER}09` : '#f5f8ff', borderRadius: 8, border: `1px solid ${msg.severity === 'high' ? `${AMBER}28` : '#dce6ff'}` }}>
+                    <div style={{ padding: '8px 12px', background: msg.severity === 'high' ? `${AMBER}09` : '#eef3f0', borderRadius: 8, border: `1px solid ${msg.severity === 'high' ? `${AMBER}28` : '#e6efe9'}` }}>
                       <p style={{ fontSize: 12.5, color: msg.severity === 'high' ? AMBER : SUB, margin: 0 }}>{msg.action}</p>
                     </div>
                     <ActionButtons />
@@ -502,7 +502,7 @@ export default function PulsePage() {
                   <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>{appt.contacted ? 'Patient confirmed via portal' : 'No response to automated reminder — manual contact recommended'}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 7, flexShrink: 0 }}>
-                  <button style={{ padding: '7px 14px', background: '#2d5de8', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 7, border: 'none', cursor: 'pointer' }}>Call patient</button>
+                  <button style={{ padding: '7px 14px', background: '#3f7d6a', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 7, border: 'none', cursor: 'pointer' }}>Call patient</button>
                   <button style={{ padding: '7px 14px', background: `${GREEN}12`, color: GREEN, fontSize: 12, fontWeight: 500, borderRadius: 7, border: `1px solid ${GREEN}28`, cursor: 'pointer' }}>Mark confirmed</button>
                 </div>
               </div>
@@ -512,7 +512,7 @@ export default function PulsePage() {
       )}
 
       {/* Footer */}
-      <div style={{ marginTop: 24, padding: '14px 18px', background: '#f8f9fb', borderRadius: 12, border: `1px solid ${LINE}` }}>
+      <div style={{ marginTop: 24, padding: '14px 18px', background: '#f7f5f0', borderRadius: 12, border: `1px solid ${LINE}` }}>
         <p style={{ fontSize: 12, color: FAINT, margin: '0 0 3px', fontWeight: 600 }}>How Practice Pulse works</p>
         <p style={{ fontSize: 12, color: FAINT, margin: 0, lineHeight: 1.6 }}>
           Nightly at 2am, CodeCompanion scans your Athena account across billing, unpostable encounters, lab results, patient balances, recall queues, portal messages, and appointment confirmations. All issues prioritized by dollar impact. Connected to live Athena data, this reflects your actual practice in real time.

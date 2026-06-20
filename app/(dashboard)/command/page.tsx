@@ -74,9 +74,9 @@ export default function CommandCenterPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1180, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
         .pc-row { transition: background .12s ease; }
-        .pc-row:hover { background: #fafbfd; }
+        .pc-row:hover { background: #faf7f1; }
       `}</style>
 
       {/* Header */}
@@ -101,10 +101,10 @@ export default function CommandCenterPage() {
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 30 }}>
         <Kpi label="Billed today" value={formatCents(k.billedCents)} sub={`${cc.counts.claims} claims`} />
-        <Kpi label="Collected" value={formatCents(k.collectedCents)} accent="#1a7a45" sub="insurance posted" />
+        <Kpi label="Collected" value={formatCents(k.collectedCents)} accent="#2f8a5b" sub="insurance posted" />
         <Kpi label="Insurance A/R" value={formatCents(k.insuranceArCents)} sub="awaiting payer" />
-        <Kpi label="Patient A/R" value={formatCents(k.patientArCents)} accent="#b45309" sub="to collect" />
-        <Kpi label="Recoverable" value={formatCents(k.recoverableCents)} accent="#b45309" sub={`clean claims ${Math.round(k.cleanClaimRate * 100)}%`} />
+        <Kpi label="Patient A/R" value={formatCents(k.patientArCents)} accent="#b8862a" sub="to collect" />
+        <Kpi label="Recoverable" value={formatCents(k.recoverableCents)} accent="#b8862a" sub={`clean claims ${Math.round(k.cleanClaimRate * 100)}%`} />
       </div>
 
       {/* The revenue cycle */}
@@ -138,7 +138,7 @@ export default function CommandCenterPage() {
                         {w.payerName}{w.cptHcpcs ? ` · ${w.cptHcpcs}` : ''}{w.carcCode ? ` · CARC ${w.carcCode}` : ''} — {w.reason}
                       </p>
                     </div>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: w.recoverableCents > 0 ? '#1a7a45' : FAINT, minWidth: 70, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: w.recoverableCents > 0 ? '#2f8a5b' : FAINT, minWidth: 70, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                       {w.recoverableCents > 0 ? formatCents(w.recoverableCents) : '—'}
                     </span>
                   </div>
@@ -154,7 +154,7 @@ export default function CommandCenterPage() {
         <div className="pc-card" style={card}>
           <div style={{ padding: '14px 18px', borderBottom: `1px solid ${LINE}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 13.5, fontWeight: 600, color: INK }}>Patient balances</span>
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: '#b45309' }}>{formatCents(k.patientArCents)}</span>
+            <span style={{ fontSize: 11.5, fontWeight: 600, color: '#b8862a' }}>{formatCents(k.patientArCents)}</span>
           </div>
           <div>
             {cc.balances.length === 0 && <div style={{ padding: '18px', fontSize: 13, color: SUB }}>No patient balances outstanding.</div>}
@@ -165,7 +165,7 @@ export default function CommandCenterPage() {
                     <p style={{ fontSize: 13, fontWeight: 600, color: INK, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.patientName ?? b.accountKey}</p>
                     <p style={{ fontSize: 11.5, color: SUB, margin: 0 }}>{b.payerName ?? STANDING_LABEL[b.standing]}</p>
                   </div>
-                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#b45309', fontVariantNumeric: 'tabular-nums' }}>{formatCents(b.patientArCents)}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#b8862a', fontVariantNumeric: 'tabular-nums' }}>{formatCents(b.patientArCents)}</span>
                 </div>
               </Link>
             ))}

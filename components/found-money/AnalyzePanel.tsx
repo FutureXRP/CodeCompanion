@@ -21,10 +21,10 @@ const STATUS_VARIANT: Record<ClaimStatus, 'green' | 'red' | 'amber' | 'blue' | '
   built: 'gray',
 }
 
-const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '7px 10px', borderBottom: '1px solid #e4e8ef' }
-const td: React.CSSProperties = { fontSize: 12.5, color: '#333d4d', padding: '9px 10px', borderBottom: '1px solid #f1f3f7', verticalAlign: 'top' }
+const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9aa69f', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '7px 10px', borderBottom: '1px solid #ece7dd' }
+const td: React.CSSProperties = { fontSize: 12.5, color: '#3a4640', padding: '9px 10px', borderBottom: '1px solid #f0ece3', verticalAlign: 'top' }
 const taLabel: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'block' }
-const ta: React.CSSProperties = { width: '100%', minHeight: 120, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11.5, lineHeight: 1.45, padding: 10, border: '1px solid #e4e8ef', borderRadius: 8, resize: 'vertical', color: '#333d4d' }
+const ta: React.CSSProperties = { width: '100%', minHeight: 120, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 11.5, lineHeight: 1.45, padding: 10, border: '1px solid #ece7dd', borderRadius: 8, resize: 'vertical', color: '#3a4640' }
 
 export function AnalyzePanel({ initial837, initial835, initialCsv }: { initial837: string; initial835: string; initialCsv: string }) {
   const [edi837, setEdi837] = useState(initial837)
@@ -73,21 +73,21 @@ export function AnalyzePanel({ initial837, initial835, initialCsv }: { initial83
         <button
           onClick={run}
           disabled={loading}
-          style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: '#2d5de8', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1 }}
+          style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: '#3f7d6a', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1 }}
         >
           {loading ? 'Analyzing…' : 'Analyze'}
         </button>
-        {error && <span style={{ color: '#c9302c', fontSize: 13 }}>{error}</span>}
-        <span style={{ fontSize: 12, color: '#9aa3b2' }}>Processed in memory — nothing is stored. Use synthetic / de-identified data until the BAA gate is closed.</span>
+        {error && <span style={{ color: '#cf5547', fontSize: 13 }}>{error}</span>}
+        <span style={{ fontSize: 12, color: '#9aa69f' }}>Processed in memory — nothing is stored. Use synthetic / de-identified data until the BAA gate is closed.</span>
       </div>
 
       {result && (
         <div style={{ marginTop: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
-            <Stat label="Recoverable" value={formatCents(result.foundMoney.totals.recoverableCents)} accent="#1a7a45" />
+            <Stat label="Recoverable" value={formatCents(result.foundMoney.totals.recoverableCents)} accent="#2f8a5b" />
             <Stat label="Findings" value={String(result.foundMoney.totals.count)} />
             <Stat label="Claims paid" value={`${result.claimTotals.paid} / ${result.claimTotals.total}`} />
-            <Stat label="Denied" value={String(result.claimTotals.denied)} accent={result.claimTotals.denied > 0 ? '#c9302c' : undefined} />
+            <Stat label="Denied" value={String(result.claimTotals.denied)} accent={result.claimTotals.denied > 0 ? '#cf5547' : undefined} />
           </div>
 
           <Section title="Claim lifecycle (from your 835)">
@@ -100,7 +100,7 @@ export function AnalyzePanel({ initial837, initial835, initialCsv }: { initial83
                     <td style={td}>{c.payerName}</td>
                     <td style={td}><Badge label={c.status.replace('_', ' ')} variant={STATUS_VARIANT[c.status]} /></td>
                     <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCents(c.billedCents)}</td>
-                    <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: c.paidCents > 0 ? '#1a7a45' : '#9aa3b2' }}>{formatCents(c.paidCents)}</td>
+                    <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: c.paidCents > 0 ? '#2f8a5b' : '#9aa69f' }}>{formatCents(c.paidCents)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -116,10 +116,10 @@ export function AnalyzePanel({ initial837, initial835, initialCsv }: { initial83
                 <tbody>
                   {result.foundMoney.findings.map((f) => (
                     <tr key={f.id}>
-                      <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: '#1a7a45', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{formatCents(f.recoverableCents)}</td>
+                      <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: '#2f8a5b', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{formatCents(f.recoverableCents)}</td>
                       <td style={td}><Badge label={f.type} variant={TYPE_VARIANT[f.type]} /></td>
                       <td style={{ ...td, fontFamily: 'ui-monospace, monospace' }}>{f.cptHcpcs}</td>
-                      <td style={{ ...td, color: '#4a5366', maxWidth: 460 }}>{f.reason}</td>
+                      <td style={{ ...td, color: '#5a6b62', maxWidth: 460 }}>{f.reason}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -134,17 +134,17 @@ export function AnalyzePanel({ initial837, initial835, initialCsv }: { initial83
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
-      <p style={{ fontSize: 11, fontWeight: 600, color: '#9aa3b2', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>{label}</p>
-      <p style={{ fontSize: 24, fontWeight: 700, color: accent ?? '#1e2533', margin: 0, letterSpacing: '-0.02em' }}>{value}</p>
+    <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }}>
+      <p style={{ fontSize: 11, fontWeight: 600, color: '#9aa69f', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>{label}</p>
+      <p style={{ fontSize: 24, fontWeight: 700, color: accent ?? '#1f2d27', margin: 0, letterSpacing: '-0.02em' }}>{value}</p>
     </div>
   )
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e4e8ef', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginBottom: 18 }}>
-      <div style={{ padding: '11px 14px', borderBottom: '1px solid #f1f3f7', fontSize: 13, fontWeight: 600, color: '#1e2533' }}>{title}</div>
+    <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', marginBottom: 18 }}>
+      <div style={{ padding: '11px 14px', borderBottom: '1px solid #f0ece3', fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>{title}</div>
       <div style={{ padding: '2px 4px' }}>{children}</div>
     </div>
   )

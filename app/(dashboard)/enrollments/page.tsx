@@ -5,11 +5,11 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // ── Design tokens (match dashboard palette) ───────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -21,7 +21,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -67,7 +67,7 @@ export default async function EnrollmentsPage({
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .enr-row { transition: background .12s ease; }
-        .enr-row:hover { background: #fafbfd; }
+        .enr-row:hover { background: #faf7f1; }
       `}</style>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
@@ -122,7 +122,7 @@ export default async function EnrollmentsPage({
             type="submit"
             style={{
               fontSize: 13.5, fontWeight: 600, color: '#fff',
-              background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)',
+              background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)',
               border: 'none', borderRadius: 8, padding: '9px 20px',
               cursor: 'pointer', flexShrink: 0,
               boxShadow: '0 2px 8px rgba(45,93,232,.18)',
@@ -146,7 +146,7 @@ export default async function EnrollmentsPage({
               gap: 0,
               padding: '10px 18px',
               borderBottom: `1px solid ${LINE}`,
-              background: '#fafbfd',
+              background: '#faf7f1',
               borderRadius: '14px 14px 0 0',
             }}
           >
@@ -191,7 +191,7 @@ export default async function EnrollmentsPage({
                 <span style={{
                   fontFamily: 'DM Mono, ui-monospace, monospace',
                   fontSize: 12, color: SUB,
-                  background: '#f3f5f9', padding: '2px 7px',
+                  background: '#f0ece3', padding: '2px 7px',
                   borderRadius: 5, display: 'inline-block',
                   width: 'fit-content',
                 }}>

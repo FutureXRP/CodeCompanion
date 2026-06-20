@@ -15,11 +15,11 @@ const RED = '#cf5547'
 const BLUE = '#3f7d6a' // sage primary
 
 const PRIORITY: Record<TaskPriority, { fg: string; bg: string }> = {
-  high: { fg: RED, bg: '#fff5f5' }, medium: { fg: AMBER, bg: '#fdf4e3' }, low: { fg: SUB, bg: '#f1f3f7' },
+  high: { fg: RED, bg: '#fae9e6' }, medium: { fg: AMBER, bg: '#f6efdd' }, low: { fg: SUB, bg: '#f0ece3' },
 }
 const STATUS_LABEL: Record<TaskStatus, string> = { open: 'Open', in_progress: 'In progress', done: 'Done' }
 const STATUS_STYLE: Record<TaskStatus, { fg: string; bg: string }> = {
-  open: { fg: BLUE, bg: '#eef2fb' }, in_progress: { fg: AMBER, bg: '#fdf4e3' }, done: { fg: GREEN, bg: '#e8f6ee' },
+  open: { fg: BLUE, bg: '#e7f0eb' }, in_progress: { fg: AMBER, bg: '#f6efdd' }, done: { fg: GREEN, bg: '#e6f4ec' },
 }
 
 const card: React.CSSProperties = { background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }
@@ -37,17 +37,17 @@ function Kpi({ label, value, accent, sub }: { label: string; value: string; acce
 export default function TasksPage() {
   const q = buildTaskQueue()
   const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, fontWeight: 600, color: FAINT, padding: '8px 14px', borderBottom: `1px solid ${LINE}`, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }
-  const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '10px 14px', borderBottom: `1px solid #f3f5f9`, verticalAlign: 'middle' }
+  const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '10px 14px', borderBottom: `1px solid #f0ece3`, verticalAlign: 'middle' }
 
   return (
     <div style={{ padding: '34px 40px 48px', maxWidth: 1180, margin: '0 auto' }}>
-      <style>{`.pc-row:hover { background: #fafbfd; }`}</style>
+      <style>{`.pc-row:hover { background: #faf7f1; }`}</style>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginBottom: 26 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>Follow-up Queue</h1>
-            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, background: '#e8f6ee', padding: '3px 10px', borderRadius: 999 }}>Synthetic</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, background: '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>Synthetic</span>
           </div>
           <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>Every open revenue task — owned, prioritized, and aging against its SLA. Nothing falls through.</p>
         </div>

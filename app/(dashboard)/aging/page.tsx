@@ -41,7 +41,7 @@ function Kpi({ label, value, accent, sub }: { label: string; value: string; acce
 }
 
 const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, fontWeight: 600, color: FAINT, padding: '8px 14px', borderBottom: `1px solid ${LINE}`, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }
-const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '9px 14px', borderBottom: `1px solid #f3f5f9`, verticalAlign: 'middle' }
+const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '9px 14px', borderBottom: `1px solid #f0ece3`, verticalAlign: 'middle' }
 
 export default function AgingPage() {
   const book = sampleArBook()
@@ -53,8 +53,8 @@ export default function AgingPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1180, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
-        .pc-row:hover { background: #fafbfd; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
+        .pc-row:hover { background: #faf7f1; }
       `}</style>
 
       {/* Header */}
@@ -62,7 +62,7 @@ export default function AgingPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>A/R &amp; Denials</h1>
-            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, background: '#e8f6ee', padding: '3px 10px', borderRadius: 999 }}>Synthetic A/R book</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, background: '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>Synthetic A/R book</span>
           </div>
           <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>
             Outstanding receivables aged by service date, and where claims are being denied. {aging.totals.count} open claims · {denials.deniedCount} denials in period.
@@ -172,8 +172,8 @@ export default function AgingPage() {
                   <td style={td}>
                     {c.description}
                     {c.appealable
-                      ? <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, background: '#e8f6ee', padding: '1px 7px', borderRadius: 999, marginLeft: 8 }}>appealable</span>
-                      : <span style={{ fontSize: 10, fontWeight: 700, color: SUB, background: '#f1f3f7', padding: '1px 7px', borderRadius: 999, marginLeft: 8 }}>write-off</span>}
+                      ? <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, background: '#e6f4ec', padding: '1px 7px', borderRadius: 999, marginLeft: 8 }}>appealable</span>
+                      : <span style={{ fontSize: 10, fontWeight: 700, color: SUB, background: '#f0ece3', padding: '1px 7px', borderRadius: 999, marginLeft: 8 }}>write-off</span>}
                   </td>
                   <td style={{ ...td, textAlign: 'right', color: SUB, fontVariantNumeric: 'tabular-nums' }}>{c.count}</td>
                   <td style={{ ...td, textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCents(c.deniedCents)}</td>

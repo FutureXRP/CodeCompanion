@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 
 // ── Palette ───────────────────────────────────────────────────
-const INK   = '#16213a'
-const SUB   = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE  = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED   = '#c9302c'
+const INK   = '#1f2d27'
+const SUB   = '#65726b'
+const FAINT = '#9aa69f'
+const LINE  = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED   = '#cf5547'
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -21,7 +21,7 @@ const card: React.CSSProperties = {
 function SectionLabel({ children, meta }: { children: string; meta?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 14px' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         {children}
       </span>
       <div style={{ height: 1, flex: 1, background: LINE }} />
@@ -128,7 +128,7 @@ const operationalMetrics = [
 ]
 
 const darByPayer = [
-  { payer: 'Medicare',          dar: 28, prev: 31, benchmark: 30, trend: 'up' as const,   volume: '42%', color: '#3b6ef8' },
+  { payer: 'Medicare',          dar: 28, prev: 31, benchmark: 30, trend: 'up' as const,   volume: '42%', color: '#57997f' },
   { payer: 'Medicaid',          dar: 52, prev: 55, benchmark: 45, trend: 'up' as const,   volume: '18%', color: '#f87171' },
   { payer: 'Blue Cross',        dar: 34, prev: 33, benchmark: 32, trend: 'down' as const, volume: '22%', color: '#fbbf24' },
   { payer: 'United Healthcare', dar: 38, prev: 40, benchmark: 32, trend: 'up' as const,   volume: '11%', color: '#a78bfa' },
@@ -140,7 +140,7 @@ const prevDAR = 39
 const benchmarkDAR = 32
 
 const payerMix = [
-  { payer: 'Medicare',    pct: 42, prevPct: 40, color: '#3b6ef8' },
+  { payer: 'Medicare',    pct: 42, prevPct: 40, color: '#57997f' },
   { payer: 'Commercial',  pct: 40, prevPct: 41, color: '#34d399' },
   { payer: 'Medicaid',    pct: 18, prevPct: 19, color: '#fbbf24' },
 ]
@@ -155,7 +155,7 @@ function TrendArrow({ trend, size = 14 }: { trend: 'up' | 'down' | 'neutral'; si
   return <span style={{ color: FAINT, fontSize: `${size}px` }}>→</span>
 }
 
-function Sparkline({ values, color = '#3b6ef8' }: { values: number[]; color?: string }) {
+function Sparkline({ values, color = '#57997f' }: { values: number[]; color?: string }) {
   const max = Math.max(...values)
   const min = Math.min(...values)
   const range = max - min || 1
@@ -200,7 +200,7 @@ export default function AnalyticsPage() {
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
       <style>{`
         .pc-card { transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
-        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #d9e0ea; }
+        .pc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,21,32,.08); border-color: #ddd6c8; }
       `}</style>
 
       {/* Header */}
@@ -232,7 +232,7 @@ export default function AnalyticsPage() {
             deltaColor: FAINT,
             sub: `~${Math.round(totalUpcoming / 4)} per week`,
             numColor: INK,
-            accent: '#5a6473',
+            accent: '#65726b',
           },
           {
             label: 'Overall DAR',
@@ -279,11 +279,11 @@ export default function AnalyticsPage() {
               <p style={{ fontSize: 12, color: FAINT, margin: 0 }}>Actual vs projected vs prior year</p>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <button onClick={() => setShowYOY(!showYOY)} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 500, background: showYOY ? '#f5f8ff' : '#f8f9fb', color: showYOY ? '#2d5de8' : SUB, border: `1px solid ${showYOY ? '#dce6ff' : LINE}`, borderRadius: 7, cursor: 'pointer' }}>
+              <button onClick={() => setShowYOY(!showYOY)} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 500, background: showYOY ? '#eef3f0' : '#f7f5f0', color: showYOY ? '#3f7d6a' : SUB, border: `1px solid ${showYOY ? '#e6efe9' : LINE}`, borderRadius: 7, cursor: 'pointer' }}>
                 {showYOY ? '✓ YoY' : 'YoY'}
               </button>
               {(['weekly','monthly'] as const).map(p => (
-                <button key={p} onClick={() => setRevPeriod(p)} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 500, background: revPeriod === p ? INK : '#f8f9fb', color: revPeriod === p ? '#fff' : SUB, border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', textTransform: 'capitalize' }}>
+                <button key={p} onClick={() => setRevPeriod(p)} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 500, background: revPeriod === p ? INK : '#f7f5f0', color: revPeriod === p ? '#fff' : SUB, border: '1px solid transparent', borderRadius: 7, cursor: 'pointer', textTransform: 'capitalize' }}>
                   {p}
                 </button>
               ))}
@@ -293,7 +293,7 @@ export default function AnalyticsPage() {
           {/* Legend */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
             {[
-              { color: '#3b6ef8', label: 'Actual revenue', dash: false },
+              { color: '#57997f', label: 'Actual revenue', dash: false },
               { color: '#34d399', label: 'Projected', dash: true },
               showYOY && { color: LINE, label: 'Prior year', dash: false },
             ].filter(Boolean).map((item: any, i) => (
@@ -316,9 +316,9 @@ export default function AnalyticsPage() {
                   <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', gap: 2, height: 140 }}>
                       {showYOY && m.yoy && (
-                        <div style={{ flex: 1, background: '#f1f3f7', borderRadius: '3px 3px 0 0', height: `${yoyH}px`, minHeight: 2 }} />
+                        <div style={{ flex: 1, background: '#f0ece3', borderRadius: '3px 3px 0 0', height: `${yoyH}px`, minHeight: 2 }} />
                       )}
-                      <div style={{ flex: 1, borderRadius: '3px 3px 0 0', height: `${isProjected ? projH : actualH}px`, minHeight: 2, background: isProjected ? 'repeating-linear-gradient(45deg, #dcf4e8, #dcf4e8 2px, transparent 2px, transparent 6px)' : '#3b6ef8', position: 'relative' }}>
+                      <div style={{ flex: 1, borderRadius: '3px 3px 0 0', height: `${isProjected ? projH : actualH}px`, minHeight: 2, background: isProjected ? 'repeating-linear-gradient(45deg, #e6f4ec, #e6f4ec 2px, transparent 2px, transparent 6px)' : '#57997f', position: 'relative' }}>
                         {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
                       </div>
                     </div>
@@ -338,7 +338,7 @@ export default function AnalyticsPage() {
                 return (
                   <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <div style={{ width: '100%', height: 140, display: 'flex', alignItems: 'flex-end' }}>
-                      <div style={{ width: '100%', height: `${isProjected ? projH : actualH}px`, minHeight: 2, borderRadius: '3px 3px 0 0', background: isProjected ? 'transparent' : '#3b6ef8', position: 'relative' }}>
+                      <div style={{ width: '100%', height: `${isProjected ? projH : actualH}px`, minHeight: 2, borderRadius: '3px 3px 0 0', background: isProjected ? 'transparent' : '#57997f', position: 'relative' }}>
                         {isProjected && <div style={{ position: 'absolute', inset: 0, border: '1.5px dashed #34d399', borderRadius: '3px 3px 0 0' }} />}
                       </div>
                     </div>
@@ -373,7 +373,7 @@ export default function AnalyticsPage() {
           <SectionTitle title="Operational metrics" subtitle="Your performance vs national primary care benchmarks" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {operationalMetrics.map((m, i) => (
-              <div key={i} style={{ padding: '12px 0', borderBottom: i < operationalMetrics.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+              <div key={i} style={{ padding: '12px 0', borderBottom: i < operationalMetrics.length - 1 ? `1px solid #f7f5f0` : 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 2 }}>
@@ -435,7 +435,7 @@ export default function AnalyticsPage() {
                       <span style={{ fontSize: 11, color: FAINT }}>was {p.prev}d</span>
                     </div>
                   </div>
-                  <div style={{ height: 6, background: '#f1f3f7', borderRadius: 3, position: 'relative', overflow: 'visible' }}>
+                  <div style={{ height: 6, background: '#f0ece3', borderRadius: 3, position: 'relative', overflow: 'visible' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: isOver ? '#f87171' : '#34d399', borderRadius: 3, transition: 'width 0.5s ease' }} />
                     <div style={{ position: 'absolute', top: -2, left: `${benchPct}%`, width: 2, height: 10, background: FAINT, borderRadius: 1 }} title={`Benchmark: ${p.benchmark}d`} />
                   </div>
@@ -472,13 +472,13 @@ export default function AnalyticsPage() {
                     <span style={{ fontSize: 14, fontWeight: 700, color: INK, fontVariantNumeric: 'tabular-nums' }}>{p.pct}%</span>
                   </div>
                 </div>
-                <div style={{ height: 8, background: '#f1f3f7', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: 8, background: '#f0ece3', borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 4, transition: 'width 0.5s ease' }} />
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 14, padding: '10px 12px', background: '#f8f9fb', borderRadius: 9, border: `1px solid ${LINE}` }}>
+          <div style={{ marginTop: 14, padding: '10px 12px', background: '#f7f5f0', borderRadius: 9, border: `1px solid ${LINE}` }}>
             <p style={{ fontSize: 12, color: SUB, margin: 0, lineHeight: 1.5 }}>
               Medicare mix increasing (+2pp) — positive for DAR predictability. Medicaid decrease (-1pp) helps DAR overall.
             </p>
@@ -498,7 +498,7 @@ export default function AnalyticsPage() {
             </thead>
             <tbody>
               {weeklySchedule.filter(w => w.completed === null).map((w, i, arr) => (
-                <tr key={i} style={{ borderBottom: i < arr.length - 1 ? `1px solid #f8f9fb` : 'none' }}>
+                <tr key={i} style={{ borderBottom: i < arr.length - 1 ? `1px solid #f7f5f0` : 'none' }}>
                   <td style={{ padding: '10px 10px', fontWeight: 500, color: INK }}>{w.week}</td>
                   <td style={{ padding: '10px 10px', textAlign: 'right', color: SUB, fontVariantNumeric: 'tabular-nums' }}>{w.scheduled}</td>
                   <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>${((w.projected || 0) / 1000).toFixed(1)}k</td>
@@ -507,7 +507,7 @@ export default function AnalyticsPage() {
               ))}
             </tbody>
             <tfoot>
-              <tr style={{ borderTop: `1px solid ${LINE}`, background: '#fafbfd' }}>
+              <tr style={{ borderTop: `1px solid ${LINE}`, background: '#faf7f1' }}>
                 <td style={{ padding: '10px 10px', fontWeight: 600, color: INK }}>Total</td>
                 <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 600, color: INK, fontVariantNumeric: 'tabular-nums' }}>{totalUpcoming}</td>
                 <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: GREEN, fontVariantNumeric: 'tabular-nums' }}>${(projectedMonthRevenue / 1000).toFixed(1)}k</td>
@@ -516,9 +516,9 @@ export default function AnalyticsPage() {
             </tfoot>
           </table>
 
-          <div style={{ marginTop: 14, padding: '10px 12px', background: '#f5f8ff', borderRadius: 9, border: '1px solid #dce6ff' }}>
+          <div style={{ marginTop: 14, padding: '10px 12px', background: '#eef3f0', borderRadius: 9, border: '1px solid #e6efe9' }}>
             <p style={{ fontSize: 12, color: SUB, margin: 0, lineHeight: 1.5 }}>
-              <strong style={{ color: '#2d5de8' }}>Projection basis:</strong> Scheduled appointments × average allowed by payer mix × (1 − 7.2% no-show rate) + expected care gap revenue.
+              <strong style={{ color: '#3f7d6a' }}>Projection basis:</strong> Scheduled appointments × average allowed by payer mix × (1 − 7.2% no-show rate) + expected care gap revenue.
               Actuals will vary based on coding accuracy and payer adjudication.
             </p>
           </div>
@@ -527,19 +527,19 @@ export default function AnalyticsPage() {
 
       {/* Insight callout */}
       <div style={{ background: INK, borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#3b6ef8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#57997f', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a7 7 0 100 14A7 7 0 009 2zM9 6v4M9 12v.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
         <div>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: '0 0 6px' }}>Revenue opportunity summary</p>
-          <p style={{ fontSize: 13, color: '#9aa3b2', margin: '0 0 10px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: '#9aa69f', margin: '0 0 10px', lineHeight: 1.6 }}>
             Based on current dynamics, your May projected revenue of <strong style={{ color: '#34d399' }}>${(projectedMay / 1000).toFixed(1)}k</strong> is {mayVsYOY}% above May 2025.
             Closing the 3 coding leakage flags adds ~<strong style={{ color: '#34d399' }}>$310</strong> to this week alone.
             Improving clean claim rate from 88% to the 95% benchmark would recover an estimated <strong style={{ color: '#34d399' }}>$2,800/month</strong> in currently denied claims.
             Reducing DAR from {overallDAR} to {benchmarkDAR} days accelerates approximately <strong style={{ color: '#34d399' }}>$14,000</strong> in cash flow into this quarter.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
-            <a href="/coding" style={{ padding: '7px 14px', background: '#3b6ef8', color: '#fff', fontSize: 12.5, fontWeight: 500, borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>Review coding flags</a>
+            <a href="/coding" style={{ padding: '7px 14px', background: '#57997f', color: '#fff', fontSize: 12.5, fontWeight: 500, borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>Review coding flags</a>
             <a href="/pulse" style={{ padding: '7px 14px', background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12.5, fontWeight: 500, borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>View Practice Pulse</a>
           </div>
         </div>

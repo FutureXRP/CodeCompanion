@@ -11,8 +11,8 @@ export default function EligibilityPage() {
   const configured = Boolean(process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY)
   const sandbox = process.env.STEDI_SANDBOX !== 'false'
   const mode = !configured ? 'Mock' : sandbox ? 'Sandbox' : 'Production'
-  const modeColor = mode === 'Production' ? '#c9302c' : mode === 'Sandbox' ? '#1a7a45' : '#92400e'
-  const modeBg = mode === 'Production' ? '#fff5f5' : mode === 'Sandbox' ? '#e8f6ee' : '#fdf4e3'
+  const modeColor = mode === 'Production' ? '#cf5547' : mode === 'Sandbox' ? '#2f8a5b' : '#92400e'
+  const modeBg = mode === 'Production' ? '#fae9e6' : mode === 'Sandbox' ? '#e6f4ec' : '#f6efdd'
 
   return (
     <div style={{ padding: '34px 40px 48px', maxWidth: 1080, margin: '0 auto' }}>
@@ -30,8 +30,8 @@ export default function EligibilityPage() {
       <div style={{ marginTop: 36 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 6px' }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tomorrow&apos;s schedule sweep</span>
-          <div style={{ height: 1, flex: 1, background: '#e9ecf2' }} />
-          <span style={{ fontSize: 11.5, color: '#9aa3b2' }}>batch-verify before the visits</span>
+          <div style={{ height: 1, flex: 1, background: '#ece7dd' }} />
+          <span style={{ fontSize: 11.5, color: '#9aa69f' }}>batch-verify before the visits</span>
         </div>
         <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 14px', maxWidth: 660, lineHeight: 1.5 }}>
           Verify the whole schedule ahead of time so terminated plans and unmet deductibles surface at the front desk, not as denials later.
