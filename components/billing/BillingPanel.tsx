@@ -2,13 +2,13 @@
 import { useState } from 'react'
 import { formatCents } from '@/lib/canonical'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const BLUE = '#2d5de8'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const BLUE = '#3f7d6a' // sage primary
 
 function safeStr(v: unknown): string {
   if (v == null) return ''
@@ -156,7 +156,7 @@ function AccountRow({ account, balance, isOpen, isLast, onToggle, onPaid }: {
                   <option value="card">Card</option><option value="cash">Cash</option><option value="check">Check</option><option value="ach">ACH</option>
                 </select>
               </div>
-              <button onClick={record} disabled={loading} style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', border: 'none', borderRadius: 9, padding: '9px 18px', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+              <button onClick={record} disabled={loading} style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', border: 'none', borderRadius: 9, padding: '9px 18px', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}>
                 {loading ? 'Recording…' : 'Record payment'}
               </button>
             </div>

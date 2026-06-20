@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { formatCents } from '@/lib/canonical'
 import type { BenefitItem, EligibilityResult } from '@/lib/rcm/eligibility'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const LINE = '#e9ecf2'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const LINE = '#ece7dd'
 
 /** Never render a raw nested object into React (CLAUDE.md). Coerce to a display string. */
 function safeStr(v: unknown): string {
@@ -132,7 +132,7 @@ export function EligibilityPanel({ configured, sandbox }: { configured: boolean;
             disabled={loading}
             style={{
               fontSize: 13.5, fontWeight: 600, color: '#fff',
-              background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)',
+              background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)',
               border: 'none', borderRadius: 10, padding: '10px 20px',
               cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1,
               boxShadow: '0 4px 14px rgba(45,93,232,.2)',

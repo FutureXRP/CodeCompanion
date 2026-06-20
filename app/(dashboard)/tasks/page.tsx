@@ -5,14 +5,14 @@ import { buildTaskQueue, type TaskPriority, type TaskStatus } from '@/lib/tasks'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED = '#c9302c'
-const BLUE = '#2d5de8'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED = '#cf5547'
+const BLUE = '#3f7d6a' // sage primary
 
 const PRIORITY: Record<TaskPriority, { fg: string; bg: string }> = {
   high: { fg: RED, bg: '#fff5f5' }, medium: { fg: AMBER, bg: '#fdf4e3' }, low: { fg: SUB, bg: '#f1f3f7' },

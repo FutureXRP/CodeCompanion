@@ -7,14 +7,15 @@ import type { AccountStanding } from '@/lib/ledger'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
-const BLUE = '#2d5de8'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
+const BLUE = '#3f7d6a' // sage primary
+const HERO_GRADIENT = 'linear-gradient(140deg, #34685a 0%, #3f7d6a 60%, #57997f 100%)'
 
-const TONE: Record<StageTone, string> = { neutral: INK, good: '#1a7a45', warn: '#b45309', bad: '#c9302c' }
-const TONE_BG: Record<StageTone, string> = { neutral: '#eef2fb', good: '#e8f6ee', warn: '#fdf4e3', bad: '#fff5f5' }
+const TONE: Record<StageTone, string> = { neutral: INK, good: '#2f8a5b', warn: '#b8862a', bad: '#cf5547' }
+const TONE_BG: Record<StageTone, string> = { neutral: '#e7f0eb', good: '#e6f4ec', warn: '#f6efdd', bad: '#fae9e6' }
 
 const KIND_TONE: Record<WorkItemKind, StageTone> = {
   rejection: 'bad', denial: 'bad', underpayment: 'warn', undercoding: 'warn', unadjudicated: 'neutral',
@@ -82,18 +83,18 @@ export default function CommandCenterPage() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginBottom: 26 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>Command Center</h1>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#1a7a45', background: '#e8f6ee', padding: '3px 10px', borderRadius: 999 }}>Synthetic clinic day</span>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: INK, margin: 0, letterSpacing: '-0.03em' }}>Command Center</h1>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#2f8a5b', background: '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>Synthetic clinic day</span>
           </div>
           <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>
             {cc.asOf}&nbsp;&nbsp;·&nbsp;&nbsp;{cc.counts.patients} patients&nbsp;&nbsp;·&nbsp;&nbsp;{cc.counts.denials} denials&nbsp;&nbsp;·&nbsp;&nbsp;
             {cc.counts.scrubFails === 0 ? 'scrub clean' : `${cc.counts.scrubFails} scrub flags`}
           </p>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <p style={{ fontSize: 11, color: FAINT, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Capture opportunity</p>
-          <p style={{ fontSize: 30, fontWeight: 700, color: '#1a7a45', margin: 0, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{formatCents(k.captureOpportunityCents)}</p>
-          <p style={{ fontSize: 11.5, color: SUB, margin: '3px 0 0' }}>{formatCents(k.recoverableCents)} recoverable&nbsp;·&nbsp;{formatCents(k.patientArCents)} to collect</p>
+        <div style={{ background: HERO_GRADIENT, color: '#fff', borderRadius: 18, padding: '16px 22px', textAlign: 'right', minWidth: 264, boxShadow: '0 14px 32px rgba(63,125,106,.28)' }}>
+          <p style={{ fontSize: 11, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, opacity: 0.78 }}>Capture opportunity</p>
+          <p style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>{formatCents(k.captureOpportunityCents)}</p>
+          <p style={{ fontSize: 12, opacity: 0.88, margin: '3px 0 0' }}>{formatCents(k.recoverableCents)} recoverable&nbsp;·&nbsp;{formatCents(k.patientArCents)} to collect</p>
         </div>
       </div>
 

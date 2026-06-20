@@ -5,17 +5,17 @@ import { sampleArBook, buildArAging, buildDenialAnalytics } from '@/lib/analytic
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED = '#c9302c'
-const BLUE = '#2d5de8'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED = '#cf5547'
+const BLUE = '#3f7d6a' // sage primary
 
 const DAR_BENCHMARK = 35
-const BUCKET_COLORS = ['#1a7a45', '#7d9b2f', '#b45309', '#d2691e', '#c9302c']
+const BUCKET_COLORS = ['#3f7d6a', '#7e9a4e', '#b8862a', '#c9744b', '#cf5547']
 
 const card: React.CSSProperties = { background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`

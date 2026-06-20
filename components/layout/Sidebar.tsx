@@ -59,10 +59,10 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
     <aside style={{ width: '220px', flexShrink: 0, background: '#fff', borderRight: '1px solid #e4e8ef', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #f1f3f7' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #3b6ef8 0%, #1e4acc 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'linear-gradient(135deg, #57997f 0%, #34685a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 3l-2.5 4 2.5 4M10 3l2.5 4-2.5 4M8 1l-2 12" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e2533', letterSpacing: '-0.01em' }}>CodeCompanion</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#1f2d27', letterSpacing: '-0.01em' }}>CodeCompanion</span>
         </div>
         <p style={{ fontSize: '11px', color: '#9aa3b2', marginLeft: '36px', marginTop: '0' }}>Revenue Intelligence</p>
       </div>
@@ -74,11 +74,11 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
               display: 'flex', alignItems: 'center', gap: '9px',
               padding: '7px 10px', borderRadius: '8px',
               fontSize: '13.5px', fontWeight: active ? '500' : '400',
-              color: active ? '#2d5de8' : '#4a5366',
-              background: active ? '#f0f4ff' : 'transparent',
+              color: active ? '#3f7d6a' : '#5a6b62',
+              background: active ? '#e7f0eb' : 'transparent',
               textDecoration: 'none', marginBottom: '1px', transition: 'all 0.1s',
             }}>
-              <span style={{ color: active ? '#3b6ef8' : '#9aa3b2', display: 'flex', flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ color: active ? '#3f7d6a' : '#9aa69f', display: 'flex', flexShrink: 0 }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
               {item.badge && (
                 <span style={{ fontSize: '11px', fontWeight: '600', background: item.badge.bg, color: item.badge.color, padding: '1px 7px', borderRadius: '99px' }}>
@@ -93,7 +93,7 @@ export function Sidebar({ authEnabled = false, userEmail = null }: { authEnabled
         {authEnabled && userEmail ? (
           <div>
             <Link href="/account" style={{ display: 'flex', alignItems: 'center', gap: '9px', textDecoration: 'none', marginBottom: '8px' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#dce6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#2d5de8', flexShrink: 0, textTransform: 'uppercase' }}>{userEmail.charAt(0)}</div>
+              <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#e6efe9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#3f7d6a', flexShrink: 0, textTransform: 'uppercase' }}>{userEmail.charAt(0)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '12px', fontWeight: '500', color: '#333d4d', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
                 <p style={{ fontSize: '11px', color: '#9aa3b2', margin: 0 }}>View account</p>

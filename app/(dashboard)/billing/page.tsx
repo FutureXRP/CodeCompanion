@@ -5,8 +5,8 @@ import { BillingPanel, type BillingAccount } from '@/components/billing/BillingP
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const INK = '#16213a'
-const FAINT = '#9aa3b2'
+const INK = '#1f2d27'
+const FAINT = '#9aa69f'
 
 export default function BillingPage() {
   const claims = pullClaims()

@@ -4,8 +4,8 @@ import { ScheduleSweep } from '@/components/eligibility/ScheduleSweep'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
+const INK = '#1f2d27'
+const SUB = '#65726b'
 
 export default function EligibilityPage() {
   const configured = Boolean(process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY)
@@ -29,7 +29,7 @@ export default function EligibilityPage() {
 
       <div style={{ marginTop: 36 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 6px' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#2d5de8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tomorrow&apos;s schedule sweep</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#3f7d6a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tomorrow&apos;s schedule sweep</span>
           <div style={{ height: 1, flex: 1, background: '#e9ecf2' }} />
           <span style={{ fontSize: 11.5, color: '#9aa3b2' }}>batch-verify before the visits</span>
         </div>

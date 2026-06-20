@@ -2,13 +2,13 @@ import { formatCents } from '@/lib/canonical'
 import { buildScheduleSweep, sampleSchedule } from '@/lib/rcm/eligibility-sweep'
 import { MockEligibilityService } from '@/lib/rcm/eligibility'
 
-const INK = '#16213a'
-const SUB = '#5a6473'
-const FAINT = '#9aa3b2'
-const LINE = '#e9ecf2'
-const GREEN = '#1a7a45'
-const AMBER = '#b45309'
-const RED = '#c9302c'
+const INK = '#1f2d27'
+const SUB = '#65726b'
+const FAINT = '#9aa69f'
+const LINE = '#ece7dd'
+const GREEN = '#2f8a5b'
+const AMBER = '#b8862a'
+const RED = '#cf5547'
 
 const STATUS: Record<string, { fg: string; bg: string; label: string }> = {
   active: { fg: GREEN, bg: '#e8f6ee', label: 'Active' },
