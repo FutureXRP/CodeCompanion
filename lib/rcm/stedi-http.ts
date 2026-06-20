@@ -69,7 +69,7 @@ export function normalizeBaseUrl(baseUrl: string | undefined): string {
 
 /** Read shared Stedi auth from the environment. Defaults to sandbox; production is opt-in. */
 export function stediAuthFromEnv(): StediAuth {
-  const apiKey = process.env.STEDI_API_KEY
+  const apiKey = process.env.STEDI_API_KEY?.trim() // trim guards against a pasted space/newline (causes 401)
   if (!apiKey) throw new Error('STEDI_API_KEY is not set — cannot build a Stedi adapter.')
   return {
     apiKey,

@@ -249,7 +249,9 @@ function randomControlNumber(): string {
  * STEDI_API_KEY when the dedicated key isn't set.
  */
 export function stediEligibilityFromEnv(payerDirectory?: PayerDirectory): StediEligibilityConfig {
-  const apiKey = process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY
+  // .trim() guards against a stray space/newline pasted into the env var — a very
+  // common cause of a 401 Unauthorized from Stedi.
+  const apiKey = (process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY)?.trim()
   if (!apiKey) {
     throw new Error('Set STEDI_ELIGIBILITY_API_KEY (a test key for mock checks) or STEDI_API_KEY — neither is set.')
   }
