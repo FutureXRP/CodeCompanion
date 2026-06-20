@@ -18,3 +18,6 @@ next-env.d.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Generated docs — regenerate with `npm run athena-pdf` (source: ATHENA-INTEGRATION.md)
+/Athena-Integration-Guide.pdf
