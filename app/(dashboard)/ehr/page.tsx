@@ -8,6 +8,7 @@ import { runDiff } from '@/lib/diff'
 import { DaySubmitPanel } from '@/components/ehr/DaySubmitPanel'
 import { createAthenaSource, athenaConfigFromEnv, pullAthenaEncounters } from '@/lib/adapters/athena'
 import { encounterToClaim } from '@/lib/adapters/ehr'
+import { AthenaPullButton } from '@/components/ehr/AthenaPullButton'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -105,6 +106,9 @@ export default async function EhrPage() {
             </tbody>
           </table>
         )}
+        <div style={{ padding: '14px 16px', borderTop: '1px solid #f0ece3' }}>
+          <AthenaPullButton />
+        </div>
         <div style={{ padding: '10px 16px', fontSize: 11.5, color: '#9aa69f', borderTop: '1px solid #f0ece3', lineHeight: 1.5 }}>
           Pulled through <code>lib/adapters/athena</code> → canonical model. The same code path hits real athena (Preview / Production) when <code>ATHENA_USE_MOCK=false</code>.
         </div>
