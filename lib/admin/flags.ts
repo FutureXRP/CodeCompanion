@@ -1,5 +1,8 @@
 import { MODULES, MODULE_BY_ID } from './modules'
 
+/** The runtime override store (a cookie). Defined here (pure) so edge middleware can import it. */
+export const FLAGS_COOKIE = 'cc_modules'
+
 /** moduleId -> enabled. */
 export type FlagMap = Record<string, boolean>
 
