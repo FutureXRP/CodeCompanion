@@ -6,6 +6,8 @@ import { scrubClaim, OKLAHOMA } from '@/lib/scrub'
 import { buildLedger } from '@/lib/ledger'
 import { runDiff } from '@/lib/diff'
 import { DaySubmitPanel } from '@/components/ehr/DaySubmitPanel'
+import { createAthenaSource, athenaConfigFromEnv, pullAthenaEncounters } from '@/lib/adapters/athena'
+import { encounterToClaim } from '@/lib/adapters/ehr'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -19,12 +21,31 @@ const td: React.CSSProperties = {
 }
 const num: React.CSSProperties = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }
 
-export default function EhrPage() {
+export default async function EhrPage() {
   const claims = pullClaims()
   const rates = mockEhrRates()
   const remits = adjudicate(claims, rates)
   const ledger = buildLedger({ claims, remittances: remits })
   const findings = runDiff(claims, remits, rates)
+
+  // athena pull — the athena adapter producing canonical encounters. In the hosted
+  // env ATHENA_USE_MOCK=true → synthetic MockAthenaSource (no creds, no PHI gate);
+  // locally with ATHENA_USE_MOCK=false + Preview creds it hits the real sandbox.
+  const athenaCfg = athenaConfigFromEnv()
+  let athenaRows: { patient: string; payer: string; cpts: string; chargeCents: number }[] = []
+  let athenaError: string | null = null
+  try {
+    const encs = await pullAthenaEncounters(createAthenaSource(athenaCfg), { serviceDateFrom: claims[0]?.dateOfService ?? DEFAULT_DATE })
+    athenaRows = encs.map((e) => ({
+      patient: e.patientControlNumber,
+      payer: e.payer.name,
+      cpts: e.lines.map((l) => l.cptHcpcs + (l.modifiers?.length ? `-${l.modifiers.join(',')}` : '')).join(' · '),
+      chargeCents: encounterToClaim(e, 'athena').totalBilledCents,
+    }))
+  } catch (e) {
+    athenaError = e instanceof Error ? e.message : String(e)
+  }
+  const athenaTotal = athenaRows.reduce((s, r) => s + r.chargeCents, 0)
 
   const scrubs = new Map(claims.map((c) => [c.controlNumber, scrubClaim(c, OKLAHOMA)]))
   const accountByMember = new Map(ledger.accounts.map((a) => [a.accountKey, a]))
@@ -54,6 +75,39 @@ export default function EhrPage() {
           the same path a real EHR (Epic, athenahealth, the 2027 CMS mandate) would take. Proof the whole pipeline runs on
           connected, realistic data.
         </p>
+      </div>
+
+      {/* athenahealth pull — the athena adapter producing canonical encounters */}
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', margin: '18px 0' }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>athenahealth — encounter pull</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: athenaCfg.useMock ? '#2f8a5b' : '#b8862a', background: athenaCfg.useMock ? '#e6f4ec' : '#f6efdd', padding: '3px 10px', borderRadius: 999 }}>
+            {athenaCfg.useMock ? 'Mock · synthetic' : 'Live · Preview'}
+          </span>
+          {!athenaError && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>{athenaRows.length} encounter{athenaRows.length === 1 ? '' : 's'} · {formatCents(athenaTotal)} billed</span>}
+        </div>
+        {athenaError ? (
+          <div style={{ padding: '14px 16px', fontSize: 12.5, color: '#92400e', background: '#f6efdd', lineHeight: 1.55 }}>Pull unavailable: {athenaError}</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><th style={th}>Patient</th><th style={th}>Payer</th><th style={th}>Services (CPT/HCPCS)</th><th style={{ ...th, ...num }}>Charge</th></tr>
+            </thead>
+            <tbody>
+              {athenaRows.map((r) => (
+                <tr key={r.patient}>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{r.patient}</td>
+                  <td style={{ ...td, color: '#6b7280' }}>{r.payer}</td>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{r.cpts}</td>
+                  <td style={{ ...td, ...num }}>{formatCents(r.chargeCents)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div style={{ padding: '10px 16px', fontSize: 11.5, color: '#9aa69f', borderTop: '1px solid #f0ece3', lineHeight: 1.5 }}>
+          Pulled through <code>lib/adapters/athena</code> → canonical model. The same code path hits real athena (Preview / Production) when <code>ATHENA_USE_MOCK=false</code>.
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, margin: '18px 0 18px' }}>
