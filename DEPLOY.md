@@ -23,16 +23,18 @@ HIPAA tiers.
 **Ready now**
 - **Container build** — `output: 'standalone'` + a multi-stage `Dockerfile` (non-root, ~minimal).
 - **Cloud Run** — the image runs on Cloud Run unchanged (honors the injected `PORT`).
+- **Neon connection** — `lib/db/sql.ts` (lazy pool from `DATABASE_URL`, `withTenant()` GUC helper).
+- **Migration tooling** — `npm run db:migrate` stands up the full schema on Neon, with a compat
+  shim so the Supabase-flavored migrations apply, and `current_tenant_id()` repointed at the GUC.
 - **Env template** — `.env.local.example` documents `DATABASE_URL` (Neon) + Supabase-Auth-only.
 - **Polite API client** — the athena adapter backs off on 429/503 (rate-limit safe).
 
-**Pending — Phase 2b (the data-layer port)**
-The `lib/db/` repositories still use the **Supabase JS query builder** (`.from(...)`),
-which is Supabase-platform-specific. To store PHI in **Neon**, those ~32 calls move to
-SQL over a Postgres driver, and RLS switches from the Supabase JWT to a per-request
-tenant GUC (`SET LOCAL app.current_tenant = …`). Until that lands, persistence still
-targets Supabase; auth and the app shell already run anywhere. This is a contained,
-tested change — see the bottom of this file.
+**Pending — Phase 2b (the repository port)**
+The `lib/db/` repositories still use the **Supabase JS query builder** (`.from(...)`). The
+connection layer, GUC/RLS model, and migration tooling are now in place; the remaining step is
+swapping those ~32 calls to SQL over the new pool (and the callers from a Supabase data handle to
+`withTenant(...)`). They move together because they share `writeAudit` + the DB handle, so it lands
+as one tested commit — checklist below.
 
 ---
 
@@ -41,8 +43,7 @@ tested change — see the bottom of this file.
 1. Create a Neon project on the **Scale** plan; enable **HIPAA** and sign the BAA.
 2. Copy the pooled connection string into `DATABASE_URL`
    (`postgres://user:pass@ep-xxx.neon.tech/dbname?sslmode=require`).
-3. Apply the schema + RLS: run `supabase/migrations/*.sql` against `DATABASE_URL`
-   (a `db:migrate` runner ships with Phase 2b).
+3. Apply the schema + RLS: `DATABASE_URL=… npm run db:migrate` (compat shim → migrations → RLS-GUC).
 
 ## 2. Supabase (auth only)
 
@@ -82,8 +83,9 @@ docker run -p 8080:8080 --env-file .env.local codecompanion
 
 ## Phase 2b checklist (data-layer port — do this before PHI persistence on Neon)
 
-- [ ] Add a Postgres driver + `lib/db/sql.ts` (lazy pool from `DATABASE_URL`, `withTenant()` GUC helper).
-- [ ] Port `lib/db/repository.ts`, `operational-repo.ts`, `tenant.ts`, `flags-repo.ts`, `audit.ts` from `.from(...)` to SQL.
-- [ ] Switch RLS policies' `current_tenant_id()` to read the request GUC; keep the de-id corpus on the service path.
-- [ ] `scripts/db-migrate.ts` + `npm run db:migrate` to apply `supabase/migrations/*.sql` to Neon.
-- [ ] Tests for the SQL repos against a disposable Postgres; keep `db-operational.test.ts` green.
+- [x] Postgres driver (`pg`) + `lib/db/sql.ts` (lazy pool from `DATABASE_URL`, `withTenant()` GUC helper).
+- [x] `current_tenant_id()` reads the request GUC (`db/neon/zzz_rls_guc.sql`); corpus stays on the service path.
+- [x] `scripts/db-migrate.ts` + `npm run db:migrate` (a compat shim makes the Supabase migrations apply to Neon).
+- [x] `pg-mem` test harness proven (`tests/db-neon.test.ts`) for the SQL repos.
+- [ ] Port `repository.ts`, `operational-repo.ts`, `tenant.ts`, `flags-repo.ts`, `audit.ts` from `.from(...)` to the pool + update callers.
+- [ ] Repo round-trip tests against pg-mem; keep `db-operational.test.ts` green.

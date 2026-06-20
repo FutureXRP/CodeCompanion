@@ -14,5 +14,13 @@ export function isServiceRoleConfigured(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
+/** Neon (Postgres) data plane — where PHI lives. Auth stays on Supabase. */
+export function isNeonConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL)
+}
+export function databaseUrl(): string | undefined {
+  return process.env.DATABASE_URL || undefined
+}
+
 /** Single-practice bootstrap tenant until multi-user auth lands. */
 export const DEFAULT_TENANT_NAME = 'My Practice'
