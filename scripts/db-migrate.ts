@@ -7,9 +7,30 @@
  * The migrations use `create table if not exists` etc., so re-runs are safe.
  * Run:  DATABASE_URL=postgres://… npm run db:migrate
  */
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { getPool, closePool } from '../lib/db/sql'
+
+/**
+ * Load .env.local (KEY=VALUE lines) for local / Codespaces runs. The Next.js app
+ * reads .env.local automatically; standalone scripts do not, so this gives them the
+ * same single source. Existing process.env wins (Cloud Run / CI), and we split on
+ * the FIRST '=' so connection strings with '=' (…?sslmode=require) survive intact.
+ */
+function loadEnvLocal(file = path.join(process.cwd(), '.env.local')): void {
+  if (!existsSync(file)) return
+  for (const raw of readFileSync(file, 'utf8').split('\n')) {
+    const line = raw.trim()
+    if (!line || line.startsWith('#')) continue
+    const eq = line.indexOf('=')
+    if (eq === -1) continue
+    const key = line.slice(0, eq).trim()
+    let val = line.slice(eq + 1).trim()
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1)
+    if (key && !(key in process.env)) process.env[key] = val
+  }
+}
+loadEnvLocal()
 
 /** The ordered list of SQL files to apply (pure — unit-tested). */
 export function migrationPaths(root: string): string[] {
