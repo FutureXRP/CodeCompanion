@@ -10,20 +10,21 @@ test('defaultFlags includes every module at its default', () => {
   for (const m of MODULES) assert.equal(f[m.id], m.defaultOn)
 })
 
-test('resolveFlags applies overrides but keeps locked modules on', () => {
+test('resolveFlags applies overrides but keeps the locked module (Admin) on', () => {
   const f = resolveFlags({ coding: false, command: false, admin: false })
-  assert.equal(f.coding, false) // delegable module turned off
-  assert.equal(f.command, true) // locked — cannot be disabled
-  assert.equal(f.admin, true) // locked
+  assert.equal(f.coding, false) // clinical module turned off
+  assert.equal(f.command, false) // core module — now fully toggleable (complete control)
+  assert.equal(f.admin, true) // locked — only Admin cannot be disabled
   assert.equal(f.eligibility, true) // untouched default
   assert.ok(isEnabled(f, 'eligibility'))
   assert.ok(!isEnabled(f, 'coding'))
 })
 
 test('disabledIds lists off, non-locked modules only', () => {
-  const ids = disabledIds(resolveFlags({ coding: false, command: false }))
+  const ids = disabledIds(resolveFlags({ coding: false, command: false, admin: false }))
   assert.ok(ids.includes('coding'))
-  assert.ok(!ids.includes('command'))
+  assert.ok(ids.includes('command')) // core modules are now toggleable
+  assert.ok(!ids.includes('admin')) // admin is locked — never disabled
 })
 
 test('parseOverrides ignores junk, unknown keys, and non-booleans', () => {
@@ -32,11 +33,11 @@ test('parseOverrides ignores junk, unknown keys, and non-booleans', () => {
   assert.deepEqual(parseOverrides(undefined), {})
 })
 
-test('serializeOverrides round-trips and never serializes locked modules', () => {
-  const round = parseOverrides(serializeOverrides(resolveFlags({ coding: false, gaps: false })))
+test('serializeOverrides round-trips and never serializes the locked module', () => {
+  const round = parseOverrides(serializeOverrides(resolveFlags({ coding: false, gaps: false, admin: false })))
   assert.equal(round.coding, false)
   assert.equal(round.gaps, false)
-  assert.equal(round.command, undefined)
+  assert.equal(round.admin, undefined) // locked — never serialized
 })
 
 test('preset "rcm" delegates clinical (off) and keeps billing/core/system on; "all" enables everything', () => {
@@ -50,4 +51,17 @@ test('preset "rcm" delegates clinical (off) and keeps billing/core/system on; "a
 
   const all = applyPreset('all')
   for (const m of MODULES) assert.equal(all[m.id], true)
+})
+
+test('preset "clinical" turns billing off (the EHR runs billing) and keeps everything else on', () => {
+  const clinical = applyPreset('clinical')
+  for (const m of MODULES) {
+    if (m.locked) { assert.equal(clinical[m.id], true); continue }
+    assert.equal(clinical[m.id], m.group !== 'billing')
+  }
+  assert.equal(clinical.claims, false) // billing module off
+  assert.equal(clinical.billing, false) // patient billing off
+  assert.equal(clinical.coding, true) // clinical module stays on
+  assert.equal(clinical.command, true) // core stays on
+  assert.equal(clinical.admin, true) // locked stays on
 })

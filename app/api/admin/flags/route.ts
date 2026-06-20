@@ -4,7 +4,7 @@ import { isSupabaseConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
 import { setFeatureFlags } from '@/lib/db/flags-repo'
 import { FLAGS_COOKIE } from '@/lib/admin/server'
-import { applyPreset, parseOverrides, resolveFlags, serializeOverrides, type FlagMap, type PresetId } from '@/lib/admin/flags'
+import { applyPreset, PRESETS, parseOverrides, resolveFlags, serializeOverrides, type FlagMap, type PresetId } from '@/lib/admin/flags'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { moduleId?: string; enabled?: boolean; preset?: PresetId }
 
   let next: FlagMap
-  if (body.preset === 'all' || body.preset === 'rcm') {
+  if (body.preset && body.preset in PRESETS) {
     next = applyPreset(body.preset)
   } else if (body.moduleId && typeof body.enabled === 'boolean') {
     next = { ...current, [body.moduleId]: body.enabled }

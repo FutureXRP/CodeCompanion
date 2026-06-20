@@ -100,7 +100,7 @@ export function AdminPanel({ initial, persisted }: { initial: FlagMap; persisted
       })}
 
       <p style={{ fontSize: 11.5, color: FAINT, marginTop: 6, lineHeight: 1.5 }}>
-        Turning a module off hides it from the sidebar immediately. The cockpit and system pages are always on. Changes persist
+        Turning a module off hides it from the sidebar immediately. Only the Admin page stays on, so you can always come back here and re-enable anything. Changes persist
         {persisted ? ' to your account (per-tenant, audited).' : ' to this browser; sign in with Supabase configured to persist per-tenant.'}
       </p>
     </div>

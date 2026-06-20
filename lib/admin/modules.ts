@@ -1,9 +1,12 @@
 /**
  * Module registry — the toggleable sections of the app, for the Admin control
- * panel. Grouped so the integration story is explicit: Billing & RCM are
- * CodeCompanion's own rails (keep on); the Clinical & intelligence modules are
- * "delegable" — turn them off when your EHR (e.g. Athena) already provides them.
- * A module id matches its nav href (minus the leading slash).
+ * panel. You own the backend: every module can be switched off except Admin,
+ * which stays pinned so you can always get back to this panel. Modules are
+ * grouped by role. Billing & RCM are CodeCompanion's rails — but an EHR like
+ * Athena runs billing itself (and won't permit a third-party biller), so when
+ * you integrate you turn that whole group off. Clinical & intelligence modules
+ * are marked "delegable" for the same reason: turn off whatever your EHR already
+ * provides. A module id matches its nav href (minus the leading slash).
  */
 
 export type ModuleGroup = 'core' | 'billing' | 'clinical' | 'system'
@@ -13,23 +16,23 @@ export interface ModuleDef {
   label: string
   href: string
   group: ModuleGroup
-  /** Cannot be turned off (system / the cockpit). */
+  /** Pinned on — only Admin, so you can always reach this panel. */
   locked?: boolean
-  /** Could be delegated to the EHR instead of CodeCompanion. */
+  /** Your EHR may already provide this — safe to turn off / delegate. */
   delegable?: boolean
   defaultOn: boolean
   desc: string
 }
 
 export const MODULE_GROUPS: { id: ModuleGroup; label: string; blurb: string }[] = [
-  { id: 'core', label: 'Daily drivers', blurb: 'The office-manager cockpit.' },
-  { id: 'billing', label: 'Billing & RCM', blurb: "CodeCompanion's own rails — keep these on even when Athena handles the rest." },
-  { id: 'clinical', label: 'Clinical & intelligence', blurb: 'Delegable — turn off anything your EHR (e.g. Athena) already provides.' },
-  { id: 'system', label: 'System', blurb: 'Always on.' },
+  { id: 'core', label: 'Daily drivers', blurb: 'The office-manager cockpit and overview.' },
+  { id: 'billing', label: 'Billing & RCM', blurb: 'Turn these off when Athena (or your EHR) runs billing for you.' },
+  { id: 'clinical', label: 'Clinical & intelligence', blurb: 'Turn off anything your EHR already provides.' },
+  { id: 'system', label: 'System', blurb: 'Admin stays on so you can always get back here.' },
 ]
 
 export const MODULES: ModuleDef[] = [
-  { id: 'command', label: 'Command Center', href: '/command', group: 'core', locked: true, defaultOn: true, desc: 'The revenue-cycle cockpit.' },
+  { id: 'command', label: 'Command Center', href: '/command', group: 'core', defaultOn: true, desc: 'The revenue-cycle cockpit.' },
   { id: 'tasks', label: 'Follow-up Queue', href: '/tasks', group: 'core', defaultOn: true, desc: 'Owned, prioritized open work.' },
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', group: 'core', defaultOn: true, desc: 'Practice overview.' },
 
@@ -54,9 +57,9 @@ export const MODULES: ModuleDef[] = [
   { id: 'corpus', label: 'Corpus', href: '/corpus', group: 'clinical', delegable: true, defaultOn: true, desc: 'De-identified behavior corpus.' },
   { id: 'upload', label: 'Upload & Test', href: '/upload', group: 'clinical', delegable: true, defaultOn: true, desc: 'Upload 837/835 to test.' },
 
-  { id: 'admin', label: 'Admin', href: '/admin', group: 'system', locked: true, defaultOn: true, desc: 'Module control.' },
-  { id: 'account', label: 'Account', href: '/account', group: 'system', locked: true, defaultOn: true, desc: 'Your account.' },
-  { id: 'settings', label: 'Settings', href: '/settings', group: 'system', locked: true, defaultOn: true, desc: 'Settings.' },
+  { id: 'admin', label: 'Admin', href: '/admin', group: 'system', locked: true, defaultOn: true, desc: 'Module control (always on).' },
+  { id: 'account', label: 'Account', href: '/account', group: 'system', defaultOn: true, desc: 'Your account.' },
+  { id: 'settings', label: 'Settings', href: '/settings', group: 'system', defaultOn: true, desc: 'Settings.' },
 ]
 
 export const MODULE_BY_ID = new Map(MODULES.map((m) => [m.id, m]))

@@ -14,9 +14,9 @@ export function defaultFlags(): FlagMap {
 }
 
 /**
- * Resolve persisted overrides onto the defaults. Locked modules (the cockpit and
- * system pages) are ALWAYS on regardless of any override — you can't break out of
- * the app.
+ * Resolve persisted overrides onto the defaults. Locked modules (only Admin) are
+ * ALWAYS on regardless of any override — so you can always reach this panel and
+ * re-enable anything. Every other module is fully toggleable.
  */
 export function resolveFlags(overrides: Partial<FlagMap> = {}): FlagMap {
   const f = defaultFlags()
@@ -64,19 +64,27 @@ export function serializeOverrides(flags: FlagMap): string {
   return JSON.stringify(out)
 }
 
-export type PresetId = 'all' | 'rcm'
+export type PresetId = 'all' | 'rcm' | 'clinical'
 
-/** One-click configurations. `rcm` delegates clinical modules to the EHR. */
+/**
+ * One-click configurations for the two integration shapes:
+ * - `rcm` delegates the clinical modules to the EHR (CodeCompanion runs billing).
+ * - `clinical` delegates billing to the EHR (e.g. Athena runs billing and won't
+ *   permit a third-party biller), keeping CodeCompanion's clinical/intelligence.
+ */
 export const PRESETS: Record<PresetId, { label: string; desc: string }> = {
   all: { label: 'Everything on', desc: 'Enable every module.' },
   rcm: { label: 'Billing & RCM only', desc: 'Keep billing/RCM; turn off clinical modules (delegate them to your EHR).' },
+  clinical: { label: 'Clinical only (EHR billing)', desc: 'Turn off billing & RCM — for when Athena (or your EHR) runs billing.' },
 }
 
 export function applyPreset(preset: PresetId): FlagMap {
   const f = defaultFlags()
   for (const m of MODULES) {
     if (m.locked) { f[m.id] = true; continue }
-    f[m.id] = preset === 'all' ? true : m.group !== 'clinical'
+    if (preset === 'all') f[m.id] = true
+    else if (preset === 'rcm') f[m.id] = m.group !== 'clinical'
+    else f[m.id] = m.group !== 'billing' // 'clinical' — the EHR owns billing
   }
   return f
 }
