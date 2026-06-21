@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 const nav = [
   { href: '/command', label: 'Command Center', badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 1.5v2.2M8 12.3v2.2M1.5 8h2.2M12.3 8h2.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+  { href: '/workday', label: 'Workday', badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="9.5" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M8 2.5v1.6M2.8 4.3l1.1 1.1M13.2 4.3l-1.1 1.1M1.5 9.5h1.6M12.9 9.5h1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M1.5 13h13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> },
   { href: '/tasks', label: 'Follow-up Queue', badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6.2l1.3 1.3L9 4.8M5 10.4l1.3 1.3L9 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/dashboard',  label: 'Dashboard',      badge: null,
