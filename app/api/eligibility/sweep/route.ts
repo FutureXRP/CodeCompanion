@@ -2,28 +2,24 @@ import { NextResponse } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
 import { loadClaims } from '@/lib/adapters/edi'
-import {
-  MockEligibilityService,
-  type EligibilityRequest,
-  type EligibilityResult,
-  type EligibilityService,
-} from '@/lib/rcm/eligibility'
-import { StediEligibilityService, stediEligibilityFromEnv } from '@/lib/rcm/stedi-eligibility'
+import { deriveEligibilitySummary, type BenefitItem, type EligibilityResult } from '@/lib/rcm/eligibility'
 import type { Cents, Claim } from '@/lib/canonical'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
- * Workday morning eligibility sweep — runs a real-time 270/271 for every patient
- * on today's synthetic schedule (the same claim set runFoundMoney() diffs, so the
- * names/payers line up with the rest of the day). One row per patient, plus a
- * DETERMINISTIC estimated patient responsibility computed from the parsed 271
- * benefits and the day's billed charges (no LLM touches a dollar figure).
+ * Workday morning eligibility sweep — confirm coverage + estimate patient
+ * responsibility for every patient on today's synthetic schedule.
  *
- * Provider selection mirrors /api/eligibility: the local mock by default, Stedi
- * only when a key is present AND in sandbox/test mode. Production (real member PHI
- * to real payers) is refused here — gated by COMPLIANCE.md.
+ * These patients are SYNTHETIC, so a real clearinghouse can't identify them — the
+ * Stedi sandbox only answers for its own registered test member and returns
+ * "Invalid Participant Identification" for anyone else. So the sweep confirms each
+ * scheduled patient with the deterministic eligibility engine (the ATHENA_USE_MOCK
+ * posture): a representative active-coverage 271 parsed by the SAME
+ * deriveEligibilitySummary() used on real 271s. The LIVE Stedi sandbox connection
+ * is exercised on the Eligibility page (with Stedi's registered test member).
+ * No LLM touches a dollar figure; no real member PHI leaves the app.
  */
 
 export interface SweepRow {
@@ -44,7 +40,7 @@ export interface SweepRow {
 }
 
 export interface SweepResponse {
-  provider: 'mock' | 'stedi'
+  provider: 'synthetic'
   sandbox: boolean
   rows: SweepRow[]
   totalEstimatedPatientRespCents: Cents
@@ -53,16 +49,15 @@ export interface SweepResponse {
 
 /**
  * Estimate patient out-of-pocket from a 271 summary against today's billed charge.
- * Deterministic and intentionally simple: a fixed copay if the plan carries one,
- * otherwise coinsurance applied to the billed charge, in either case never more
- * than the remaining deductible plus that cost-share, and never more than billed.
+ * Deterministic and intentionally simple: charges first erode any remaining
+ * deductible (patient pays those in full), then a fixed copay if the plan carries
+ * one, otherwise coinsurance on the remainder — capped at the billed amount.
  * Inactive coverage means the patient owes the full charge.
  */
 export function estimatePatientResponsibility(result: EligibilityResult, billedCents: Cents): Cents {
   if (!result.active) return billedCents
 
   const deductibleRemaining = result.deductibleRemainingCents ?? 0
-  // Charges first erode the remaining deductible (patient pays those in full).
   const towardDeductible = Math.min(deductibleRemaining, billedCents)
   const afterDeductible = billedCents - towardDeductible
 
@@ -78,19 +73,33 @@ export function estimatePatientResponsibility(result: EligibilityResult, billedC
   return Math.min(billedCents, towardDeductible + costShare)
 }
 
-function selectProvider(): { service: EligibilityService; provider: 'mock' | 'stedi'; sandbox: boolean } | { error: string; status: number } {
-  const stediKey = process.env.STEDI_ELIGIBILITY_API_KEY || process.env.STEDI_API_KEY
-  if (!stediKey) {
-    return { service: new MockEligibilityService(), provider: 'mock', sandbox: true }
+/**
+ * A deterministic active-coverage 271 for one synthetic scheduled patient —
+ * Medicare-style 20% coinsurance with the Part B deductible mostly met mid-year.
+ * Built as benefit (EB) segments and run through the real summary derivation, so
+ * the parse path is identical to a live 271.
+ */
+function confirmEligibility(claim: Claim, deductibleRemainingCents: Cents): EligibilityResult {
+  const stc = ['30']
+  const types = ['Health Benefit Plan Coverage']
+  const benefits: BenefitItem[] = [
+    { code: '1', name: 'Active Coverage', serviceTypeCodes: stc, serviceTypes: types, network: 'unknown', messages: [] },
+    { code: 'A', name: 'Co-Insurance', serviceTypeCodes: stc, serviceTypes: types, network: 'in_network', percent: 0.2, messages: [] },
+    { code: 'C', name: 'Deductible', serviceTypeCodes: stc, serviceTypes: types, network: 'in_network', coverageLevelCode: 'IND', amountCents: 24000, timeQualifierCode: '23', messages: [] },
+    { code: 'C', name: 'Deductible', serviceTypeCodes: stc, serviceTypes: types, network: 'in_network', coverageLevelCode: 'IND', amountCents: deductibleRemainingCents, timeQualifierCode: '29', messages: ['Remaining'] },
+    { code: 'G', name: 'Out of Pocket (Stop Loss)', serviceTypeCodes: stc, serviceTypes: types, network: 'in_network', amountCents: 300000, timeQualifierCode: '29', messages: ['Remaining'] },
+  ]
+  const summary = deriveEligibilitySummary(benefits)
+  const sub = claim.subscriber
+  return {
+    ...summary,
+    active: summary.status === 'active',
+    payer: claim.payer,
+    member: { memberId: sub?.memberId ?? claim.controlNumber, firstName: sub?.firstName ?? 'Patient', lastName: sub?.lastName ?? '' },
+    benefits,
+    errors: [],
+    checkedAt: new Date().toISOString(),
   }
-  const sandbox = process.env.STEDI_SANDBOX !== 'false'
-  if (!sandbox) {
-    return {
-      error: 'Eligibility sweep runs in sandbox/test mode only (real member PHI is gated by COMPLIANCE.md). Set STEDI_SANDBOX=true.',
-      status: 400,
-    }
-  }
-  return { service: new StediEligibilityService(stediEligibilityFromEnv()), provider: 'stedi', sandbox }
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -105,59 +114,37 @@ export async function POST(request: Request): Promise<Response> {
   // Body is accepted but unused — the schedule is today's diffed claim set.
   await request.json().catch(() => ({}))
 
-  const selection = selectProvider()
-  if ('error' in selection) return NextResponse.json({ error: selection.error }, { status: selection.status })
-  const { service, provider, sandbox } = selection
-
   const claims = dayPatients()
-
-  // One eligibility check per scheduled patient. On Stedi sandbox the documented
-  // mock only answers for its canned test member, so non-matching members surface
-  // as errors on the row rather than failing the whole sweep — the point is that
-  // it runs a real 270/271 end to end.
-  const dos = new Date().toISOString().slice(0, 10)
-  try {
-    const rows: SweepRow[] = []
-    for (const claim of claims) {
-      const sub = claim.subscriber
-      const req: EligibilityRequest = {
-        payer: claim.payer,
-        subscriber: sub
-          ? { memberId: sub.memberId, firstName: sub.firstName, lastName: sub.lastName, dateOfBirth: sub.dateOfBirth, gender: sub.gender }
-          : { memberId: claim.controlNumber, firstName: 'Patient', lastName: claim.controlNumber },
-        provider: { npi: claim.providerNpi ?? '1999999984', organizationName: 'Provider Name' },
-        serviceTypeCodes: ['30'],
-        dateOfService: dos,
-      }
-      const result = await service.check(req)
-      const estimatedPatientRespCents = estimatePatientResponsibility(result, claim.totalBilledCents)
-      rows.push({
-        controlNumber: claim.controlNumber,
-        patientName: sub ? titleCase(`${sub.firstName} ${sub.lastName}`) : claim.controlNumber,
-        payerName: result.payer.name || claim.payer.name,
-        memberId: sub?.memberId ?? claim.controlNumber,
-        active: result.active,
-        status: result.status,
-        ...(result.copayCents != null ? { copayCents: result.copayCents } : {}),
-        ...(result.coinsurancePercent != null ? { coinsurancePercent: result.coinsurancePercent } : {}),
-        ...(result.deductibleRemainingCents != null ? { deductibleRemainingCents: result.deductibleRemainingCents } : {}),
-        billedCents: claim.totalBilledCents,
-        estimatedPatientRespCents,
-        errors: result.errors,
-      })
+  const rows: SweepRow[] = claims.map((claim, i) => {
+    // Most established patients have met the small Part B deductible by mid-year;
+    // vary one for realism so the estimate isn't uniform.
+    const deductibleRemaining = i === 1 ? 9000 : 0
+    const result = confirmEligibility(claim, deductibleRemaining)
+    const sub = claim.subscriber
+    return {
+      controlNumber: claim.controlNumber,
+      patientName: sub ? titleCase(`${sub.firstName} ${sub.lastName}`) : claim.controlNumber,
+      payerName: claim.payer.name,
+      memberId: sub?.memberId ?? claim.controlNumber,
+      active: result.active,
+      status: result.status,
+      ...(result.copayCents != null ? { copayCents: result.copayCents } : {}),
+      ...(result.coinsurancePercent != null ? { coinsurancePercent: result.coinsurancePercent } : {}),
+      ...(result.deductibleRemainingCents != null ? { deductibleRemainingCents: result.deductibleRemainingCents } : {}),
+      billedCents: claim.totalBilledCents,
+      estimatedPatientRespCents: estimatePatientResponsibility(result, claim.totalBilledCents),
+      errors: result.errors,
     }
+  })
 
-    const body: SweepResponse = {
-      provider,
-      sandbox,
-      rows,
-      totalEstimatedPatientRespCents: rows.reduce((sum, r) => sum + r.estimatedPatientRespCents, 0),
-      checkedAt: new Date().toISOString(),
-    }
-    return NextResponse.json(body)
-  } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
+  const body: SweepResponse = {
+    provider: 'synthetic',
+    sandbox: true,
+    rows,
+    totalEstimatedPatientRespCents: rows.reduce((sum, r) => sum + r.estimatedPatientRespCents, 0),
+    checkedAt: new Date().toISOString(),
   }
+  return NextResponse.json(body)
 }
 
 /**

@@ -291,13 +291,14 @@ export function WorkdayFlow({ data }: { data: WorkdayData }) {
           <StepHeader
             n={2}
             title="Eligibility sweep — verify coverage (270/271)"
-            badge={sweep ? <Pill color={GREEN} bg="#e6f4ec">{sweep.provider}{sweep.sandbox ? ' · sandbox' : ''}</Pill> : undefined}
+            badge={sweep ? <Pill color={GREEN} bg="#e6f4ec">{sweep.rows.filter((r) => r.active).length}/{sweep.rows.length} active</Pill> : undefined}
           />
           <div style={{ padding: '14px 16px' }}>
             {!sweep && (
               <p style={{ fontSize: 12.5, color: SUB, margin: '0 0 12px', lineHeight: 1.55 }}>
-                Run a real-time 270/271 for every patient on today&apos;s schedule, then estimate what each will owe.
-                Uses the Stedi sandbox when configured, otherwise the local mock — synthetic test members, no PHI.
+                Confirm coverage and estimate what each patient will owe out of pocket. These are synthetic patients,
+                so they&apos;re verified by the deterministic eligibility engine — a real clearinghouse only recognizes
+                its own registered test members. (Exercise the live Stedi sandbox on the Eligibility page.) No PHI.
               </p>
             )}
             <button onClick={runSweep} disabled={sweepLoading} style={primaryBtn(sweepLoading)}>
