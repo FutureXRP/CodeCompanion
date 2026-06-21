@@ -13,6 +13,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 4.3v7.4M9.9 5.9c-.3-.7-1-1.1-1.9-1.1-1 0-1.9.5-1.9 1.4 0 2 3.8 1 3.8 3.1 0 .9-.9 1.5-1.9 1.5-1 0-1.7-.4-2-1.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/ehr',         label: 'EHR Pull',       badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.5 11v2a1 1 0 001 1h9a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> },
+  { href: '/sandbox',     label: 'Sandbox',        badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 1.5h4M6.5 1.5v4L3.2 11.6A1.4 1.4 0 004.5 13.8h7a1.4 1.4 0 001.3-2.2L9.5 5.5v-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M4.8 9h6.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
   { href: '/claims',      label: 'Claims (RCM)',   badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
   { href: '/ledger',      label: 'Patient Balances', badge: null,
