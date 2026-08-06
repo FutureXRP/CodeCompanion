@@ -7,14 +7,29 @@ import { NextResponse, type NextRequest } from 'next/server'
  * Degrades gracefully: with no Supabase env, this is a no-op so the synthetic
  * demo (and a zero-config Vercel deploy) keeps working with no login. Once the
  * URL + anon key are set, dashboard routes require an authenticated user.
+ *
+ * Resilience: getUser() is a network round-trip to Supabase on EVERY request. It
+ * is raced against a timeout so a slow or unreachable Supabase can never hang the
+ * edge middleware — which otherwise surfaces as a Vercel 504
+ * MIDDLEWARE_INVOCATION_TIMEOUT and takes the whole app offline. On timeout the
+ * request simply proceeds (no redirect); auth is re-checked on the next request.
  */
 
 const PUBLIC_EXACT = new Set(['/'])
 const PUBLIC_PREFIXES = ['/login', '/auth']
+const GETUSER_TIMEOUT_MS = 3000
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT.has(pathname)) return true
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+/** Reject after `ms` so a hung network call never blocks the runtime. */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('supabase-timeout')), ms)),
+  ])
 }
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
@@ -37,26 +52,31 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     },
   })
 
-  // IMPORTANT: do not run code between createServerClient and getUser() — it
-  // refreshes the session token and must be the first auth call.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
 
-  if (!user && !isPublicPath(pathname)) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/login'
-    redirectUrl.searchParams.set('redirectTo', pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
+  try {
+    // IMPORTANT: do not run code between createServerClient and getUser() — it
+    // refreshes the session token and must be the first auth call.
+    const {
+      data: { user },
+    } = await withTimeout(supabase.auth.getUser(), GETUSER_TIMEOUT_MS)
 
-  if (user && pathname === '/login') {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/dashboard'
-    redirectUrl.searchParams.delete('redirectTo')
-    return NextResponse.redirect(redirectUrl)
+    if (!user && !isPublicPath(pathname)) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      redirectUrl.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    if (user && pathname === '/login') {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/dashboard'
+      redirectUrl.searchParams.delete('redirectTo')
+      return NextResponse.redirect(redirectUrl)
+    }
+  } catch {
+    // Supabase slow/unreachable — do NOT hang the edge middleware or bounce the
+    // user to /login. Proceed; page-level auth re-checks on the next request.
   }
 
   return response
