@@ -1,13 +1,19 @@
-import { runFoundMoney } from '@/lib/found-money/run'
+import { loadFoundMoney } from '@/lib/found-money/source'
 import { findingsToCsv, reportToJson } from '@/lib/found-money/export'
 
-// Generates the report server-side and streams it as a download.
+// Generates the report server-side on the same source the Found Money page
+// shows (the Tebra pull, or the 837/835 files) and streams it as a download.
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export function GET(request: Request): Response {
+export async function GET(request: Request): Promise<Response> {
   const format = new URL(request.url).searchParams.get('format') ?? 'csv'
-  const report = runFoundMoney()
+  let report
+  try {
+    report = (await loadFoundMoney()).report
+  } catch (e) {
+    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
+  }
 
   if (format === 'json') {
     return new Response(reportToJson(report), {

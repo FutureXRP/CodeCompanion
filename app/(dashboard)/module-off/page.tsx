@@ -22,7 +22,7 @@ export default async function ModuleOffPage({ searchParams }: { searchParams: Pr
       </div>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: INK, margin: '0 0 8px', letterSpacing: '-0.02em' }}>{label} is turned off</h1>
       <p style={{ fontSize: 13.5, color: SUB, margin: '0 auto', maxWidth: 420, lineHeight: 1.6 }}>
-        An administrator has disabled this module{mod?.delegable ? ' — it may be handled in your EHR (e.g. Athena) instead' : ''}.
+        An administrator has disabled this module{mod?.delegable ? ' — it may be handled in your practice-management system (e.g. Tebra) instead' : ''}.
         Turn it back on in <strong>Admin → Module control</strong>.
       </p>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 26 }}>

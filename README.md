@@ -9,7 +9,8 @@ approved, the claim after the payer answers.
 See `CLAUDE.md`, `ARCHITECTURE.md`, and `ROADMAP.md` for the design and the
 "ladder" (found money → full RCM → predictive adjudication → settlement);
 `TEBRA-INTEGRATION.md` for the practice-management integration and its runbook;
-`GO-LIVE.md` + `DEPLOY.md` for production.
+`TRAINING-MANUAL.md` for the staff walkthrough (`npm run training:pdf` renders
+the PDF into `docs/training/`); `GO-LIVE.md` + `DEPLOY.md` for production.
 
 ## Quick start (zero config)
 

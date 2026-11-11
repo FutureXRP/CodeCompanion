@@ -13,7 +13,7 @@ How CodeCompanion plugs into Tebra (formerly Kareo) if SquareOne moves off athen
 | **Tebra** | Charge entry, claim submission (its clearinghouse, TriZetto), eligibility checks, ERA/EFT auto-posting, patient statements and card payments |
 | **CodeCompanion** | The found-money diff (underpayments, un-appealed denials, unanswered claims), the denial worklist, appeal drafting, coding suggestions, the pre-submission scrubber, the command center |
 
-So on Tebra the Stedi rails are switched **off** in Admin (Eligibility, Claims, Clearinghouse, Enrollments, Patient Billing) and Stedi drops out of the BAA list. Everything else stays.
+So on Tebra the Stedi rails are switched **off** — one click: *Admin → Tebra (PM runs billing)* keeps the Tebra loop (Front Desk, Pre-approval Review, Found Money, Posting Workbench, Follow-up Queue, Scorecard, EHR Pull) and turns off Eligibility, Claims, Clearinghouse, Enrollments, Patient Billing and the modules still bound to the demo EHR — and Stedi drops out of the BAA list. The Found Money page, its CSV export and the appeal drafter read the Tebra pull (`FOUND_MONEY_SOURCE`, default `tebra` unless real 837/835 files are configured). The staff-facing walkthrough is `TRAINING-MANUAL.md` (`npm run training:pdf` renders the PDF).
 
 The reason this is *easier* than athena: one Tebra API record (`GetCharges`) carries all three sides of the Rung 0 join for a service line —
 

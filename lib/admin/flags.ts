@@ -64,19 +64,31 @@ export function serializeOverrides(flags: FlagMap): string {
   return JSON.stringify(out)
 }
 
-export type PresetId = 'all' | 'rcm' | 'clinical'
+export type PresetId = 'all' | 'rcm' | 'clinical' | 'tebra'
 
 /**
- * One-click configurations for the two integration shapes:
+ * One-click configurations for the integration shapes:
  * - `rcm` delegates the clinical modules to the EHR (CodeCompanion runs billing).
- * - `clinical` delegates billing to the EHR (e.g. Athena runs billing and won't
+ * - `clinical` delegates billing to the EHR (e.g. athena runs billing and won't
  *   permit a third-party biller), keeping CodeCompanion's clinical/intelligence.
+ * - `tebra` is the practice-management shape (TEBRA-INTEGRATION.md): Tebra
+ *   submits claims, posts ERAs and bills patients; CodeCompanion runs the loop
+ *   around it. The Stedi rails and the modules still bound to the demo EHR go off.
  */
 export const PRESETS: Record<PresetId, { label: string; desc: string }> = {
   all: { label: 'Everything on', desc: 'Enable every module.' },
   rcm: { label: 'Billing & RCM only', desc: 'Keep billing/RCM; turn off clinical modules (delegate them to your EHR).' },
-  clinical: { label: 'Clinical only (EHR billing)', desc: 'Turn off billing & RCM — for when Athena (or your EHR) runs billing.' },
+  clinical: { label: 'Clinical only (EHR billing)', desc: 'Turn off billing & RCM — for when athena (or your EHR) runs billing.' },
+  tebra: {
+    label: 'Tebra (PM runs billing)',
+    desc: 'Tebra submits claims, posts ERAs and bills patients. Keep the Tebra loop — Front Desk, Pre-approval Review, Found Money, Posting Workbench, Follow-up Queue, Scorecard, EHR Pull — plus the overview pages; turn off the Stedi rails and the modules still bound to the demo EHR.',
+  },
 }
+
+/** The modules the Tebra loop uses; everything else is off under that preset (Admin stays locked on). */
+export const TEBRA_MODULES: ReadonlySet<string> = new Set([
+  'command', 'dashboard', 'tasks', 'frontdesk', 'review', 'workbench', 'scorecard', 'found-money', 'ehr', 'account', 'settings',
+])
 
 export function applyPreset(preset: PresetId): FlagMap {
   const f = defaultFlags()
@@ -84,6 +96,7 @@ export function applyPreset(preset: PresetId): FlagMap {
     if (m.locked) { f[m.id] = true; continue }
     if (preset === 'all') f[m.id] = true
     else if (preset === 'rcm') f[m.id] = m.group !== 'clinical'
+    else if (preset === 'tebra') f[m.id] = TEBRA_MODULES.has(m.id)
     else f[m.id] = m.group !== 'billing' // 'clinical' — the EHR owns billing
   }
   return f

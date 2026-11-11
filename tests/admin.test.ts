@@ -65,3 +65,14 @@ test('preset "clinical" turns billing off (the EHR runs billing) and keeps every
   assert.equal(clinical.command, true) // core stays on
   assert.equal(clinical.admin, true) // locked stays on
 })
+
+test('preset "tebra" keeps the Tebra loop and the overview pages on; Stedi rails and demo-bound modules off', () => {
+  const t = applyPreset('tebra')
+  for (const id of ['frontdesk', 'review', 'found-money', 'workbench', 'tasks', 'scorecard', 'ehr', 'command', 'dashboard', 'admin', 'account', 'settings']) {
+    assert.equal(t[id], true, `${id} should be on`)
+  }
+  for (const id of ['eligibility', 'claims', 'clearinghouse', 'enrollments', 'billing', 'ledger', 'scrub', 'aging', 'coding', 'gaps', 'audit', 'pulse', 'schedule', 'analytics', 'predict', 'corpus', 'upload']) {
+    assert.equal(t[id], false, `${id} should be off`)
+  }
+  assert.equal(Object.keys(t).length, MODULES.length)
+})

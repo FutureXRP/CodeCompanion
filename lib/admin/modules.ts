@@ -26,7 +26,7 @@ export interface ModuleDef {
 
 export const MODULE_GROUPS: { id: ModuleGroup; label: string; blurb: string }[] = [
   { id: 'core', label: 'Daily drivers', blurb: 'The office-manager cockpit and overview.' },
-  { id: 'billing', label: 'Billing & RCM', blurb: 'Turn these off when Athena (or your EHR) runs billing for you.' },
+  { id: 'billing', label: 'Billing & RCM', blurb: 'Turn these off when Tebra (or your EHR) runs billing for you.' },
   { id: 'clinical', label: 'Clinical & intelligence', blurb: 'Turn off anything your EHR already provides.' },
   { id: 'system', label: 'System', blurb: 'Admin stays on so you can always get back here.' },
 ]

@@ -95,7 +95,7 @@ export function TebraPullButton() {
           )}
           <div style={{ marginTop: 6, fontSize: 12, color: '#4b5b52' }}>
             {result.persisted ? 'Saved to your Neon database ✓ — ' : `(not saved: ${result.persistError}) — `}
-            now in <a href="/found-money" style={{ color: '#2f5a86', fontWeight: 600 }}>Found Money</a> and <a href="/claims" style={{ color: '#2f5a86', fontWeight: 600 }}>Claims</a>.
+            now in <a href="/found-money" style={{ color: '#2f5a86', fontWeight: 600 }}>Found Money</a> and the <a href="/workbench" style={{ color: '#2f5a86', fontWeight: 600 }}>Posting Workbench</a>.
           </div>
         </div>
       )}

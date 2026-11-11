@@ -2,9 +2,9 @@ import { Badge } from '@/components/ui/Badge'
 import { StatCard } from '@/components/ui/StatCard'
 import { AppealButton } from '@/components/found-money/AppealButton'
 import { formatCents, type Finding, type FindingType } from '@/lib/canonical'
-import { runFoundMoney, type FoundMoneyReport } from '@/lib/found-money/run'
+import { loadFoundMoney, type FoundMoneyView } from '@/lib/found-money/source'
 
-// Reads sample files and runs the diff server-side; never prerendered/edge.
+// Runs the diff server-side on the configured source (the Tebra pull, or 837/835 files); never prerendered/edge.
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -41,16 +41,16 @@ const td: React.CSSProperties = {
   verticalAlign: 'top',
 }
 
-export default function FoundMoneyPage() {
-  let report: FoundMoneyReport | null = null
+export default async function FoundMoneyPage() {
+  let view: FoundMoneyView | null = null
   let error: string | null = null
   try {
-    report = runFoundMoney()
+    view = await loadFoundMoney()
   } catch (e) {
     error = e instanceof Error ? e.message : String(e)
   }
 
-  if (!report) {
+  if (!view) {
     return (
       <div style={{ padding: '28px 32px', maxWidth: '1100px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
@@ -63,17 +63,25 @@ export default function FoundMoneyPage() {
     )
   }
 
+  const { report, claims } = view
   const { totals, meta, findings } = report
+  const patientByControl = new Map(claims.map((c) => [c.controlNumber, c.subscriber ? `${c.subscriber.firstName} ${c.subscriber.lastName}`.trim() : '']))
+  const tebra = view.kind === 'tebra'
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#1f2d27', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-            Found Money
-          </h1>
-          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-            Deterministic diff of what you billed (837) vs. what was paid (835) vs. your contracted rate.
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4, gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 480px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#1f2d27', margin: 0, letterSpacing: '-0.02em' }}>Found Money</h1>
+            <span style={{ fontSize: 11, fontWeight: 600, color: view.live ? '#b8862a' : '#2f8a5b', background: view.live ? '#f6efdd' : '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>
+              {view.label}
+            </span>
+          </div>
+          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: 1.5, maxWidth: 640 }}>
+            {tebra
+              ? 'What was billed vs. what your Tebra contract rates expect vs. what the payer actually did — every line, after the payer answers. Deterministic; nothing here is an estimate.'
+              : 'Deterministic diff of what you billed (837) vs. what was paid (835) vs. your contracted rate.'}
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -107,6 +115,7 @@ export default function FoundMoneyPage() {
             <tr>
               <th style={{ ...th, textAlign: 'right' }}>Recoverable</th>
               <th style={th}>Type</th>
+              <th style={th}>Patient</th>
               <th style={th}>CPT</th>
               <th style={th}>Payer</th>
               <th style={th}>DOS</th>
@@ -122,13 +131,17 @@ export default function FoundMoneyPage() {
                   {formatCents(finding.recoverableCents)}
                 </td>
                 <td style={td}><Badge label={TYPE_BADGE[finding.type].label} variant={TYPE_BADGE[finding.type].variant} /></td>
+                <td style={{ ...td, fontWeight: 500, color: '#1f2d27', whiteSpace: 'nowrap' }}>
+                  {patientByControl.get(finding.claimControlNumber) || finding.claimControlNumber}
+                  <div style={{ fontSize: 11, color: '#9aa69f', fontFamily: 'DM Mono, monospace', fontWeight: 400 }}>{finding.claimControlNumber}</div>
+                </td>
                 <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>
                   {finding.cptHcpcs}{finding.modifiers.length ? `-${finding.modifiers.join('-')}` : ''}
                 </td>
                 <td style={td}>{finding.payerName}</td>
                 <td style={{ ...td, whiteSpace: 'nowrap', color: '#6b7280' }}>{finding.dateOfService ?? '—'}</td>
                 <td style={td}>{statusBadge(finding)}</td>
-                <td style={{ ...td, color: '#5a6b62', maxWidth: 360 }}>{finding.reason}</td>
+                <td style={{ ...td, color: '#5a6b62', maxWidth: 320 }}>{finding.reason}</td>
                 <td style={td}>
                   {finding.appealable && (finding.type === 'denial' || finding.type === 'underpayment') ? (
                     <AppealButton findingId={finding.id} kind={finding.type as 'denial' | 'underpayment'} />
@@ -138,13 +151,19 @@ export default function FoundMoneyPage() {
                 </td>
               </tr>
             ))}
+            {findings.length === 0 && (
+              <tr><td style={{ ...td, color: '#9aa69f' }} colSpan={9}>Nothing found — every line is paid to contract and answered.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
 
       <p style={{ fontSize: '12px', color: '#9aa69f', marginTop: 14, lineHeight: 1.5 }}>
-        Source: <strong>{meta.source}</strong> · {meta.claimCount} claims / {meta.lineCount} lines / {meta.remittanceCount} remittances · {meta.feeScheduleSize} contracted rates.
-        Money math is deterministic (no LLM, integer cents) and runs on synthetic data — set <code>EDI_USE_SAMPLE_FILES=false</code> with <code>ALLOW_REAL_PHI=true</code> after the COMPLIANCE.md gate to run on real 837/835 files.
+        Source: <strong>{view.label}</strong> · {meta.claimCount} claims / {meta.lineCount} lines / {meta.remittanceCount} remittances · {meta.feeScheduleSize} contracted rates.
+        Money math is deterministic (no LLM, integer cents).{' '}
+        {tebra
+          ? <>The <a href="/workbench" style={{ color: '#34685a', fontWeight: 600 }}>Posting Workbench</a> turns these findings into the biller&apos;s queue; the nightly sync stores them for the Follow-up Queue and the Scorecard. <code>FOUND_MONEY_SOURCE=files</code> shows the 837/835 file path instead.</>
+          : <>Set <code>EDI_USE_SAMPLE_FILES=false</code> with <code>ALLOW_REAL_PHI=true</code> after the COMPLIANCE.md gate to run on real 837/835 files; <code>FOUND_MONEY_SOURCE=tebra</code> shows the Tebra pull instead.</>}
       </p>
     </div>
   )

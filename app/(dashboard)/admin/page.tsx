@@ -18,12 +18,12 @@ export default async function AdminPage() {
       </div>
       <p style={{ fontSize: 13.5, color: SUB, margin: '0 0 22px', maxWidth: 700, lineHeight: 1.55 }}>
         Switch any section of the platform on or off — you own the backend, and only{' '}
-        <strong>Admin</strong> stays pinned so you can always get back here. Running alongside an EHR,
-        turn off whatever it already provides. An EHR like Athena runs billing itself and won&apos;t allow a
-        third-party biller, so on integration you switch the entire{' '}
-        <strong>Billing &amp; RCM</strong> group off — one click with the{' '}
-        <em>Clinical only</em> preset. If instead your EHR handles the clinical side, use{' '}
-        <em>Billing &amp; RCM only</em>.
+        <strong>Admin</strong> stays pinned so you can always get back here. Running alongside a
+        practice-management system, turn off whatever it already provides. On Tebra, which submits claims,
+        posts ERAs and bills patients, one click with the <em>Tebra (PM runs billing)</em> preset keeps the
+        Tebra loop — Front Desk, Pre-approval Review, Found Money, Posting Workbench, Follow-up Queue,
+        Scorecard, EHR Pull — and switches the rest off. An EHR that runs billing but nothing else (athena) is the{' '}
+        <em>Clinical only</em> preset; an EHR that handles the clinical side is <em>Billing &amp; RCM only</em>.
       </p>
       <AdminPanel initial={flags} persisted={isNeonConfigured()} />
     </div>
