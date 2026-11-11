@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const to = body.serviceDateTo || body.serviceDateFrom || today
     const from = body.serviceDateFrom || (cfg.useMock ? to : daysBefore(to, 30))
 
-    const { claims, remittances, feeSchedule, report } = await runTebraFoundMoney(createTebraSource(cfg), {
+    const { claims, remittances, feeSchedule, report, workbench } = await runTebraFoundMoney(createTebraSource(cfg), {
       serviceDateFrom: from,
       serviceDateTo: to,
     })
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
       findings: report.totals.count,
       recoverableCents: report.totals.recoverableCents,
       byType: report.totals.byType,
+      workbench: { items: workbench.items.length, atStakeCents: workbench.atStakeCents },
       persisted,
       persistError,
     })

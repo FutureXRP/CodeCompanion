@@ -1,5 +1,14 @@
 import { dollarsToCents } from '../../canonical'
-import type { Adjustment, Claim, FeeScheduleLine, Payer, Remittance, RemittanceLine } from '../../canonical'
+import type {
+  Adjustment,
+  Claim,
+  ClaimTracking,
+  ClaimTrackingStatus,
+  FeeScheduleLine,
+  Payer,
+  Remittance,
+  RemittanceLine,
+} from '../../canonical'
 import type { EhrEncounter, EhrServiceLine } from '../ehr'
 import { encounterToClaim } from '../ehr'
 import type { TebraChargeRaw, TebraPracticeRaw } from './types'
@@ -289,6 +298,48 @@ export function tebraChargesToRemittances(rows: TebraChargeRaw[]): Remittance[] 
       totalPaidCents: lines.reduce((sum, l) => sum + l.paidCents, 0),
       patientRespCents: lines.reduce((sum, l) => sum + l.patientRespCents, 0),
       lines,
+    })
+  }
+  return out
+}
+
+function trackingStatus(row: TebraChargeRaw): ClaimTrackingStatus {
+  switch (normalizeStatus(row.Status)) {
+    case 'denial':
+      return 'denied'
+    case 'rejection':
+      return 'rejected'
+    case 'noresponse':
+      return 'no_response'
+    default:
+      return isAdjudicated(row) ? 'adjudicated' : 'pending'
+  }
+}
+
+/**
+ * Per-line claim tracking — status, balances, and when the primary, the
+ * secondary and the patient were billed. The posting workbench works from this
+ * (resubmits, status checks, unbilled secondaries, unsent statements).
+ */
+export function tebraChargesToClaimTracking(rows: TebraChargeRaw[]): ClaimTracking[] {
+  const out: ClaimTracking[] = []
+  for (const [encounterId, group] of groupByEncounter(rows)) {
+    group.forEach((row, i) => {
+      const secondaryName = row.SecondaryInsuranceBilledCompanyName?.trim() || row.SecondaryInsuranceBilledPlanName?.trim() || ''
+      out.push({
+        claimControlNumber: encounterId,
+        claimLineId: `${encounterId}:${i + 1}`,
+        status: trackingStatus(row),
+        lastBilledDate:
+          tebraDate(row.PrimaryInsuranceLastBillDate) ||
+          tebraDate(row.PrimaryInsuranceFirstBillDate ?? row.PrimaryInsuranceFirstBilDate) ||
+          undefined,
+        insuranceBalanceCents: tebraCents(row.InsuranceBalance),
+        patientBalanceCents: tebraCents(row.PatientBalance),
+        ...(secondaryName ? { secondaryPayer: { externalId: payerKey(secondaryName), name: secondaryName } } : {}),
+        secondaryBilledDate: tebraDate(row.SecondaryInsuranceFirstBillDate) || undefined,
+        patientBilledDate: tebraDate(row.PatientFirstBillDate) || undefined,
+      })
     })
   }
   return out

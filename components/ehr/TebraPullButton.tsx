@@ -16,6 +16,7 @@ interface PullResult {
   findings: number
   recoverableCents: number
   byType: { underpayment: TypeTotal; denial: TypeTotal; undercoding: TypeTotal; unadjudicated: TypeTotal }
+  workbench?: { items: number; atStakeCents: number }
   persisted: boolean
   persistError?: string | null
 }
@@ -86,6 +87,12 @@ export function TebraPullButton() {
               {' '}{t.unadjudicated.count} unanswered ({fmt(t.unadjudicated.recoverableCents)}), {t.undercoding.count} undercoded
             </span>
           </div>
+          {result.workbench && (
+            <div style={{ marginTop: 4 }}>
+              Posting workbench: <strong>{result.workbench.items}</strong> item{result.workbench.items === 1 ? '' : 's'} for a biller · <strong>{fmt(result.workbench.atStakeCents)}</strong> at stake
+              {' → '}<a href="/workbench" style={{ color: '#2f5a86', fontWeight: 600 }}>work the queue</a>
+            </div>
+          )}
           <div style={{ marginTop: 6, fontSize: 12, color: '#4b5b52' }}>
             {result.persisted ? 'Saved to your Neon database ✓ — ' : `(not saved: ${result.persistError}) — `}
             now in <a href="/found-money" style={{ color: '#2f5a86', fontWeight: 600 }}>Found Money</a> and <a href="/claims" style={{ color: '#2f5a86', fontWeight: 600 }}>Claims</a>.

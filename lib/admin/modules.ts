@@ -34,6 +34,7 @@ export const MODULE_GROUPS: { id: ModuleGroup; label: string; blurb: string }[] 
 export const MODULES: ModuleDef[] = [
   { id: 'command', label: 'Command Center', href: '/command', group: 'core', defaultOn: true, desc: 'The revenue-cycle cockpit.' },
   { id: 'tasks', label: 'Follow-up Queue', href: '/tasks', group: 'core', defaultOn: true, desc: 'Owned, prioritized open work.' },
+  { id: 'workbench', label: 'Posting Workbench', href: '/workbench', group: 'core', defaultOn: true, desc: 'Appeals, resubmits, secondaries, statements.' },
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', group: 'core', defaultOn: true, desc: 'Practice overview.' },
 
   { id: 'eligibility', label: 'Eligibility', href: '/eligibility', group: 'billing', defaultOn: true, desc: 'Real-time 270/271 verification.' },

@@ -158,6 +158,29 @@ export interface Remittance {
   lines: RemittanceLine[]
 }
 
+/**
+ * Where a submitted claim line stands with the payer, as the practice-management
+ * system tracks it — the 277-style status every PM carries, vendor-neutral.
+ * Drives the posting workbench; never a dollar figure on its own.
+ */
+export type ClaimTrackingStatus = 'pending' | 'rejected' | 'no_response' | 'adjudicated' | 'denied'
+
+export interface ClaimTracking {
+  claimControlNumber: string
+  /** Canonical line id (`${claimControlNumber}:${lineNumber}`). */
+  claimLineId: string
+  status: ClaimTrackingStatus
+  /** Last date the line was sent to the primary payer (YYYY-MM-DD), when known. */
+  lastBilledDate?: string
+  insuranceBalanceCents: Cents
+  patientBalanceCents: Cents
+  /** A secondary payer on file for the claim, and when it was billed (if ever). */
+  secondaryPayer?: Payer
+  secondaryBilledDate?: string
+  /** When the patient was first sent a statement for this line, when known. */
+  patientBilledDate?: string
+}
+
 export interface FeeScheduleLine {
   payerExternalId: string
   cptHcpcs: string

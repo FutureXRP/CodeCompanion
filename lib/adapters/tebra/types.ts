@@ -58,6 +58,14 @@ export interface TebraChargeRaw {
   /** Contract-expected allowed for this charge (Settings > Contracts and Fees > Contract Rates). */
   AllowedAmount?: string
   ExpectedAmount?: string
+  // ── Claim tracking: when each party was billed (the guide spells the first one "FirstBilDate").
+  PrimaryInsuranceFirstBillDate?: string
+  PrimaryInsuranceFirstBilDate?: string
+  PrimaryInsuranceLastBillDate?: string
+  SecondaryInsuranceFirstBillDate?: string
+  SecondaryInsuranceLastBillDate?: string
+  PatientFirstBillDate?: string
+  PatientLastBillDate?: string
   // ── Primary payer adjudication, as posted (ERA auto-post or manual).
   PrimaryInsurancePaymentID?: string
   PrimaryInsurancePaymentPostingDate?: string

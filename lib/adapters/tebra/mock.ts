@@ -39,7 +39,10 @@ export function sampleTebraCharges(serviceDate = '2026-01-15'): TebraChargeRaw[]
     ServiceLocationNPI: '1234567893',
     ServiceLocationPlaceofServiceCode: '11',
   }
+  // Every line went out to the primary payer on the service date.
+  const billed = { PrimaryInsuranceFirstBillDate: serviceDate, PrimaryInsuranceLastBillDate: serviceDate }
   const adjudicated = (paymentId: string, ref: string) => ({
+    ...billed,
     PrimaryInsurancePaymentID: paymentId,
     PrimaryInsurancePaymentPostingDate: serviceDate,
     PrimaryInsuranceAdjudicationDate: serviceDate,
@@ -50,11 +53,13 @@ export function sampleTebraCharges(serviceDate = '2026-01-15'): TebraChargeRaw[]
 
   return [
     // E-2001 — Medicare, paid exactly to contract (coinsurance is patient-owed, not a shortfall).
+    // SoonerCare is on file as secondary and has never been billed — the crossover was missed.
     {
       ...base, ...adjudicated('PAY-9001', 'EFT-114455'),
       ID: 'C-5001', EncounterID: 'E-2001', PatientID: 'P1001', PatientName: 'DOE, JANE', PatientDateOfBirth: '01/01/1990',
       CaseName: 'Medicare', CasePayerScenario: 'Medicare',
       PrimaryInsuranceBilledCompanyName: 'Medicare', PrimaryInsuranceBilledPlanName: 'Medicare Part B', BilledTo: 'Medicare',
+      SecondaryInsuranceBilledCompanyName: 'SoonerCare', SecondaryInsuranceBilledPlanName: 'SoonerCare Traditional',
       ProcedureCode: '99214', DiagnosisCode1: 'E11.65', DiagnosisCode2: 'I10', Units: '1', UnitCharge: '150.00', TotalCharges: '150.00',
       Status: 'Completed', ExpectedAmount: '112.50', AllowedAmount: '112.50',
       PrimaryInsuranceAllowed: '112.50', PrimaryInsuranceContractAdjustment: '37.50', PrimaryInsuranceContractAdjustmentReason: 'CO-45',
@@ -66,6 +71,7 @@ export function sampleTebraCharges(serviceDate = '2026-01-15'): TebraChargeRaw[]
       ID: 'C-5002', EncounterID: 'E-2001', PatientID: 'P1001', PatientName: 'DOE, JANE', PatientDateOfBirth: '01/01/1990',
       CaseName: 'Medicare', CasePayerScenario: 'Medicare',
       PrimaryInsuranceBilledCompanyName: 'Medicare', PrimaryInsuranceBilledPlanName: 'Medicare Part B', BilledTo: 'Medicare',
+      SecondaryInsuranceBilledCompanyName: 'SoonerCare', SecondaryInsuranceBilledPlanName: 'SoonerCare Traditional',
       ProcedureCode: '36415', DiagnosisCode1: 'E11.65', Units: '1', UnitCharge: '25.00', TotalCharges: '25.00',
       Status: 'Completed', ExpectedAmount: '3.00', AllowedAmount: '3.00',
       PrimaryInsuranceAllowed: '3.00', PrimaryInsuranceContractAdjustment: '22.00', PrimaryInsuranceContractAdjustmentReason: 'CO-45',
@@ -73,6 +79,7 @@ export function sampleTebraCharges(serviceDate = '2026-01-15'): TebraChargeRaw[]
       Receipts: '3.00', AdjustedCharges: '3.00', InsuranceBalance: '0.00', PatientBalance: '0.00', TotalBalance: '0.00',
     },
     // E-2002 — Aetna, 99213-25 allowed $80 against a $95 contract rate → $15 underpayment.
+    // The $16 coinsurance has never been put on a statement.
     {
       ...base, ...adjudicated('PAY-9002', 'EFT-220901'),
       ID: 'C-5003', EncounterID: 'E-2002', PatientID: 'P1002', PatientName: 'CASTELLANO, MARIA', PatientDateOfBirth: '07/14/1978',
@@ -109,7 +116,7 @@ export function sampleTebraCharges(serviceDate = '2026-01-15'): TebraChargeRaw[]
     },
     // E-2004 — BCBS of Oklahoma: one line never answered, one rejected at the clearinghouse. No adjudication at all.
     {
-      ...base,
+      ...base, ...billed,
       ID: 'C-5006', EncounterID: 'E-2004', PatientID: 'P1004', PatientName: 'NGUYEN, LINH', PatientDateOfBirth: '11/02/1988',
       CaseName: 'Commercial', CasePayerScenario: 'Commercial',
       PrimaryInsuranceBilledCompanyName: 'Blue Cross Blue Shield of Oklahoma', PrimaryInsuranceBilledPlanName: 'BlueChoice PPO', BilledTo: 'Blue Cross Blue Shield of Oklahoma',
@@ -118,7 +125,7 @@ export function sampleTebraCharges(serviceDate = '2026-01-15'): TebraChargeRaw[]
       Receipts: '0.00', AdjustedCharges: '150.00', InsuranceBalance: '150.00', PatientBalance: '0.00', TotalBalance: '150.00',
     },
     {
-      ...base,
+      ...base, ...billed,
       ID: 'C-5007', EncounterID: 'E-2004', PatientID: 'P1004', PatientName: 'NGUYEN, LINH', PatientDateOfBirth: '11/02/1988',
       CaseName: 'Commercial', CasePayerScenario: 'Commercial',
       PrimaryInsuranceBilledCompanyName: 'Blue Cross Blue Shield of Oklahoma', PrimaryInsuranceBilledPlanName: 'BlueChoice PPO', BilledTo: 'Blue Cross Blue Shield of Oklahoma',

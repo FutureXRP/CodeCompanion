@@ -9,6 +9,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="9.5" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M8 2.5v1.6M2.8 4.3l1.1 1.1M13.2 4.3l-1.1 1.1M1.5 9.5h1.6M12.9 9.5h1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M1.5 13h13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg> },
   { href: '/tasks', label: 'Follow-up Queue', badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6.2l1.3 1.3L9 4.8M5 10.4l1.3 1.3L9 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+  { href: '/workbench', label: 'Posting Workbench', badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6h6M5 8.5h6M5 11h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M10.2 11l1 1 1.8-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/dashboard',  label: 'Dashboard',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/></svg> },
   { href: '/found-money', label: 'Found Money',    badge: null,

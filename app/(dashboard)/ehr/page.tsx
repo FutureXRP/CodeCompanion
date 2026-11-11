@@ -213,7 +213,9 @@ export default async function EhrPage() {
         </div>
         <div style={{ padding: '10px 16px', fontSize: 11.5, color: '#9aa69f', borderTop: '1px solid #f0ece3', lineHeight: 1.5 }}>
           Pulled through <code>lib/adapters/tebra</code> (Web Services API 2.1 · <code>GetCharges</code>) → canonical claims + remittances + Tebra&apos;s own contract rates → the
-          found-money diff. The same code path hits the real Tebra API when <code>TEBRA_USE_MOCK=false</code> (see <code>TEBRA-INTEGRATION.md</code>).
+          found-money diff and the <a href="/workbench" style={{ color: '#34685a', fontWeight: 600 }}>Posting Workbench</a>
+          {t ? ` (${t.workbench.items.length} items · ${formatCents(t.workbench.atStakeCents)} at stake)` : ''}. The same code path hits the real Tebra API when{' '}
+          <code>TEBRA_USE_MOCK=false</code> (see <code>TEBRA-INTEGRATION.md</code>).
         </div>
       </div>
 

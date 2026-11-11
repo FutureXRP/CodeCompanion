@@ -21,6 +21,7 @@ import {
   tebraChargesToEncounters,
   tebraChargesToRemittances,
   tebraChargesToFeeScheduleLines,
+  tebraChargesToClaimTracking,
   type SoapRequest,
   type TebraClientConfig,
 } from '../lib/adapters/tebra'
@@ -341,11 +342,63 @@ test('found money straight from a Tebra pull (mock): every finding type, determi
   assert.equal(withFallback.feeSchedule.rate('AETNA', '99499'), 5000)
 })
 
-test('pullTebraCanonical returns rows, practice, encounters, claims, remittances and rates', async () => {
+test('pullTebraCanonical returns rows, practice, encounters, claims, remittances, rates and tracking', async () => {
   const pull = await pullTebraCanonical(new MockTebraSource(), { serviceDateFrom: '2026-01-15' })
   assert.equal(pull.rows.length, 7)
   assert.equal(pull.practice?.NPI, '1234567893')
   assert.equal(pull.encounters.length, 4)
   assert.equal(pull.claims[0].providerNpi, '1234567893')
   assert.equal(pull.feeScheduleLines.length, 7)
+  assert.equal(pull.tracking.length, 7)
+})
+
+test('tebraChargesToClaimTracking: per-line status, balances, secondary + statement billing', () => {
+  const tracking = tebraChargesToClaimTracking(sampleTebraCharges('2026-01-15'))
+  assert.equal(tracking.length, 7)
+  const jane = tracking[0]
+  assert.equal(jane.claimLineId, 'E-2001:1')
+  assert.equal(jane.status, 'adjudicated')
+  assert.equal(jane.lastBilledDate, '2026-01-15')
+  assert.equal(jane.patientBalanceCents, 2250)
+  assert.equal(jane.insuranceBalanceCents, 0)
+  assert.equal(jane.secondaryPayer?.name, 'SoonerCare')
+  assert.equal(jane.secondaryBilledDate, undefined)
+  assert.equal(tracking[2].patientBilledDate, undefined) // Aetna coinsurance never on a statement
+  assert.equal(tracking[4].status, 'denied')
+  assert.equal(tracking[5].status, 'no_response')
+  assert.equal(tracking[6].status, 'rejected')
+  // Tolerates the guide's "FirstBilDate" spelling.
+  const [odd] = tebraChargesToClaimTracking([{ ID: 'C-1', EncounterID: 'E-1', ProcedureCode: '99213', PrimaryInsuranceBilledCompanyName: 'Aetna', PrimaryInsuranceFirstBilDate: '2026-02-01', Status: 'Pending' }])
+  assert.equal(odd.lastBilledDate, '2026-02-01')
+  assert.equal(odd.status, 'pending')
+})
+
+test('posting workbench: the "needs a biller" queue from a Tebra pull, deterministic and ranked by dollars', async () => {
+  const now = new Date('2026-02-14T12:00:00Z') // 30 days after the clinic day
+  const { workbench } = await runTebraFoundMoney(new MockTebraSource(), { serviceDateFrom: '2026-01-15' }, [], now)
+  assert.equal(workbench.items.length, 6)
+  assert.equal(workbench.atStakeCents, 31650)
+  assert.deepEqual(
+    workbench.items.map((i) => [i.category, i.amountCents]),
+    [
+      ['appeal_denial', 12800],
+      ['status_check', 11000],
+      ['resubmit_rejected', 2500],
+      ['bill_secondary', 2250],
+      ['send_statement', 1600],
+      ['appeal_underpayment', 1500],
+    ],
+  )
+  assert.equal(workbench.items[0].findingId, 'denial:E-2003:1')
+  assert.equal(workbench.items[0].patientName, 'JAMES OKAFOR')
+  const status = workbench.items.find((i) => i.category === 'status_check')!
+  assert.equal(status.daysSince, 30)
+  assert.match(status.action, /30 days since sent/)
+  const secondary = workbench.items.find((i) => i.category === 'bill_secondary')!
+  assert.equal(secondary.claimLineId, 'E-2001:1')
+  assert.match(secondary.action, /Bill SoonerCare/)
+  assert.deepEqual(workbench.byCategory.send_statement, { count: 1, amountCents: 1600 })
+  assert.deepEqual(workbench.byCategory.appeal_underpayment, { count: 1, amountCents: 1500 })
+  // No double counting: E-2004's unanswered lines come from tracking, not from the unadjudicated findings too.
+  assert.equal(workbench.items.filter((i) => i.claimControlNumber === 'E-2004').length, 2)
 })

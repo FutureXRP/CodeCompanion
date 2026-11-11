@@ -65,7 +65,8 @@ Nothing above `lib/adapters/tebra` knows a Tebra field name (the adapter boundar
    ```
 4. **Prove the connection:** `npm run tebra-pull -- 2026-10-01 2026-10-31`. It prints the encounters it pulled, billed vs contract vs paid per encounter, and the found-money report.
 5. **Let Neon keep Tebra runs:** `npm run db:migrate -- --only=011` (one statement, no reset, nothing else re-run).
-6. In the app: **EHR Pull** page → *Tebra — charges + ERA pull* → the blue button. Same loop as the athena one: pull → diff → save → Found Money / Claims.
+6. In the app: **EHR Pull** page → *Tebra — charges + ERA pull* → the blue button. Same loop as the athena one: pull → diff → save → Found Money / Claims / Posting Workbench.
+7. **Load your contract rates into Tebra** (*Settings › Contracts and Fees › Contract Rates*, per payer, or "Base on Medicare" with a multiplier). Tebra ships that table empty, and it is where `ExpectedAmount` comes from — without it the diff still catches denials and unanswered claims, but underpayment detection is blind. Make it a gating item on the migration checklist.
 
 Until step 3 is done the app and the script run the **synthetic mock** (`TEBRA_USE_MOCK` unset or `true`): no credentials, no network, no PHI. That is also what the hosted Vercel app runs.
 
@@ -100,6 +101,21 @@ Known gaps, on purpose for now:
 - **No payer claim number (ICN).** `GetCharges` doesn't carry it; `payerClaimControlNumber` stays empty until `GetTransactions` or the ERA fills it.
 - **Encounters billed to the patient only** (no insurance company) are skipped — there is no contract to diff against.
 - **Rendering NPI** isn't on the charge record; `providerNpi` falls back to the practice NPI. (`GetProviders` can enrich it when the submit path ever needs it.)
+
+---
+
+## Tebra's RPA bots vs. the Posting Workbench
+
+Tebra quotes two add-ons: an **ERA Processing Bot** ($125/mo + $250 setup) and an **Unapplied Payments Bot** ($125/mo + $350 setup). Each is two things glued together:
+
+| Half | What it is | Who does it on CodeCompanion |
+|---|---|---|
+| **Robotic posting** — applying every ERA line into Tebra by rule, handling recoupments, matching copays to balances | Screen automation of Tebra's own desktop app. The API has no operation for it (`CreatePayments` makes an *unapplied* payment record; nothing applies a payment to a charge or posts an adjustment), which is exactly why Tebra sells it as "RPA". | **Tebra** — the base plan's *A/R: Auto-Payment Posting* posts the clean ERAs; at ~250 visits a month the exceptions are a handful, worked by a human in Tebra. We do not build screen automation against a vendor's app for money postings. |
+| **The workbench** — the consolidated view of claims that need a biller's attention | A ranked queue derived from what Tebra already tracks per charge | **CodeCompanion** — `/workbench` (`lib/found-money/workbench.ts`): appeals (denials, underpayments), fix-and-resubmit (rejected), status checks (no response), secondaries never billed, statements never sent — each with the dollars on it. Deterministic, read-only, from the same pull. |
+
+So: skip both bots at this size. If posting labor ever becomes the bottleneck (in-house billing at higher volume), buy the ERA bot then — nothing here conflicts with it. **If you do, require that posted adjustments keep the CARC/RARC codes** (CO-45, CO-197 …): the diff classifies denials from those codes; a rule that posts denials under a generic Tebra reason still gets flagged, but as "manual review" instead of "appealable — CARC 197".
+
+Not yet in the workbench, on the list: recoupments (835 PLB segments on the file path; `GetTransactions` reversals on the API path) and an unapplied-patient-payment matcher (`GetPayments.Unapplied` ↔ open patient balances — a daily "apply these" list; applying still happens in Tebra).
 
 ---
 

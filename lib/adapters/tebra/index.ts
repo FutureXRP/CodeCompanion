@@ -1,8 +1,9 @@
-import type { Claim, FeeScheduleLine, Remittance } from '../../canonical'
+import type { Claim, ClaimTracking, FeeScheduleLine, Remittance } from '../../canonical'
 import type { EhrEncounter } from '../ehr'
 import { MockTebraSource } from './mock'
 import { TebraClient, type RequestElementOrder, type SoapTransport } from './client'
 import {
+  tebraChargesToClaimTracking,
   tebraChargesToEncounters,
   tebraChargesToFeeScheduleLines,
   tebraChargesToRemittances,
@@ -87,6 +88,8 @@ export interface TebraCanonicalPull {
   remittances: Remittance[]
   /** Tebra's contract-expected amounts (Settings > Contracts and Fees), one line per payer/code/modifier. */
   feeScheduleLines: FeeScheduleLine[]
+  /** Per-line claim tracking: status, balances, who has been billed — the posting workbench's input. */
+  tracking: ClaimTracking[]
 }
 
 /** Pull a service-date window from Tebra and normalize it: claims + remittances + contract rates. */
@@ -102,5 +105,6 @@ export async function pullTebraCanonical(source: TebraSource, query: TebraCharge
     claims: encounters.map((e) => encounterToClaim(e, 'tebra')),
     remittances: tebraChargesToRemittances(rows),
     feeScheduleLines: tebraChargesToFeeScheduleLines(rows),
+    tracking: tebraChargesToClaimTracking(rows),
   }
 }
