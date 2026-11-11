@@ -21,6 +21,13 @@ after a switch — the same three files, the same command.
 Ask for **12 months** of 837s and 835s **for the same months**. 90 days gives a
 signal; a year gives the answer.
 
+If the billing company or athena stalls: every ONC-certified EHR must provide a
+complete **EHI export** of the practice's electronic health information on
+request (the Cures Act requirement, in force since 2024), and claims and payment
+history are part of it. It usually arrives as data tables rather than X12 files;
+that is the "claims-detail CSV" case above — send what you get and the loader
+is adapted to it.
+
 The fee schedule is a CSV with four columns:
 
 ```
