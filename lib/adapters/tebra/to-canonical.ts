@@ -304,6 +304,9 @@ export function tebraChargesToRemittances(rows: TebraChargeRaw[]): Remittance[] 
 }
 
 function trackingStatus(row: TebraChargeRaw): ClaimTrackingStatus {
+  const approval = (row.EncounterStatus ?? '').trim().toLowerCase()
+  if (approval === 'draft') return 'draft'
+  if (approval === 'review') return 'review'
   switch (normalizeStatus(row.Status)) {
     case 'denial':
       return 'denied'

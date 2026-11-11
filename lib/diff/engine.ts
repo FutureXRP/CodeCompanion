@@ -24,15 +24,15 @@ export interface RateLookup {
   rate(payerExternalId: string, cptHcpcs: string, modifier?: string): number | undefined
 }
 
-/** Conservative one-level upcode map for E/M office visits. */
-const UPCODE_MAP: Record<string, string> = {
+/** Conservative one-level upcode map for E/M office visits (shared with the pre-approval review). */
+export const EM_NEXT_LEVEL: Record<string, string> = {
   '99202': '99203',
   '99203': '99204',
   '99212': '99213',
   '99213': '99214',
 }
-const UNDERCODING_MIN_DIAGNOSES = 4
-const UNDERCODING_MIN_LINES = 2
+export const UNDERCODING_MIN_DIAGNOSES = 4
+export const UNDERCODING_MIN_LINES = 2
 
 /** Conservative default filing window; real limits are payer-specific (90–365d). */
 const TIMELY_FILING_LIMIT_DAYS = 365
@@ -158,7 +158,7 @@ function undercodingFinding(
   rates: RateLookup,
   detectedAt: string,
 ): Finding | null {
-  const next = UPCODE_MAP[line.cptHcpcs]
+  const next = EM_NEXT_LEVEL[line.cptHcpcs]
   if (!next) return null
 
   const diagnoses = Math.max(line.diagnosisPointers.length, claim.diagnoses.length)

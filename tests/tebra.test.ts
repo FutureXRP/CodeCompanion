@@ -7,7 +7,9 @@ import {
   MockTebraSource,
   createTebraSource,
   pullTebraCanonical,
+  pullTebraPending,
   sampleTebraCharges,
+  samplePendingTebraCharges,
   xmlFields,
   soapEnvelope,
   dateWindows,
@@ -350,6 +352,40 @@ test('pullTebraCanonical returns rows, practice, encounters, claims, remittances
   assert.equal(pull.claims[0].providerNpi, '1234567893')
   assert.equal(pull.feeScheduleLines.length, 7)
   assert.equal(pull.tracking.length, 7)
+})
+
+test('pullTebraPending: Draft then Review, each row keeps its approval state, nothing adjudicated', async () => {
+  const queries: string[] = []
+  const source = new MockTebraSource()
+  const original = source.getCharges.bind(source)
+  source.getCharges = async (q) => {
+    queries.push(`${q.encounterStatus}:${q.includeUnapproved}`)
+    return original(q)
+  }
+  const pull = await pullTebraPending(source, { serviceDateFrom: '2026-01-15' })
+  assert.deepEqual(queries, ['Draft:true', 'Review:true'])
+  assert.equal(pull.rows.length, samplePendingTebraCharges().length)
+  assert.equal(pull.claims.length, 6)
+  assert.equal(pull.remittances.length, 0)
+  assert.deepEqual([...new Set(pull.tracking.map((t) => t.status))].sort(), ['draft', 'review'])
+  assert.equal(pull.tracking.find((t) => t.claimControlNumber === 'P-3001')?.status, 'review')
+  assert.equal(pull.tracking.find((t) => t.claimControlNumber === 'P-3002')?.status, 'draft')
+  // The ordinary pull never includes unapproved charges.
+  assert.equal((await pullTebraCanonical(new MockTebraSource(), { serviceDateFrom: '2026-01-15' })).claims.length, 4)
+})
+
+test('TebraClient.getCharges: an EncounterStatus query is sent in the filter and echoed onto each row', async () => {
+  const reqs: SoapRequest[] = []
+  const { c } = client(async (req) => {
+    reqs.push(req)
+    return { status: 200, text: soapResponse([{ ID: 'C-1', EncounterID: 'E-1', ProcedureCode: '99213' }]) }
+  })
+  const rows = await c.getCharges({ serviceDateFrom: '2026-01-15', includeUnapproved: true, encounterStatus: 'Draft' })
+  assert.match(
+    reqs[0].body,
+    /<sch:Filter><sch:EncounterStatus>Draft<\/sch:EncounterStatus><sch:FromServiceDate>2026-01-15<\/sch:FromServiceDate><sch:IncludeUnapprovedCharges>T<\/sch:IncludeUnapprovedCharges><sch:PracticeName>SquareOne Medical<\/sch:PracticeName><sch:ToServiceDate>2026-01-15<\/sch:ToServiceDate><\/sch:Filter>/,
+  )
+  assert.equal(rows[0].EncounterStatus, 'Draft')
 })
 
 test('tebraChargesToClaimTracking: per-line status, balances, secondary + statement billing', () => {

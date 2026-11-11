@@ -55,6 +55,11 @@ export interface TebraChargeRaw {
   BilledTo?: string
   /** Completed | Pending | Ready | Error-Rejection | Error – Denial | Error – No Response | Undefined */
   Status?: string
+  /**
+   * Draft | Review | Approved | Rejected. Not a response column — the client echoes
+   * the EncounterStatus filter it queried with, so unapproved charges stay marked.
+   */
+  EncounterStatus?: string
   /** Contract-expected allowed for this charge (Settings > Contracts and Fees > Contract Rates). */
   AllowedAmount?: string
   ExpectedAmount?: string
@@ -110,6 +115,8 @@ export interface TebraChargeQuery {
   serviceDateTo?: string // default = serviceDateFrom
   /** Also return charges on Draft/Review encounters (IncludeUnapprovedCharges=T). Default false. */
   includeUnapproved?: boolean
+  /** Only charges on encounters in this approval state (guide §4.4.1 EncounterStatus). */
+  encounterStatus?: 'Draft' | 'Review' | 'Approved' | 'Rejected'
 }
 
 /** The intake boundary: a source of charge records (real SOAP client or mock). */

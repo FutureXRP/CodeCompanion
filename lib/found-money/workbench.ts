@@ -99,8 +99,10 @@ export function buildPostingWorkbench(input: WorkbenchInput, now: Date = new Dat
     }
   }
 
-  // 2. What the PM's claim tracking says about every line.
+  // 2. What the PM's claim tracking says about every line that has been sent.
+  //    Draft / Review encounters belong to the pre-approval review, not here.
   for (const t of input.tracking) {
+    if (t.status === 'draft' || t.status === 'review') continue
     const claim = claimsByControl.get(t.claimControlNumber)
     const line = claim?.lines.find((l) => l.id === t.claimLineId)
     if (!claim || !line) continue

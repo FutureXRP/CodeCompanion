@@ -163,7 +163,14 @@ export interface Remittance {
  * system tracks it — the 277-style status every PM carries, vendor-neutral.
  * Drives the posting workbench; never a dollar figure on its own.
  */
-export type ClaimTrackingStatus = 'pending' | 'rejected' | 'no_response' | 'adjudicated' | 'denied'
+export type ClaimTrackingStatus =
+  | 'draft' // not yet approved by the provider/biller — never sent
+  | 'review' // completed, awaiting approval — never sent
+  | 'pending'
+  | 'rejected'
+  | 'no_response'
+  | 'adjudicated'
+  | 'denied'
 
 export interface ClaimTracking {
   claimControlNumber: string

@@ -95,6 +95,29 @@ export interface TebraCanonicalPull {
 /** Pull a service-date window from Tebra and normalize it: claims + remittances + contract rates. */
 export async function pullTebraCanonical(source: TebraSource, query: TebraChargeQuery): Promise<TebraCanonicalPull> {
   const rows = await source.getCharges(query)
+  return normalizePull(source, rows)
+}
+
+/**
+ * Pull the encounters nobody has approved yet (Draft, then Review — two calls,
+ * the API has no "either" filter) for the pre-approval review. Nothing here has
+ * been sent, so there are no remittances; the claims are what *would* go out.
+ */
+export async function pullTebraPending(source: TebraSource, query: Omit<TebraChargeQuery, 'includeUnapproved' | 'encounterStatus'>): Promise<TebraCanonicalPull> {
+  const rows: TebraChargeRaw[] = []
+  const seen = new Set<string>()
+  for (const encounterStatus of ['Draft', 'Review'] as const) {
+    for (const row of await source.getCharges({ ...query, includeUnapproved: true, encounterStatus })) {
+      const key = row.ID || `${row.EncounterID}|${row.ProcedureCode}|${rows.length}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      rows.push(row)
+    }
+  }
+  return normalizePull(source, rows)
+}
+
+async function normalizePull(source: TebraSource, rows: TebraChargeRaw[]): Promise<TebraCanonicalPull> {
   // Billing NPI / tax id for the canonical billing provider — best-effort (its own permission).
   const practice = await source.getPractices().then((p) => p[0], () => undefined)
   const encounters = tebraChargesToEncounters(rows, practice)

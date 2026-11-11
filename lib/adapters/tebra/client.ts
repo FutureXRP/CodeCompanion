@@ -164,6 +164,7 @@ export class TebraClient implements TebraSource {
     const rows: TebraChargeRaw[] = []
     for (const [windowFrom, windowTo] of dateWindows(from, to, this.maxWindowDays)) {
       const filter = xmlFields({
+        EncounterStatus: query.encounterStatus,
         FromServiceDate: windowFrom,
         IncludeUnapprovedCharges: query.includeUnapproved ? 'T' : undefined,
         PracticeName: this.cfg.practiceName,
@@ -174,6 +175,8 @@ export class TebraClient implements TebraSource {
         const key = record.ID || `${record.EncounterID}|${record.ProcedureCode}|${record.ServiceStartDate}|${rows.length}`
         if (seen.has(key)) continue
         seen.add(key)
+        // The response has no approval column — keep the state we asked for on the row.
+        if (query.encounterStatus && !record.EncounterStatus) record.EncounterStatus = query.encounterStatus
         rows.push(record)
       }
     }

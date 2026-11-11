@@ -104,6 +104,19 @@ Known gaps, on purpose for now:
 
 ---
 
+## Pre-approval Review — capture before the claim goes out
+
+Everything above is the *after-the-visit* loop. `/review` (`lib/capture`) is the *before-it-goes-out* loop: it pulls the encounters nobody has approved yet (`GetCharges` with `IncludeUnapprovedCharges=T`, once for `EncounterStatus=Draft` and once for `Review`) and runs two deterministic layers against Tebra's own contract rates:
+
+- **The scrubber** (`lib/scrub`) — what would reject at the clearinghouse or deny/bundle at the payer: missing diagnosis, bundled pairs (NCCI), units over the MUE, E/M without modifier 25 next to a procedure, telehealth modifiers, invalid NPI… Errors are *blockers*, warnings are *fix first*. (The subscriber-address check is skipped: Tebra holds the demographics and builds the 837 itself.)
+- **Capture rules** (`lib/capture/rules.ts`) — what the record may support and what is missing: a vaccine without its administration code (90471 / G0008), an E/M whose diagnoses may support the next level (same conservative test as the diff, priced from the contract), Medicare AWV add-ons not billed (G0444, 99497), G2211 on a pure Medicare E/M, a problem visit with a preventive visit lacking modifier 25, duplicate lines, $0 charges.
+
+Every item carries the contracted dollars **at risk** (would be lost as coded) or **available if documented** (separately payable, only when the note supports it). The page is read-only: the provider or biller edits and approves in Tebra. The write path (`UpdateEncounterStatus` → Rejected with a note back to the provider / Approved) is a later step, and only with a flag.
+
+What it needs: the contract rates loaded (step 7 above) — for codes not on any encounter yet (the add-ons), the practice's **Export Contracts and Fees** as the fallback CSV. The mock uses `sampleTebraContractRates()` as that export.
+
+---
+
 ## Tebra's RPA bots vs. the Posting Workbench
 
 Tebra quotes two add-ons: an **ERA Processing Bot** ($125/mo + $250 setup) and an **Unapplied Payments Bot** ($125/mo + $350 setup). Each is two things glued together:
