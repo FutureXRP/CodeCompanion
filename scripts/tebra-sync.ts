@@ -22,6 +22,7 @@ export function printSummary(s: TebraSyncSummary): void {
   console.log(`  ${label}: ${s.rows} lines · ${s.encounters} encounters (${s.adjudicated} adjudicated) · ${s.contractRates} rates`)
   console.log(`    found money ${formatCents(s.recoverableCents)} (${s.findings}) · workbench ${s.workbench.items.length} items / ${formatCents(s.workbench.atStakeCents)} · takebacks ${s.regressions.length}`)
   console.log(`    stored: ${s.persisted.claims} claims, ${s.persisted.remittances} remits, ${s.persisted.findings} findings (${s.persisted.replaced} replaced)`)
+  console.log(`    follow-up queue: ${s.tasks.upserted} tasks upserted (${s.tasks.review} from pre-approval review) · ${s.tasks.closed} closed`)
 }
 
 async function main(): Promise<void> {
@@ -35,7 +36,7 @@ async function main(): Promise<void> {
   console.log(`  tenant: ${tenantId}`)
   const source = createTebraSource(cfg)
   const summary = await withTenant(tenantId, (db) =>
-    syncTebraWindow({ source, db, tenantId, query, fallbackRates: fallbackRatesFromEnv(), live: cfg.useMock === false, now }),
+    syncTebraWindow({ source, db, tenantId, query, fallbackRates: fallbackRatesFromEnv(), live: cfg.useMock === false, now, includeReview: true }),
   )
   printSummary(summary)
   await closePool()

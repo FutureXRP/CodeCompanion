@@ -1,6 +1,12 @@
 import Link from 'next/link'
 import { formatCents } from '@/lib/canonical'
-import { buildTaskQueue, type TaskPriority, type TaskStatus } from '@/lib/tasks'
+import { buildTaskQueue, queueFromTasks, tasksFromStored, type TaskPriority, type TaskStatus } from '@/lib/tasks'
+import { isNeonConfigured } from '@/lib/db/config'
+import { createClient } from '@/lib/supabase/server'
+import { withService, withTenant } from '@/lib/db/sql'
+import { resolveTenantId } from '@/lib/db/tenant'
+import { loadTasks, type StoredTask } from '@/lib/db/operational-repo'
+import { TaskControls } from '@/components/tasks/TaskControls'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,7 +27,6 @@ const STATUS_LABEL: Record<TaskStatus, string> = { open: 'Open', in_progress: 'I
 const STATUS_STYLE: Record<TaskStatus, { fg: string; bg: string }> = {
   open: { fg: BLUE, bg: '#e7f0eb' }, in_progress: { fg: AMBER, bg: '#f6efdd' }, done: { fg: GREEN, bg: '#e6f4ec' },
 }
-
 const card: React.CSSProperties = { background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, boxShadow: '0 1px 3px rgba(15,21,32,0.04)' }
 
 function Kpi({ label, value, accent, sub }: { label: string; value: string; accent?: string; sub?: string }) {
@@ -34,8 +39,25 @@ function Kpi({ label, value, accent, sub }: { label: string; value: string; acce
   )
 }
 
-export default function TasksPage() {
-  const q = buildTaskQueue()
+/** The practice's stored queue when signed in with Neon configured; null → synthetic. */
+async function loadStoredQueue(): Promise<StoredTask[] | null> {
+  if (!isNeonConfigured()) return null
+  try {
+    const authed = await createClient()
+    const { data: { user } } = await authed.auth.getUser()
+    if (!user) return null
+    const tenantId = await withService((db) => resolveTenantId(db, user.id))
+    if (!tenantId) return null
+    return await withTenant(tenantId, (db) => loadTasks(db, tenantId))
+  } catch {
+    return null
+  }
+}
+
+export default async function TasksPage() {
+  const stored = await loadStoredQueue()
+  const live = Boolean(stored && stored.length > 0)
+  const q = live ? queueFromTasks(tasksFromStored(stored!, new Date())) : buildTaskQueue()
   const th: React.CSSProperties = { textAlign: 'left', fontSize: 11, fontWeight: 600, color: FAINT, padding: '8px 14px', borderBottom: `1px solid ${LINE}`, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }
   const td: React.CSSProperties = { fontSize: 12.5, color: INK, padding: '10px 14px', borderBottom: `1px solid #f0ece3`, verticalAlign: 'middle' }
 
@@ -47,7 +69,9 @@ export default function TasksPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: 0, letterSpacing: '-0.025em' }}>Follow-up Queue</h1>
-            <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, background: '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>Synthetic</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: live ? BLUE : GREEN, background: live ? '#e7f0eb' : '#e6f4ec', padding: '3px 10px', borderRadius: 999 }}>
+              {live ? 'From the sync' : 'Synthetic'}
+            </span>
           </div>
           <p style={{ fontSize: 13, color: FAINT, margin: 0 }}>Every open revenue task — owned, prioritized, and aging against its SLA. Nothing falls through.</p>
         </div>
@@ -66,7 +90,7 @@ export default function TasksPage() {
       </div>
 
       {/* By assignee */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, q.byAssignee.length)}, 1fr)`, gap: 12, marginBottom: 26 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(1, Math.min(4, q.byAssignee.length))}, 1fr)`, gap: 12, marginBottom: 26 }}>
         {q.byAssignee.map((a) => (
           <div key={a.assignee} style={{ ...card, padding: '14px 16px' }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: INK, margin: '0 0 6px' }}>{a.assignee}</p>
@@ -97,10 +121,16 @@ export default function TasksPage() {
                     <td style={td}><span style={{ fontSize: 10.5, fontWeight: 700, color: p.fg, background: p.bg, padding: '2px 9px', borderRadius: 999, textTransform: 'capitalize' }}>{t.priority}</span></td>
                     <td style={td}>
                       <p style={{ margin: '0 0 2px', fontWeight: 600 }}>{t.title}</p>
-                      <p style={{ margin: 0, fontSize: 11.5, color: SUB, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320 }}>{t.detail}</p>
+                      <p style={{ margin: 0, fontSize: 11.5, color: SUB, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 360 }} title={t.detail}>{t.detail}</p>
                     </td>
-                    <td style={{ ...td, color: SUB, whiteSpace: 'nowrap' }}>{t.assignee}</td>
-                    <td style={td}><span style={{ fontSize: 10.5, fontWeight: 700, color: s.fg, background: s.bg, padding: '2px 9px', borderRadius: 999 }}>{STATUS_LABEL[t.status]}</span></td>
+                    {live ? (
+                      <td style={td} colSpan={2}><TaskControls id={t.id} status={t.status} assignee={t.assignee === 'Unassigned' ? null : t.assignee} /></td>
+                    ) : (
+                      <>
+                        <td style={{ ...td, color: SUB, whiteSpace: 'nowrap' }}>{t.assignee}</td>
+                        <td style={td}><span style={{ fontSize: 10.5, fontWeight: 700, color: s.fg, background: s.bg, padding: '2px 9px', borderRadius: 999 }}>{STATUS_LABEL[t.status]}</span></td>
+                      </>
+                    )}
                     <td style={{ ...td, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCents(t.dollarsCents)}</td>
                     <td style={{ ...td, textAlign: 'right', whiteSpace: 'nowrap', color: t.overdue ? RED : SUB, fontWeight: t.overdue ? 700 : 400, fontVariantNumeric: 'tabular-nums' }}>
                       {t.status === 'done' ? '—' : t.overdue ? `${Math.abs(t.dueInDays)}d over` : `in ${t.dueInDays}d`}
@@ -115,7 +145,9 @@ export default function TasksPage() {
       </div>
 
       <p style={{ fontSize: 11.5, color: FAINT, marginTop: 18, lineHeight: 1.5 }}>
-        Tasks are generated deterministically from the engine&apos;s open work (appealable denials, unpaid claims, patient balances); priority and dollars are engine-derived. Ownership and status are seeded for the demo — a real build persists assignment, status, and SLAs to the database.
+        {live
+          ? 'Tasks come from the sync: Posting Workbench items and fix-first encounters from the Pre-approval Review, keyed so a re-sync refreshes the dollars but keeps your owner, status and due date; items that stop applying close themselves. Priority and dollars are engine-derived.'
+          : 'Tasks are generated deterministically from the engine’s open work (appealable denials, unpaid claims, patient balances); priority and dollars are engine-derived. Ownership and status are seeded for the demo — once the sync runs against Neon, this queue shows the stored tasks with editable owner and status.'}
       </p>
     </div>
   )

@@ -12,7 +12,8 @@ import { sampleArBook, ageInDays } from '../analytics'
  * persists these to the DB). No LLM produces a figure or a routing decision.
  */
 
-export type TaskSource = 'denial' | 'follow_up' | 'balance'
+/** denial / follow_up / balance come from the posting side; review from the pre-approval side. */
+export type TaskSource = 'denial' | 'follow_up' | 'balance' | 'review'
 export type TaskStatus = 'open' | 'in_progress' | 'done'
 export type TaskPriority = 'high' | 'medium' | 'low'
 
@@ -48,9 +49,34 @@ export interface TaskQueue {
 }
 
 const OWNER = { ar: 'Priya — A/R', billing: 'Dana — Billing', front: 'Marco — Front desk' }
-const SLA_DAYS: Record<TaskPriority, number> = { high: 7, medium: 14, low: 30 }
+export const SLA_DAYS: Record<TaskPriority, number> = { high: 7, medium: 14, low: 30 }
 
-const priorityFor = (cents: Cents): TaskPriority => (cents >= 15_000 ? 'high' : cents >= 6_000 ? 'medium' : 'low')
+export const priorityFor = (cents: Cents): TaskPriority => (cents >= 15_000 ? 'high' : cents >= 6_000 ? 'medium' : 'low')
+
+/** Counts, dollars at stake and per-owner load for any task list (synthetic or stored). */
+export function queueFromTasks(tasks: Task[]): TaskQueue {
+  const rank: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 }
+  const sorted = [...tasks].sort((a, b) => Number(b.overdue) - Number(a.overdue) || rank[a.priority] - rank[b.priority] || b.dollarsCents - a.dollarsCents)
+  const open = sorted.filter((t) => t.status === 'open').length
+  const inProgress = sorted.filter((t) => t.status === 'in_progress').length
+  const done = sorted.filter((t) => t.status === 'done').length
+  const overdue = sorted.filter((t) => t.overdue).length
+  const dollarsAtStakeCents = sorted.filter((t) => t.status !== 'done').reduce((s, t) => s + t.dollarsCents, 0)
+  const loads = new Map<string, AssigneeLoad>()
+  for (const t of sorted) {
+    if (t.status === 'done') continue
+    const load = loads.get(t.assignee) ?? { assignee: t.assignee, openCount: 0, dollarsCents: 0 }
+    load.openCount += 1
+    load.dollarsCents += t.dollarsCents
+    loads.set(t.assignee, load)
+  }
+  return {
+    tasks: sorted,
+    counts: { total: sorted.length, open, inProgress, done, overdue },
+    dollarsAtStakeCents,
+    byAssignee: [...loads.values()].sort((a, b) => b.dollarsCents - a.dollarsCents),
+  }
+}
 
 /** Stable hash so status is varied but reproducible regardless of ordering. */
 function hash(s: string): number {
@@ -130,28 +156,8 @@ export function buildTaskQueue(asOf: Date = new Date()): TaskQueue {
     )
 
   // Overdue first, then priority, then dollars.
-  const rank: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 }
-  tasks.sort((a, b) => Number(b.overdue) - Number(a.overdue) || rank[a.priority] - rank[b.priority] || b.dollarsCents - a.dollarsCents)
-
-  const open = tasks.filter((t) => t.status === 'open').length
-  const inProgress = tasks.filter((t) => t.status === 'in_progress').length
-  const done = tasks.filter((t) => t.status === 'done').length
-  const overdue = tasks.filter((t) => t.overdue).length
-  const dollarsAtStakeCents = tasks.filter((t) => t.status !== 'done').reduce((s, t) => s + t.dollarsCents, 0)
-
-  const loads = new Map<string, AssigneeLoad>()
-  for (const t of tasks) {
-    if (t.status === 'done') continue
-    const load = loads.get(t.assignee) ?? { assignee: t.assignee, openCount: 0, dollarsCents: 0 }
-    load.openCount += 1
-    load.dollarsCents += t.dollarsCents
-    loads.set(t.assignee, load)
-  }
-
-  return {
-    tasks,
-    counts: { total: tasks.length, open, inProgress, done, overdue },
-    dollarsAtStakeCents,
-    byAssignee: [...loads.values()].sort((a, b) => b.dollarsCents - a.dollarsCents),
-  }
+  return queueFromTasks(tasks)
 }
+
+export * from './from-workbench'
+export * from './from-stored'

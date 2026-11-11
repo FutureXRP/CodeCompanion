@@ -6,9 +6,14 @@ import { writeAudit } from '../db/audit'
 import { loadPaidByControl, replaceRun, type PersistResult } from '../db/repository'
 import { withService, withTenant, type Queryable } from '../db/sql'
 import { resolveSyncTenant } from '../db/tenant'
+import { closeStaleTasks, upsertTasks } from '../db/operational-repo'
+import { runTebraPreApproval } from '../capture/tebra'
 import { detectPaymentRegressions, type PaymentRegression } from '../found-money/regressions'
 import { runTebraFoundMoney } from '../found-money/tebra'
 import { buildPostingWorkbench, type PostingWorkbench } from '../found-money/workbench'
+import type { EditTables } from '../scrub'
+import { loadEditTablesFromEnv } from '../scrub'
+import { tasksFromReview, tasksFromWorkbench, type PersistableTask } from '../tasks'
 
 /**
  * The Tebra sync: pull a window → diff → detect takebacks against what we
@@ -31,6 +36,9 @@ export interface TebraSyncOptions {
   live: boolean
   userId?: string | null
   now?: Date
+  /** Also pull the Draft/Review encounters and turn fix-first ones into tasks (nightly: yes; history backfill: no). */
+  includeReview?: boolean
+  edits?: EditTables
 }
 
 export interface TebraSyncSummary {
@@ -46,6 +54,8 @@ export interface TebraSyncSummary {
   regressions: PaymentRegression[]
   workbench: PostingWorkbench
   persisted: PersistResult & { replaced: number }
+  /** Follow-up Queue: engine tasks upserted (workbench + review) and stale ones closed. */
+  tasks: { upserted: number; closed: number; review: number }
   generatedAt: string
 }
 
@@ -69,6 +79,18 @@ export async function syncTebraWindow(opts: TebraSyncOptions): Promise<TebraSync
   const persisted = await replaceRun(opts.db, opts.tenantId, { claims, remittances, findings: report.findings })
   const workbench = buildPostingWorkbench({ claims, findings: report.findings, tracking, rates: feeSchedule, regressions }, now)
 
+  // The Follow-up Queue: engine tasks upsert by key (a human's owner/status survive); stale ones close.
+  let reviewTasks: PersistableTask[] = []
+  let reviewControls: string[] = []
+  if (opts.includeReview) {
+    const review = await runTebraPreApproval(opts.source, opts.query, opts.fallbackRates ?? [], now, opts.edits)
+    reviewTasks = tasksFromReview(review.report)
+    reviewControls = review.claims.map((c) => c.controlNumber)
+  }
+  const allTasks = [...tasksFromWorkbench(workbench), ...reviewTasks]
+  const upserted = await upsertTasks(opts.db, opts.tenantId, allTasks, now)
+  const closed = await closeStaleTasks(opts.db, opts.tenantId, [...claims.map((c) => c.controlNumber), ...reviewControls], allTasks.map((t) => t.sourceKey))
+
   return {
     tenantId: opts.tenantId,
     query: opts.query,
@@ -82,6 +104,7 @@ export async function syncTebraWindow(opts: TebraSyncOptions): Promise<TebraSync
     regressions,
     workbench,
     persisted,
+    tasks: { upserted, closed, review: reviewTasks.length },
     generatedAt: now.toISOString(),
   }
 }
@@ -112,6 +135,16 @@ export async function runNightlyTebraSync(now: Date = new Date(), env: Record<st
   const query = nightlyWindow(now, lookback)
   const tenantId = await withService((db) => resolveSyncTenant(db, env))
   return withTenant(tenantId, (db) =>
-    syncTebraWindow({ source, db, tenantId, query, fallbackRates: fallbackRatesFromEnv(env), live: cfg.useMock === false, now }),
+    syncTebraWindow({
+      source,
+      db,
+      tenantId,
+      query,
+      fallbackRates: fallbackRatesFromEnv(env),
+      live: cfg.useMock === false,
+      now,
+      includeReview: true,
+      edits: loadEditTablesFromEnv(env),
+    }),
   )
 }

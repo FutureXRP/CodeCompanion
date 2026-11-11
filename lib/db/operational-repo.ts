@@ -2,7 +2,7 @@ import { postPatientPayment } from '../ledger'
 import { toPatientPayment, type PaymentRequest, type PaymentResult } from '../payments'
 import type { EnrollmentRecord } from '../rcm/enrollment'
 import type { EligibilityResult } from '../rcm/eligibility'
-import type { Task } from '../tasks'
+import type { PersistableTask, Task, TaskStatus } from '../tasks'
 import { toLedgerEntryRow } from './mappers'
 import { toEligibilityCheckRow, toEnrollmentRow, toPaymentTransactionRow, toTaskRow } from './operational-mappers'
 import { writeAudit } from './audit'
@@ -109,9 +109,56 @@ export async function saveTasks(db: Queryable, tenantId: string, tasks: Task[], 
   return rows.length
 }
 
+/**
+ * Upsert engine-generated tasks by source_key (012). The engine refreshes title,
+ * detail, dollars and priority; a human's assignee, status and due date survive.
+ */
+export async function upsertTasks(db: Queryable, tenantId: string, tasks: PersistableTask[], asOf: Date = new Date()): Promise<number> {
+  if (tasks.length === 0) return 0
+  const rows = tasks.map((t) => toTaskRow(tenantId, t, isoDate(new Date(asOf.getTime() + t.dueInDays * MS_PER_DAY)), t.sourceKey))
+  await upsertMany(db, 'tasks', rows, ['tenant_id', 'source_key'], ['title', 'detail', 'dollars_cents', 'priority'])
+  return rows.length
+}
+
+/**
+ * Close engine tasks that no longer apply: for the claims this sync evaluated,
+ * any keyed task whose key is not in the present set is done (the denial got
+ * paid, the secondary got billed, the encounter got approved).
+ */
+export async function closeStaleTasks(db: Queryable, tenantId: string, controlNumbers: string[], presentKeys: string[]): Promise<number> {
+  if (controlNumbers.length === 0) return 0
+  const cph = controlNumbers.map((_, i) => `$${i + 2}`).join(', ')
+  const kph = presentKeys.map((_, i) => `$${i + 2 + controlNumbers.length}`).join(', ')
+  const res = await db.query(
+    `update tasks set status = 'done', updated_at = now()
+      where tenant_id = $1 and source_key is not null and status <> 'done'
+        and split_part(source_key, ':', 2) in (${cph})${presentKeys.length ? ` and source_key not in (${kph})` : ''}`,
+    [tenantId, ...controlNumbers, ...presentKeys],
+  )
+  return res.rowCount ?? 0
+}
+
+/** A human's edit: status and/or assignee. */
+export async function updateTask(db: Queryable, tenantId: string, id: string, patch: { status?: TaskStatus; assignee?: string | null }): Promise<boolean> {
+  const sets: string[] = []
+  const params: unknown[] = [tenantId, id]
+  if (patch.status) {
+    params.push(patch.status)
+    sets.push(`status = $${params.length}`)
+  }
+  if (patch.assignee !== undefined) {
+    params.push(patch.assignee)
+    sets.push(`assignee = $${params.length}`)
+  }
+  if (sets.length === 0) return false
+  const res = await db.query(`update tasks set ${sets.join(', ')}, updated_at = now() where tenant_id = $1 and id = $2`, params)
+  return (res.rowCount ?? 0) > 0
+}
+
 export interface StoredTask {
   id: string
   source: Task['source']
+  sourceKey: string | null
   title: string
   detail: string | null
   dollarsCents: number
@@ -119,35 +166,42 @@ export interface StoredTask {
   status: Task['status']
   priority: Task['priority']
   dueDate: string | null
+  createdAt: string | null
 }
 
 interface TaskRowRead {
   id: string
   source: Task['source']
+  source_key: string | null
   title: string
   detail: string | null
-  dollars_cents: number
+  dollars_cents: number | string
   assignee: string | null
   status: Task['status']
   priority: Task['priority']
-  due_date: string | null
+  due_date: string | Date | null
+  created_at: string | Date | null
 }
+
+const toIso = (v: string | Date | null): string | null => (v == null ? null : v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10))
 
 /** Load a tenant's tasks, highest dollars first. */
 export async function loadTasks(db: Queryable, tenantId: string): Promise<StoredTask[]> {
   const res = await db.query(
-    'select id, source, title, detail, dollars_cents, assignee, status, priority, due_date from tasks where tenant_id = $1 order by dollars_cents desc',
+    'select id, source, source_key, title, detail, dollars_cents, assignee, status, priority, due_date, created_at from tasks where tenant_id = $1 order by dollars_cents desc',
     [tenantId],
   )
   return (res.rows as TaskRowRead[]).map((r) => ({
     id: r.id,
     source: r.source,
+    sourceKey: r.source_key ?? null,
     title: r.title,
     detail: r.detail,
-    dollarsCents: r.dollars_cents,
+    dollarsCents: Number(r.dollars_cents) || 0,
     assignee: r.assignee,
     status: r.status,
     priority: r.priority,
-    dueDate: r.due_date,
+    dueDate: toIso(r.due_date),
+    createdAt: toIso(r.created_at),
   }))
 }

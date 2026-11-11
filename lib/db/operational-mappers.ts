@@ -106,8 +106,10 @@ export interface TaskRow {
   status: Task['status']
   priority: Task['priority']
   due_date: string | null
+  /** Stable engine key (012_tasks_source_key) so a re-sync upserts; null for hand-made tasks. */
+  source_key: string | null
 }
-export function toTaskRow(tenantId: string, t: Task, dueDate: string | null = null): TaskRow {
+export function toTaskRow(tenantId: string, t: Task, dueDate: string | null = null, sourceKey: string | null = null): TaskRow {
   return {
     tenant_id: tenantId,
     source: t.source,
@@ -118,5 +120,6 @@ export function toTaskRow(tenantId: string, t: Task, dueDate: string | null = nu
     status: t.status,
     priority: t.priority,
     due_date: dueDate,
+    source_key: sourceKey,
   }
 }
