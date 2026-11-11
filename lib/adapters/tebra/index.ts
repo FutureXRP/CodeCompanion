@@ -15,6 +15,8 @@ export * from './types'
 export * from './client'
 export * from './mock'
 export * from './to-canonical'
+export * from './contract-export'
+export * from './validate'
 
 /**
  * The Tebra (Kareo) adapter — pull charges + their adjudication from Tebra's

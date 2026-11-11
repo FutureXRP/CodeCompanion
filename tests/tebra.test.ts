@@ -10,6 +10,8 @@ import {
   pullTebraPending,
   sampleTebraCharges,
   samplePendingTebraCharges,
+  resetMockTebraState,
+  resolveWindow,
   xmlFields,
   soapEnvelope,
   dateWindows,
@@ -174,7 +176,7 @@ test('TebraClient: faults, API errors and security failures are readable errors'
   await assert.rejects(apiErr.getCharges({ serviceDateFrom: '2026-01-15' }), /At least one filter is required/)
 
   const { c: dates } = client(async () => ({ status: 200, text: soapResponse([]) }))
-  await assert.rejects(dates.getCharges({ serviceDateFrom: '2026-02-01', serviceDateTo: '2026-01-01' }), /must not precede/)
+  await assert.rejects(dates.getCharges({ serviceDateFrom: '2026-02-01', serviceDateTo: '2026-01-01' }), /precedes its start/)
 })
 
 test('TebraClient: wide ranges are sliced into ≤ maxWindowDays calls and de-duplicated by charge ID', async () => {
@@ -386,6 +388,55 @@ test('TebraClient.getCharges: an EncounterStatus query is sent in the filter and
     /<sch:Filter><sch:EncounterStatus>Draft<\/sch:EncounterStatus><sch:FromServiceDate>2026-01-15<\/sch:FromServiceDate><sch:IncludeUnapprovedCharges>T<\/sch:IncludeUnapprovedCharges><sch:PracticeName>SquareOne Medical<\/sch:PracticeName><sch:ToServiceDate>2026-01-15<\/sch:ToServiceDate><\/sch:Filter>/,
   )
   assert.equal(rows[0].EncounterStatus, 'Draft')
+})
+
+test('TebraClient.getCharges: posting / last-modified windows (the nightly sync shape) go out as both-ended pairs', async () => {
+  const reqs: SoapRequest[] = []
+  const { c } = client(async (req) => {
+    reqs.push(req)
+    return { status: 200, text: soapResponse([]) }
+  })
+  await c.getCharges({ modifiedDateFrom: '2026-11-08', modifiedDateTo: '2026-11-11', postingDateFrom: '2026-09-13', postingDateTo: '2026-11-11' })
+  assert.equal(reqs.length, 1) // posting is the sliced window (60 days → one call); modified rides along
+  assert.match(
+    reqs[0].body,
+    /<sch:Filter><sch:FromLastModifiedDate>2026-11-08<\/sch:FromLastModifiedDate><sch:FromPostingDate>2026-09-13<\/sch:FromPostingDate><sch:PracticeName>SquareOne Medical<\/sch:PracticeName><sch:ToLastModifiedDate>2026-11-11<\/sch:ToLastModifiedDate><sch:ToPostingDate>2026-11-11<\/sch:ToPostingDate><\/sch:Filter>/,
+  )
+  assert.ok(!reqs[0].body.includes('ServiceDate'))
+  assert.deepEqual(resolveWindow({ modifiedDateFrom: '2026-11-08' }), { kind: 'modified', from: '2026-11-08', to: '2026-11-08' })
+  assert.throws(() => resolveWindow({}), /needs a date window/)
+  await assert.rejects(c.getCharges({ postingDateFrom: '2026-02-01', postingDateTo: '2026-01-01' }), /precedes/)
+})
+
+test('TebraClient.updateEncounterStatus: the write path in WCF member order, header first', async () => {
+  const reqs: SoapRequest[] = []
+  const { c } = client(async (req) => {
+    reqs.push(req)
+    return { status: 200, text: soapResponse([], { op: 'UpdateEncounterStatus' }) }
+  })
+  const out = await c.updateEncounterStatus('P-3001', 'Approved')
+  assert.deepEqual(out, { encounterId: 'P-3001', status: 'Approved' })
+  assert.match(reqs[0].headers.SOAPAction, /KareoServices\/UpdateEncounterStatus"$/)
+  assert.match(
+    reqs[0].body,
+    /<sch:UpdateEncounterStatus><sch:request><sch:RequestHeader>.*<\/sch:RequestHeader><sch:EncounterID>P-3001<\/sch:EncounterID><sch:EncounterStatus>Approved<\/sch:EncounterStatus><sch:Practice><sch:PracticeName>SquareOne Medical<\/sch:PracticeName><\/sch:Practice><\/sch:request>/,
+  )
+  await assert.rejects(c.updateEncounterStatus('', 'Approved'), /needs an encounter id/)
+})
+
+test('MockTebraSource.updateEncounterStatus: approved / sent-back encounters leave the pending queue', async () => {
+  resetMockTebraState()
+  const source = new MockTebraSource()
+  assert.equal((await pullTebraPending(source, { serviceDateFrom: '2026-01-15' })).claims.length, 6)
+  await source.updateEncounterStatus('P-3004', 'Approved')
+  await source.updateEncounterStatus('P-3006', 'Rejected')
+  const after = await pullTebraPending(source, { serviceDateFrom: '2026-01-15' })
+  assert.deepEqual(after.claims.map((c) => c.controlNumber).sort(), ['P-3001', 'P-3002', 'P-3003', 'P-3005'])
+  const approved = await source.getCharges({ serviceDateFrom: '2026-01-15', includeUnapproved: true, encounterStatus: 'Approved' })
+  assert.ok(approved.some((r) => r.EncounterID === 'P-3004'))
+  await assert.rejects(source.updateEncounterStatus('E-2001', 'Approved'), /not Draft\/Review/)
+  resetMockTebraState()
+  assert.equal((await pullTebraPending(source, { serviceDateFrom: '2026-01-15' })).claims.length, 6)
 })
 
 test('tebraChargesToClaimTracking: per-line status, balances, secondary + statement billing', () => {

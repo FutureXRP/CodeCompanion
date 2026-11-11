@@ -48,7 +48,7 @@ const isProcedure = (cpt: string): boolean =>
   Boolean(cpt) && !isEM(cpt) && !isLabOrDraw(cpt) && !isBundledIntoEM(cpt)
 
 /** NPI check digit: Luhn over the constant prefix "80840" + the 10-digit NPI. */
-function isValidNpi(npi: string): boolean {
+export function isValidNpi(npi: string): boolean {
   if (!/^\d{10}$/.test(npi)) return false
   const s = '80840' + npi
   let sum = 0

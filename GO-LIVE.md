@@ -5,48 +5,62 @@ honest map of what is **code-complete** versus what still requires **human /
 infra / legal** action. Code cannot certify a PHI system as live; this is the
 checklist a person drives to the finish.
 
+The stack: **Google Cloud Run** hosts the app, **Neon** Postgres holds PHI,
+**Supabase** is auth only, the practice-management system (**Tebra**, or
+athena) runs claims / eligibility / ERA, and CodeCompanion reads what it posted.
+Stedi is used only if CodeCompanion submits claims itself.
+
 ---
 
 ## What is code-complete (engineering done)
 
 - **Canonical model + RLS** — every tenant-scoped table enables row-level security
-  in the migration that creates it (`005`, `007`, `009`), isolated by
-  `current_tenant_id()`. A static guard test (`tests/db-operational.test.ts`)
-  fails CI if a future tenant table ships without RLS.
-- **Operational persistence** (`009_operational.sql`) — `eligibility_checks`,
-  `transaction_enrollments`, `payment_transactions`, `tasks`, and `audit_log`,
-  each tenant-scoped + RLS. Repositories in `lib/db/` write/read them.
-- **Immutable audit log** — append-only `audit_log` (a DB trigger rejects
-  UPDATE/DELETE for everyone, including the service role). `writeAudit()` is wired
-  into the PHI write paths (`persistRun`, `recordPayment`, eligibility, enrollment).
-- **De-identification gate** — `assertDeidentified()` runs at the corpus write
+  in the migration that creates it (`005`–`011`), isolated by `current_tenant_id()`
+  (on Neon, a per-request GUC). A static guard test fails CI if a tenant table
+  ships without RLS.
+- **Immutable audit log** — append-only `audit_log`; `writeAudit()` is wired into
+  every PHI path: persisted runs, payments, eligibility, enrollment, **live Tebra
+  pulls** (`tebra_charges`) and **Tebra writes** (`tebra_encounter_status`).
+- **De-identification gate** — `assertDeidentified()` at the corpus write
   boundary; the corpus table has no `tenant_id` and a `sample_n >= 11` CHECK.
-  Tests in `tests/corpus.test.ts`.
-- **Production switches** — `ALLOW_REAL_PHI` gates every real-PHI rail
-  (clearinghouse, eligibility); `ALLOW_REAL_CHARGES` gates real card charges.
-  Both default OFF; the app runs mock-first until they are flipped.
-- **The suite** — Command Center, Follow-up Queue, Eligibility (+ schedule sweep),
-  Patient Billing, A/R & Denials, and the full RCM cycle, all on the deterministic
-  engine. Test suite green; `next build` clean.
+- **Production switches** — `ALLOW_REAL_PHI` gates every real-PHI rail (the
+  Tebra and athena live clients, the clearinghouse, eligibility);
+  `ALLOW_REAL_CHARGES` gates real card charges; `TEBRA_ALLOW_WRITES` gates writes
+  back to Tebra. All default OFF.
+- **The Tebra loop, end to end on synthetic data** — adapter (SOAP, paced,
+  windowed, validated request shape), Found Money straight off a pull, the
+  Posting Workbench (appeals, resubmits, status checks, secondaries, statements,
+  takebacks), the Pre-approval Review (scrubber + capture rules with contracted
+  dollars), idempotent sync + backfill, the nightly job, the day-one validator,
+  the contract-export and NCCI-table loaders. `TEBRA-INTEGRATION.md` is the
+  runbook.
+- **The suite** — 200+ deterministic tests green; `next build` clean.
 
 ## What only a human / infra / legal can close (the blockers)
 
-1. **Sign the BAAs** — Supabase, Anthropic, Stedi, Stripe (every vendor in the PHI
-   path). Then set `BAA_SIGNED=true`. *(Deferred by request.)*
+1. **Sign the BAAs** — Google Cloud and Neon (self-serve), Anthropic (by request;
+   only if appeal drafting runs on real PHI). Tebra's comes with its contract.
+   Stedi / Stripe only if used. Then set `BAA_SIGNED=true`.
 2. **HIPAA security risk assessment** — a qualified review of the deployment.
    Then set `HIPAA_SECURITY_REVIEW=true`.
-3. **Provision production infra** — a real Supabase project, plus Stedi production
-   credentials and (optional at launch) Stripe live keys. Set the env vars.
-4. **Apply the schema** — run `supabase/migrations/*` against the production DB and
-   confirm `supabase/tests/rls_isolation_test.sql` passes there.
-5. **Bootstrap a tenant** — first sign-in creates the tenant + membership
-   (`ensureTenantForUser`); verify `current_tenant_id()` resolves.
-6. **Flip the switches** — `ALLOW_REAL_PHI=true` (and `ALLOW_REAL_CHARGES=true`
-   once Stripe reconciliation is verified) **only after** 1–5 are done.
+3. **Provision production infra** — Cloud Run + the Neon Scale tier (DEPLOY.md);
+   `DATABASE_URL`; `npm run db:migrate` (then `-- --only=011` for any later
+   migration); a Supabase project for staff logins.
+4. **Tebra account** — the Customer Key (a System Administrator's Customer Care
+   case), a dedicated API user with the System Admin role, the practice's contract
+   rates loaded into *Contracts and Fees* (and exported to
+   `TEBRA_CONTRACT_EXPORT_PATH`), ERA enrollment through TriZetto for every payer.
+5. **Validate before trusting** — `npm run tebra-validate` clean on a real window;
+   then `npm run tebra-backfill` for history; then `TEBRA_SYNC_ENABLED=true`.
+6. **Bootstrap a tenant** — first sign-in creates the practice
+   (`ensureTenantForUser`); set `SYNC_TENANT_ID` if more than one exists.
+7. **Flip the switches** — `ALLOW_REAL_PHI=true` on the Cloud Run environment
+   only, never on Vercel; `TEBRA_ALLOW_WRITES=true` once the biller has run a week
+   of reviews read-only; `ALLOW_REAL_CHARGES=true` only if Stripe is used.
 
 ## The go / no-go rule
 
 `npm run readiness` exits non-zero while any required check is unmet, so it can
-gate the deploy. It will report **NOT READY** until the BAAs, the security
-review, and the production switches are in place — which is correct: this build
-is engineered for go-live, but going live is a human decision on top of it.
+gate the deploy. It reports **NOT READY** until the BAAs, the security review,
+and the production switches are in place — which is correct: this build is
+engineered for go-live, but going live is a human decision on top of it.

@@ -1,5 +1,5 @@
 import type { Claim, ClaimTracking } from '../canonical'
-import { scrubClaim, OKLAHOMA } from '../scrub'
+import { scrubClaim, OKLAHOMA, SEED_EDITS } from '../scrub'
 import { CAPTURE_RULES, claimExpected, lineRate } from './rules'
 import type {
   ApprovalStatus,
@@ -45,7 +45,7 @@ const SEVERITY_ORDER: Record<CaptureSeverity, number> = { blocker: 0, warning: 1
 
 /** The scrubber's findings as capture findings: errors block, warnings warn, info is dropped (not actionable for approval). */
 export function scrubFindings(claim: Claim, ctx: ReviewContext): CaptureFinding[] {
-  const result = scrubClaim(claim, OKLAHOMA)
+  const result = scrubClaim(claim, OKLAHOMA, ctx.edits ?? SEED_EDITS)
   const out: CaptureFinding[] = []
   for (const f of result.findings) {
     if (f.severity === 'info') continue

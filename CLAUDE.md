@@ -81,6 +81,7 @@ Nothing above `lib/adapters/` may import an Athena type, an Epic type, an X12 se
   /canonical             canonical model types (the spine)
   /diff                  Rung 0 deterministic engine
   /capture               pre-approval review: scrubber + capture rules on unsent encounters (deterministic)
+  /sync                  the PM sync (pull → diff → takebacks → idempotent persist → audit); nightly via Inngest
   /corpus                de-id transform + behavioral corpus access
   /predict               Rung 2 (later)
   /ledger                Rung 3 (later)

@@ -1,6 +1,7 @@
 import type { FeeScheduleLine } from '../canonical'
 import { FeeSchedule } from '../adapters/fee-schedule'
 import { pullTebraPending, type TebraCanonicalPull, type TebraChargeQuery, type TebraSource } from '../adapters/tebra'
+import type { EditTables } from '../scrub'
 import { reviewClaims } from './review'
 import type { CaptureReport } from './types'
 
@@ -15,19 +16,27 @@ export interface TebraPreApproval extends TebraCanonicalPull {
   report: CaptureReport
 }
 
+export interface PreApprovalOptions {
+  /** The practice's contract export / CSV — rates for codes not on any encounter yet (the suggested add-ons). */
+  fallbackRates?: FeeScheduleLine[]
+  /** NCCI PTP + MUE tables; seed tables when omitted (see lib/scrub/load-tables). */
+  edits?: EditTables
+  now?: Date
+}
+
 /**
  * Tebra's contract rates (ExpectedAmount on the pending charges) win;
- * `fallbackRates` — the practice's contract export or CSV — supply rates for
- * codes that are not on any encounter yet (the add-ons the review can suggest).
+ * `fallbackRates` supply rates for codes that are not on any encounter yet.
  */
 export async function runTebraPreApproval(
   source: TebraSource,
   query: Omit<TebraChargeQuery, 'includeUnapproved' | 'encounterStatus'>,
   fallbackRates: FeeScheduleLine[] = [],
   now: Date = new Date(),
+  edits?: EditTables,
 ): Promise<TebraPreApproval> {
   const pull = await pullTebraPending(source, query)
   const feeSchedule = new FeeSchedule([...fallbackRates, ...pull.feeScheduleLines]) // later lines override
-  const report = reviewClaims(pull.claims, pull.tracking, { rates: feeSchedule, assembledBy: 'pm' }, now)
+  const report = reviewClaims(pull.claims, pull.tracking, { rates: feeSchedule, assembledBy: 'pm', edits }, now)
   return { ...pull, feeSchedule, report }
 }

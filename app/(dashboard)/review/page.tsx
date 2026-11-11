@@ -1,8 +1,10 @@
 import { Badge } from '@/components/ui/Badge'
 import { StatCard } from '@/components/ui/StatCard'
 import { formatCents } from '@/lib/canonical'
-import { createTebraSource, tebraConfigFromEnv, sampleTebraContractRates } from '@/lib/adapters/tebra'
+import { createTebraSource, tebraConfigFromEnv, sampleTebraContractRates, fallbackRatesFromEnv } from '@/lib/adapters/tebra'
 import { runTebraPreApproval, type TebraPreApproval, type CaptureSeverity, type ReviewVerdict } from '@/lib/capture'
+import { editTableStatus, loadEditTablesFromEnv } from '@/lib/scrub'
+import { EncounterActions } from '@/components/review/EncounterActions'
 import { DEFAULT_DATE } from '@/lib/mock-ehr'
 
 export const runtime = 'nodejs'
@@ -36,12 +38,21 @@ export default async function ReviewPage() {
   let result: TebraPreApproval | null = null
   let error: string | null = null
   try {
-    // Mock: the synthetic contract export supplies rates for the add-ons the review can suggest.
-    result = await runTebraPreApproval(createTebraSource(cfg), { serviceDateFrom: DEFAULT_DATE }, cfg.useMock ? sampleTebraContractRates() : [])
+    // Rates for codes not on any encounter yet: the synthetic contract export in mock
+    // mode, the practice's TEBRA_CONTRACT_EXPORT_PATH live. NCCI tables from env (seed otherwise).
+    result = await runTebraPreApproval(
+      createTebraSource(cfg),
+      { serviceDateFrom: DEFAULT_DATE },
+      cfg.useMock ? sampleTebraContractRates() : fallbackRatesFromEnv(),
+      new Date(),
+      loadEditTablesFromEnv(),
+    )
   } catch (e) {
     error = e instanceof Error ? e.message : String(e)
   }
   const report = result?.report
+  const writesEnabled = cfg.useMock || process.env.TEBRA_ALLOW_WRITES === 'true'
+  const tables = editTableStatus()
   const claimsByControl = new Map((result?.claims ?? []).map((c) => [c.controlNumber, c]))
   const encountersByControl = new Map((result?.encounters ?? []).map((e) => [e.patientControlNumber, e]))
   const providerByControl = new Map((result?.rows ?? []).map((r) => [r.EncounterID ?? '', r.RenderingProviderName ?? '']))
@@ -121,6 +132,11 @@ export default async function ReviewPage() {
                       </div>
                     )
                   })}
+                  {writesEnabled && (
+                    <div style={{ padding: '10px 16px', background: '#fbfaf7' }}>
+                      <EncounterActions encounterId={r.claimControlNumber} verdict={r.verdict} source={cfg.useMock ? 'mock' : 'live'} />
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -131,7 +147,9 @@ export default async function ReviewPage() {
 
           <p style={{ fontSize: 12, color: '#9aa69f', marginTop: 16, lineHeight: 1.55 }}>
             Deterministic rules (<code>lib/capture</code>) over the scrubber&apos;s edits and Tebra&apos;s contract rates — never an estimate, never an LLM.
-            &ldquo;If documented&rdquo; means exactly that: bill it only when the note supports it. Approving and editing stay in Tebra.
+            &ldquo;If documented&rdquo; means exactly that: bill it only when the note supports it. Editing stays in Tebra;
+            {writesEnabled ? ' approve / send-back here writes through the Tebra API.' : ' approving too (TEBRA_ALLOW_WRITES is off).'}
+            {' '}NCCI tables: PTP {tables.ptp} · MUE {tables.mue}{tables.ptp === 'seed' ? ' — load the CMS files (NCCI_PTP_PATH / NCCI_MUE_PATH) before relying on bundling edits.' : '.'}
           </p>
         </>
       )}

@@ -1,5 +1,6 @@
 import type { Claim } from '../canonical'
 import type { RateLookup } from '../diff'
+import type { EditTables } from '../scrub'
 
 /**
  * Pre-approval review — the "capture the most out of every visit" layer.
@@ -74,6 +75,8 @@ export interface ReviewContext {
    * structural scrubber checks apply.
    */
   assembledBy: 'pm' | 'codecompanion'
+  /** NCCI PTP + MUE tables for the scrubber; the seed tables when omitted. */
+  edits?: EditTables
 }
 
 /** A capture rule: pure function from a claim (+ rates) to findings. */

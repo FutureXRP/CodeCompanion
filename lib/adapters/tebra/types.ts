@@ -109,18 +109,37 @@ export interface TebraPracticeRaw {
   [extra: string]: string | undefined
 }
 
-/** What to pull — a service-date window (the API needs both ends when dates are used). */
+export type TebraEncounterStatus = 'Draft' | 'Review' | 'Approved' | 'Rejected'
+
+/**
+ * What to pull. At least one date window; the API needs both ends of any
+ * window it is given (a missing end defaults to the start):
+ *  - service dates  — the visits in a range (backfill by date of service)
+ *  - posting dates  — charges entered in a range (Tebra's own default scope is the last 7 posting days)
+ *  - modified dates — anything touched in a range: new payments on old claims (the nightly sync)
+ * The first pair present (service → posting → modified) is the one sliced into
+ * ≤ maxWindowDays calls; the others go along unchanged.
+ */
 export interface TebraChargeQuery {
-  serviceDateFrom: string // YYYY-MM-DD
-  serviceDateTo?: string // default = serviceDateFrom
+  serviceDateFrom?: string // YYYY-MM-DD
+  serviceDateTo?: string
+  postingDateFrom?: string
+  postingDateTo?: string
+  modifiedDateFrom?: string
+  modifiedDateTo?: string
   /** Also return charges on Draft/Review encounters (IncludeUnapprovedCharges=T). Default false. */
   includeUnapproved?: boolean
   /** Only charges on encounters in this approval state (guide §4.4.1 EncounterStatus). */
-  encounterStatus?: 'Draft' | 'Review' | 'Approved' | 'Rejected'
+  encounterStatus?: TebraEncounterStatus
 }
 
 /** The intake boundary: a source of charge records (real SOAP client or mock). */
 export interface TebraSource {
   getCharges(query: TebraChargeQuery): Promise<TebraChargeRaw[]>
   getPractices(): Promise<TebraPracticeRaw[]>
+  /**
+   * The write path (guide §4.21): move a Draft/Review encounter to Approved or
+   * Rejected (back to the provider). Gated above the adapter by TEBRA_ALLOW_WRITES.
+   */
+  updateEncounterStatus(encounterId: string, status: TebraEncounterStatus): Promise<{ encounterId: string; status: TebraEncounterStatus }>
 }

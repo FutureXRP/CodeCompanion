@@ -1,4 +1,4 @@
-import type { TebraChargeQuery, TebraChargeRaw, TebraPracticeRaw, TebraSource } from './types'
+import type { TebraChargeQuery, TebraChargeRaw, TebraEncounterStatus, TebraPracticeRaw, TebraSource } from './types'
 import { escapeXml, extractFirst, extractRecords, extractStringList } from './xml'
 
 /**
@@ -109,6 +109,32 @@ function isoToUtc(iso: string): number {
   return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
 }
 
+export type WindowKind = 'service' | 'posting' | 'modified'
+
+/** The date window a query is sliced on: the first pair present, both ends resolved. */
+export function resolveWindow(query: TebraChargeQuery): { kind: WindowKind; from: string; to: string } {
+  if (query.serviceDateFrom) return { kind: 'service', from: query.serviceDateFrom, to: query.serviceDateTo ?? query.serviceDateFrom }
+  if (query.postingDateFrom) return { kind: 'posting', from: query.postingDateFrom, to: query.postingDateTo ?? query.postingDateFrom }
+  if (query.modifiedDateFrom) return { kind: 'modified', from: query.modifiedDateFrom, to: query.modifiedDateTo ?? query.modifiedDateFrom }
+  throw new Error('GetCharges needs a date window: service, posting, or last-modified dates (guide §3.2 — both ends).')
+}
+
+/** The date filter fields for one slice: the sliced pair plus the other pairs as given. */
+export function windowFields(query: TebraChargeQuery, kind: WindowKind, from: string, to: string): Record<string, string | undefined> {
+  const pair = (f?: string, t?: string) => (f ? { from: f, to: t ?? f } : undefined)
+  const service = kind === 'service' ? { from, to } : pair(query.serviceDateFrom, query.serviceDateTo)
+  const posting = kind === 'posting' ? { from, to } : pair(query.postingDateFrom, query.postingDateTo)
+  const modified = kind === 'modified' ? { from, to } : pair(query.modifiedDateFrom, query.modifiedDateTo)
+  return {
+    FromServiceDate: service?.from,
+    ToServiceDate: service?.to,
+    FromPostingDate: posting?.from,
+    ToPostingDate: posting?.to,
+    FromLastModifiedDate: modified?.from,
+    ToLastModifiedDate: modified?.to,
+  }
+}
+
 function utcToIso(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10)
 }
@@ -148,29 +174,26 @@ export class TebraClient implements TebraSource {
     return `<sch:RequestHeader>${fields}</sch:RequestHeader>`
   }
 
-  /** The `<request>` children: header + Filter (Fields omitted → full records). */
-  requestBody(filterXml: string): string {
-    const filter = `<sch:Filter>${filterXml}</sch:Filter>`
-    return this.requestOrder === 'alphabetical' ? filter + this.requestHeader() : this.requestHeader() + filter
+  /** The `<request>` children: header + the operation's own elements (Fields omitted → full records). */
+  requestBody(inner: string): string {
+    return this.requestOrder === 'alphabetical' ? inner + this.requestHeader() : this.requestHeader() + inner
   }
 
-  /** Charges for a service-date range, sliced into ≤ maxWindowDays calls, de-duped by charge ID. */
+  /** Charges for a date window, sliced into ≤ maxWindowDays calls, de-duped by charge ID. */
   async getCharges(query: TebraChargeQuery): Promise<TebraChargeRaw[]> {
-    const from = query.serviceDateFrom
-    const to = query.serviceDateTo ?? from
-    if (isoToUtc(to) < isoToUtc(from)) throw new Error('serviceDateTo must not precede serviceDateFrom.')
+    const { kind, from, to } = resolveWindow(query)
+    if (isoToUtc(to) < isoToUtc(from)) throw new Error(`The ${kind}-date window's end precedes its start.`)
 
     const seen = new Set<string>()
     const rows: TebraChargeRaw[] = []
     for (const [windowFrom, windowTo] of dateWindows(from, to, this.maxWindowDays)) {
       const filter = xmlFields({
+        ...windowFields(query, kind, windowFrom, windowTo),
         EncounterStatus: query.encounterStatus,
-        FromServiceDate: windowFrom,
         IncludeUnapprovedCharges: query.includeUnapproved ? 'T' : undefined,
         PracticeName: this.cfg.practiceName,
-        ToServiceDate: windowTo,
       })
-      const xml = await this.call('GetCharges', this.requestBody(filter))
+      const xml = await this.call('GetCharges', this.requestBody(`<sch:Filter>${filter}</sch:Filter>`))
       for (const record of extractRecords(xml, 'ChargeData')) {
         const key = record.ID || `${record.EncounterID}|${record.ProcedureCode}|${record.ServiceStartDate}|${rows.length}`
         if (seen.has(key)) continue
@@ -184,8 +207,22 @@ export class TebraClient implements TebraSource {
   }
 
   async getPractices(): Promise<TebraPracticeRaw[]> {
-    const xml = await this.call('GetPractices', this.requestBody(xmlFields({ PracticeName: this.cfg.practiceName })))
+    const xml = await this.call('GetPractices', this.requestBody(`<sch:Filter>${xmlFields({ PracticeName: this.cfg.practiceName })}</sch:Filter>`))
     return extractRecords(xml, 'PracticeData')
+  }
+
+  /**
+   * UpdateEncounterStatus (guide §4.21): only Draft/Review encounters can be
+   * moved. Request members in WCF order: EncounterID, EncounterStatus, Practice.
+   */
+  async updateEncounterStatus(encounterId: string, status: TebraEncounterStatus): Promise<{ encounterId: string; status: TebraEncounterStatus }> {
+    if (!encounterId.trim()) throw new Error('updateEncounterStatus needs an encounter id.')
+    if (!['Draft', 'Review', 'Approved', 'Rejected'].includes(status)) throw new Error(`Unsupported encounter status "${status}".`)
+    const inner =
+      xmlFields({ EncounterID: encounterId, EncounterStatus: status }) +
+      `<sch:Practice>${xmlFields({ PracticeName: this.cfg.practiceName })}</sch:Practice>`
+    await this.call('UpdateEncounterStatus', this.requestBody(inner))
+    return { encounterId, status }
   }
 
   /**

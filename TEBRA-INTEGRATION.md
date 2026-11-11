@@ -117,6 +117,29 @@ What it needs: the contract rates loaded (step 7 above) — for codes not on any
 
 ---
 
+## Operations — the runbook
+
+Everything below runs on the mock today and switches to the live account by env alone.
+
+| Step | Command | What it does |
+|---|---|---|
+| **Day 1 — validate the account** | `npm run tebra-validate -- 2026-10-01 2026-10-31` | Pulls a window and checks the data looks the way the guide says: keys on every line, charges, **contract rates populated**, statuses recognized, CARC codes on adjustments, bill dates, secondary coverage, the practice NPI, the unapproved queue. Exit 1 on any ✗. Do not trust a dollar before this is clean. |
+| **Load history** | `npm run tebra-backfill -- 2025-11-01 2026-11-11` | Walks ≤60-day posting-date windows, syncing each one **idempotently** (re-running replaces, never duplicates). ~7 paced calls for a year; run after hours. |
+| **Sync once by hand** | `npm run tebra-sync` (or `-- 2026-10-01 2026-10-31`) | The same code the nightly job runs. |
+| **Nightly** | `TEBRA_SYNC_ENABLED=true` | Inngest cron (`TEBRA_SYNC_CRON`, default 07:00 UTC): everything modified in the last `TEBRA_SYNC_LOOKBACK_DAYS` (default 3) inside a 60-posting-day window, so a payment posted today on a visit from last month is picked up. |
+
+Each sync: pull → diff → **takeback detection** (any claim whose posted payment went *down* since the last sync becomes a *Recoupment* item on the Posting Workbench) → replace the stored run → audit (`tebra_charges` read when live, `persist_run` write). The tenant comes from `SYNC_TENANT_ID`, or the only tenant when there is exactly one — never a guess.
+
+**Files the practice supplies (both optional, both make the numbers real):**
+- `TEBRA_CONTRACT_EXPORT_PATH` — Tebra's *Export Contracts and Fees* saved as CSV. Columns are found by meaning (insurance company, procedure code, modifier, contract rate). Supplies rates for codes not on any encounter yet — the add-ons the Pre-approval Review suggests.
+- `NCCI_PTP_PATH` / `NCCI_MUE_PATH` — the CMS practitioner PTP edits and MUE values (quarterly spreadsheets, saved as CSV). Until then the scrubber runs on seed tables — enough to prove the rules, not to clear a payer.
+
+**The write path** (`TEBRA_ALLOW_WRITES=true`): the Pre-approval Review can *Approve in Tebra* or *Send back to provider* (`UpdateEncounterStatus`, Draft/Review only). Off by default; every live write is audited. Against the mock it only changes in-memory state so the queue visibly shrinks.
+
+**`npm run readiness`** reflects all of this: Neon required, Supabase auth required, Stedi only if `CLEARINGHOUSE_PROVIDER=stedi`, Tebra credentials required once `TEBRA_USE_MOCK=false`, and contract rates / NCCI tables / nightly sync reported as pending until configured.
+
+---
+
 ## Tebra's RPA bots vs. the Posting Workbench
 
 Tebra quotes two add-ons: an **ERA Processing Bot** ($125/mo + $250 setup) and an **Unapplied Payments Bot** ($125/mo + $350 setup). Each is two things glued together:
@@ -128,7 +151,7 @@ Tebra quotes two add-ons: an **ERA Processing Bot** ($125/mo + $250 setup) and a
 
 So: skip both bots at this size. If posting labor ever becomes the bottleneck (in-house billing at higher volume), buy the ERA bot then — nothing here conflicts with it. **If you do, require that posted adjustments keep the CARC/RARC codes** (CO-45, CO-197 …): the diff classifies denials from those codes; a rule that posts denials under a generic Tebra reason still gets flagged, but as "manual review" instead of "appealable — CARC 197".
 
-Not yet in the workbench, on the list: recoupments (835 PLB segments on the file path; `GetTransactions` reversals on the API path) and an unapplied-patient-payment matcher (`GetPayments.Unapplied` ↔ open patient balances — a daily "apply these" list; applying still happens in Tebra).
+Recoupments are detected by comparison — a claim whose posted payment went down since the last sync — which works on any source without knowing how it represents a takeback. Not yet built: an unapplied-patient-payment matcher (`GetPayments.Unapplied` ↔ open patient balances — a daily "apply these" list; applying still happens in Tebra).
 
 ---
 

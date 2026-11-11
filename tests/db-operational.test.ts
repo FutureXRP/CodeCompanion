@@ -55,14 +55,16 @@ test('readiness: empty env is not ready, with config+infra blockers', () => {
   const r = goLiveReadiness({})
   assert.equal(r.ready, false)
   assert.equal(r.automatedPass, false)
+  assert.ok(r.blockers.some((b) => b.id === 'database'))
   assert.ok(r.blockers.some((b) => b.id === 'supabase'))
   assert.ok(r.blockers.some((b) => b.id === 'baa'))
+  assert.ok(!r.blockers.some((b) => b.id === 'clearinghouse')) // the PM runs claims unless Stedi is chosen
 })
 
 test('readiness: everything except BAAs/review → automatedPass, not ready', () => {
   const env = {
-    NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a', SUPABASE_SERVICE_ROLE_KEY: 's',
-    ANTHROPIC_API_KEY: 'k', STEDI_API_KEY: 'st',
+    DATABASE_URL: 'postgres://neon', NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a',
+    ANTHROPIC_API_KEY: 'k',
   }
   const r = goLiveReadiness(env)
   assert.equal(r.automatedPass, true) // code + infra ready
@@ -72,12 +74,24 @@ test('readiness: everything except BAAs/review → automatedPass, not ready', ()
 
 test('readiness: all gates set → ready', () => {
   const env = {
-    NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a', SUPABASE_SERVICE_ROLE_KEY: 's',
-    ANTHROPIC_API_KEY: 'k', STEDI_API_KEY: 'st', ALLOW_REAL_PHI: 'true', BAA_SIGNED: 'true', HIPAA_SECURITY_REVIEW: 'true',
+    DATABASE_URL: 'postgres://neon', NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a',
+    ANTHROPIC_API_KEY: 'k', ALLOW_REAL_PHI: 'true', BAA_SIGNED: 'true', HIPAA_SECURITY_REVIEW: 'true',
   }
   const r = goLiveReadiness(env)
   assert.equal(r.blockers.length, 0)
   assert.equal(r.ready, true)
+})
+
+test('readiness: Tebra live mode requires its credentials; Stedi only when chosen', () => {
+  const base = { DATABASE_URL: 'd', NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a', ANTHROPIC_API_KEY: 'k' }
+  const live = goLiveReadiness({ ...base, TEBRA_USE_MOCK: 'false' })
+  assert.ok(live.blockers.some((b) => b.id === 'tebra'))
+  const creds = goLiveReadiness({ ...base, TEBRA_USE_MOCK: 'false', TEBRA_CUSTOMER_KEY: 'k', TEBRA_USER: 'u', TEBRA_PASSWORD: 'p', TEBRA_PRACTICE_NAME: 'SquareOne Medical' })
+  assert.ok(!creds.blockers.some((b) => b.id === 'tebra'))
+  assert.equal(creds.checks.find((c) => c.id === 'tebra')?.status, 'pass')
+  const stedi = goLiveReadiness({ ...base, CLEARINGHOUSE_PROVIDER: 'stedi' })
+  assert.ok(stedi.blockers.some((b) => b.id === 'clearinghouse'))
+  assert.equal(goLiveReadiness({ ...base, TEBRA_CONTRACT_EXPORT_PATH: '/x.csv', TEBRA_SYNC_ENABLED: 'true' }).checks.filter((c) => ['contract_rates', 'sync'].includes(c.id)).every((c) => c.status === 'pass'), true)
 })
 
 // ── Static RLS guard: every tenant-scoped table must have RLS + a policy ──────

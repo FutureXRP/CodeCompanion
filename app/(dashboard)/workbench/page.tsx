@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic'
 const VARIANT: Record<WorkbenchCategory, 'red' | 'amber' | 'green'> = {
   appeal_denial: 'red',
   appeal_underpayment: 'amber',
+  recoupment: 'red',
   resubmit_rejected: 'red',
   status_check: 'amber',
   bill_secondary: 'amber',

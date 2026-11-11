@@ -31,6 +31,24 @@ export async function resolveTenantId(db: Queryable, userId: string): Promise<st
   return res.rows[0] ? (res.rows[0].tenant_id as string) : null
 }
 
+/**
+ * The tenant a scheduled sync writes to — no user is signed in for a cron.
+ * SYNC_TENANT_ID when set (and it exists); otherwise the only tenant, when
+ * there is exactly one; otherwise refuse rather than guess.
+ */
+export async function resolveSyncTenant(db: Queryable, env: Record<string, string | undefined> = process.env): Promise<string> {
+  const configured = env.SYNC_TENANT_ID?.trim()
+  if (configured) {
+    const found = await db.query('select id from tenants where id = $1 limit 1', [configured])
+    if (!found.rows[0]) throw new Error(`SYNC_TENANT_ID ${configured} does not match a tenant.`)
+    return found.rows[0].id as string
+  }
+  const all = await db.query('select id from tenants order by created_at asc limit 2')
+  if (all.rows.length === 1) return all.rows[0].id as string
+  if (all.rows.length === 0) throw new Error('No tenant exists yet — sign in once to create the practice, or set SYNC_TENANT_ID.')
+  throw new Error('More than one tenant exists — set SYNC_TENANT_ID to the practice the sync should write to.')
+}
+
 /** The practice (tenant) display name. */
 export async function loadTenantName(db: Queryable, tenantId: string): Promise<string | null> {
   const res = await db.query('select name from tenants where id = $1 limit 1', [tenantId])

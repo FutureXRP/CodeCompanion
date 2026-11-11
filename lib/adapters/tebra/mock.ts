@@ -1,5 +1,16 @@
 import type { FeeScheduleLine } from '../../canonical'
-import type { TebraChargeQuery, TebraChargeRaw, TebraPracticeRaw, TebraSource } from './types'
+import type { TebraChargeQuery, TebraChargeRaw, TebraEncounterStatus, TebraPracticeRaw, TebraSource } from './types'
+
+/** In-memory approval state so the write path is visible in the mock (resets with the process). */
+const approvalOverrides = new Map<string, TebraEncounterStatus>()
+export function resetMockTebraState(): void {
+  approvalOverrides.clear()
+}
+
+/** The date the synthetic day is pinned to — whichever window the caller used. */
+function anchorDate(query: TebraChargeQuery): string {
+  return query.serviceDateFrom ?? query.postingDateFrom ?? query.modifiedDateFrom ?? '2026-01-15'
+}
 
 /**
  * Mock Tebra source — synthetic GetCharges records in the real API shape (string
@@ -17,16 +28,27 @@ import type { TebraChargeQuery, TebraChargeRaw, TebraPracticeRaw, TebraSource } 
  */
 export class MockTebraSource implements TebraSource {
   async getCharges(query: TebraChargeQuery): Promise<TebraChargeRaw[]> {
-    const approved = sampleTebraCharges(query.serviceDateFrom)
+    const date = anchorDate(query)
+    const approved = sampleTebraCharges(date)
     if (!query.includeUnapproved && !query.encounterStatus) return approved
-    const pending = samplePendingTebraCharges(query.serviceDateFrom)
-    if (query.encounterStatus === 'Approved') return approved
+    const pending = samplePendingTebraCharges(date).map((r) => {
+      const override = approvalOverrides.get(r.EncounterID ?? '')
+      return override ? { ...r, EncounterStatus: override } : r
+    })
+    if (query.encounterStatus === 'Approved') return [...approved, ...pending.filter((r) => r.EncounterStatus === 'Approved')]
     if (query.encounterStatus) return pending.filter((r) => r.EncounterStatus === query.encounterStatus)
     return [...approved, ...pending]
   }
 
   async getPractices(): Promise<TebraPracticeRaw[]> {
     return [samplePractice()]
+  }
+
+  async updateEncounterStatus(encounterId: string, status: TebraEncounterStatus): Promise<{ encounterId: string; status: TebraEncounterStatus }> {
+    const known = samplePendingTebraCharges().some((r) => r.EncounterID === encounterId)
+    if (!known) throw new Error(`Tebra UpdateEncounterStatus error: encounter ${encounterId} is not Draft/Review (only those can be updated).`)
+    approvalOverrides.set(encounterId, status)
+    return { encounterId, status }
   }
 }
 

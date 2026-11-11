@@ -1,6 +1,7 @@
 import type { Claim, ClaimTracking, Finding } from '../canonical'
 import { formatCents } from '../canonical'
 import type { RateLookup } from '../diff'
+import type { PaymentRegression } from './regressions'
 
 /**
  * The posting workbench — the "claims that need a biller's attention" queue,
@@ -16,6 +17,7 @@ import type { RateLookup } from '../diff'
 export type WorkbenchCategory =
   | 'appeal_denial'
   | 'appeal_underpayment'
+  | 'recoupment'
   | 'resubmit_rejected'
   | 'status_check'
   | 'bill_secondary'
@@ -55,6 +57,7 @@ export interface PostingWorkbench {
 export const WORKBENCH_CATEGORIES: WorkbenchCategory[] = [
   'appeal_denial',
   'appeal_underpayment',
+  'recoupment',
   'resubmit_rejected',
   'status_check',
   'bill_secondary',
@@ -64,6 +67,7 @@ export const WORKBENCH_CATEGORIES: WorkbenchCategory[] = [
 export const WORKBENCH_LABELS: Record<WorkbenchCategory, string> = {
   appeal_denial: 'Appeal denial',
   appeal_underpayment: 'Appeal underpayment',
+  recoupment: 'Recoupment / takeback',
   resubmit_rejected: 'Fix & resubmit',
   status_check: 'Check claim status',
   bill_secondary: 'Bill secondary',
@@ -79,6 +83,8 @@ export interface WorkbenchInput {
   findings: Finding[]
   tracking: ClaimTracking[]
   rates: RateLookup
+  /** Payments that went down since the last sync (lib/found-money/regressions). */
+  regressions?: PaymentRegression[]
 }
 
 export function buildPostingWorkbench(input: WorkbenchInput, now: Date = new Date()): PostingWorkbench {
@@ -155,6 +161,26 @@ export function buildPostingWorkbench(input: WorkbenchInput, now: Date = new Dat
         })
       }
     }
+  }
+
+  // 3. Money the payer took back since the last sync.
+  for (const g of input.regressions ?? []) {
+    const claim = claimsByControl.get(g.claimControlNumber)
+    const line = g.cptHcpcs ? claim?.lines.find((l) => l.cptHcpcs === g.cptHcpcs && l.modifiers.join(',') === (g.modifiers ?? []).join(',')) : undefined
+    const lineId = line?.id ?? `${g.claimControlNumber}:claim`
+    items.push({
+      id: `recoupment:${lineId}`,
+      category: 'recoupment',
+      claimControlNumber: g.claimControlNumber,
+      claimLineId: lineId,
+      patientName: claim ? patientName(claim) : g.claimControlNumber,
+      payerName: claim?.payer.name ?? '',
+      cptHcpcs: g.cptHcpcs ?? (claim?.lines.map((l) => l.cptHcpcs).join(', ') ?? ''),
+      dateOfService: claim?.dateOfService,
+      daysSince: daysBetween(claim?.dateOfService, now),
+      amountCents: -g.deltaCents,
+      action: `Payer took back ${formatCents(-g.deltaCents)} since the last sync (paid ${formatCents(g.previousPaidCents)} → ${formatCents(g.currentPaidCents)}) — find the reason on the remittance (duplicate, COB, audit, offset) and rebill or appeal.`,
+    })
   }
 
   items.sort((a, b) => b.amountCents - a.amountCents || a.category.localeCompare(b.category) || a.id.localeCompare(b.id))
