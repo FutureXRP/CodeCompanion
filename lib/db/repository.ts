@@ -1,4 +1,5 @@
 import type { Claim, Finding, Remittance } from '../canonical'
+import type { ScorecardClaim, ScorecardFinding } from '../analytics/scorecard'
 import {
   postClaimCharges,
   postRemittance,
@@ -176,6 +177,48 @@ export async function persistRun(
     remittances: remittanceCount,
     findings: findingCount,
     ledgerEntries: ledgerEntryCount,
+  }
+}
+
+/** The scorecard's inputs from the persisted runs (013 adds date_of_service + recoverable_cents). */
+export async function loadScorecardInputs(db: Queryable, tenantId: string): Promise<{ claims: ScorecardClaim[]; findings: ScorecardFinding[] }> {
+  const claims = await db.query(
+    `select c.control_number, c.date_of_service, c.total_billed_cents, p.name as payer_name,
+            coalesce(sum(rl.paid_cents), 0) as paid_cents, count(rl.id) as remit_lines
+       from claims c
+       left join payers p on p.id = c.payer_id
+       left join remittances r on r.claim_id = c.id
+       left join remittance_lines rl on rl.remittance_id = r.id
+      where c.tenant_id = $1
+      group by c.id, c.control_number, c.date_of_service, c.total_billed_cents, p.name`,
+    [tenantId],
+  )
+  const findings = await db.query(
+    `select f.type, f.status, f.recoverable_cents, f.appealable, c.control_number, c.date_of_service
+       from findings f
+       left join claim_lines cl on cl.id = f.claim_line_id
+       left join claims c on c.id = cl.claim_id
+      where f.tenant_id = $1`,
+    [tenantId],
+  )
+  const iso = (v: unknown): string | null => (v == null ? null : v instanceof Date ? v.toISOString().slice(0, 10) : String(v).slice(0, 10))
+  return {
+    claims: (claims.rows as Record<string, unknown>[]).map((r) => ({
+      controlNumber: String(r.control_number ?? ''),
+      dateOfService: iso(r.date_of_service),
+      payerName: String(r.payer_name ?? ''),
+      billedCents: Number(r.total_billed_cents) || 0,
+      paidCents: Number(r.paid_cents) || 0,
+      adjudicated: (Number(r.remit_lines) || 0) > 0,
+    })),
+    findings: (findings.rows as Record<string, unknown>[]).map((r) => ({
+      controlNumber: String(r.control_number ?? ''),
+      dateOfService: iso(r.date_of_service),
+      type: r.type as ScorecardFinding['type'],
+      status: r.status as ScorecardFinding['status'],
+      recoverableCents: Number(r.recoverable_cents) || 0,
+      appealable: Boolean(r.appealable),
+    })),
   }
 }
 

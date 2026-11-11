@@ -2,7 +2,7 @@
 --
 -- 005 declared the check inline (Postgres names it claims_source_adapter_check).
 -- Re-runnable: drop whichever check mentions source_adapter, then add the new one.
--- Apply to a live database on its own:  npm run db:migrate -- --only=011
+-- A tracked `npm run db:migrate` applies it once.
 
 do $$
 declare c record;

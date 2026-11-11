@@ -50,7 +50,9 @@ the BAAs, and flip `ALLOW_REAL_PHI=true`.
 2. Copy the pooled connection string into `DATABASE_URL`
    (`postgres://user:pass@ep-xxx.neon.tech/dbname?sslmode=require`).
 3. Apply the schema + RLS: `DATABASE_URL=… npm run db:migrate` (compat shim → migrations → RLS-GUC).
-   A database that predates a migration takes it alone: `npm run db:migrate -- --only=012`.
+   Applied files are tracked in `schema_migrations`, so the same command later applies only
+   what is new. A database set up before tracking existed takes a one-time
+   `npm run db:migrate -- --baseline=010` (records 000–010 as applied), then the plain command.
 
 ## 2. Supabase (auth only)
 

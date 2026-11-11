@@ -15,6 +15,8 @@ const nav = [
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5.2 8.2l1.9 1.9 3.8-4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   { href: '/workbench', label: 'Posting Workbench', badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6h6M5 8.5h6M5 11h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M10.2 11l1 1 1.8-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+  { href: '/scorecard', label: 'Scorecard', badge: null,
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13.5h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M3 10.5l3-3.5 2.5 2 4-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12.5" cy="4" r="1.2" fill="currentColor"/></svg> },
   { href: '/dashboard',  label: 'Dashboard',      badge: null,
     icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".4"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".7"/></svg> },
   { href: '/found-money', label: 'Found Money',    badge: null,

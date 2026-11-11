@@ -44,8 +44,10 @@ Stedi is used only if CodeCompanion submits claims itself.
 2. **HIPAA security risk assessment** — a qualified review of the deployment.
    Then set `HIPAA_SECURITY_REVIEW=true`.
 3. **Provision production infra** — Cloud Run + the Neon Scale tier (DEPLOY.md);
-   `DATABASE_URL`; `npm run db:migrate` (then `-- --only=011` and `-- --only=012`
-   on a database that predates them); a Supabase project for staff logins.
+   `DATABASE_URL`; `npm run db:migrate` applies what is new (tracked in
+   `schema_migrations`). A database set up before tracking existed: once,
+   `npm run db:migrate -- --baseline=010`, then the plain command. A Supabase
+   project for staff logins.
 4. **Tebra account** — the Customer Key (a System Administrator's Customer Care
    case), a dedicated API user with the System Admin role, the practice's contract
    rates loaded into *Contracts and Fees* (and exported to

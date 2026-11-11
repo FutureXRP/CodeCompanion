@@ -37,6 +37,7 @@ export const MODULES: ModuleDef[] = [
   { id: 'frontdesk', label: 'Front Desk', href: '/frontdesk', group: 'core', defaultOn: true, desc: 'Coverage, auths and copays before each visit.' },
   { id: 'review', label: 'Pre-approval Review', href: '/review', group: 'core', defaultOn: true, desc: 'Fix and capture before the encounter goes out.' },
   { id: 'workbench', label: 'Posting Workbench', href: '/workbench', group: 'core', defaultOn: true, desc: 'Appeals, resubmits, secondaries, statements.' },
+  { id: 'scorecard', label: 'Scorecard', href: '/scorecard', group: 'core', defaultOn: true, desc: 'Billed, paid, denials, recoverable — by payer and month.' },
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', group: 'core', defaultOn: true, desc: 'Practice overview.' },
 
   { id: 'eligibility', label: 'Eligibility', href: '/eligibility', group: 'billing', defaultOn: true, desc: 'Real-time 270/271 verification.' },

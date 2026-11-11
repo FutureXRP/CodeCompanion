@@ -5,7 +5,7 @@
 -- duplicating it: the engine refreshes title / detail / dollars / priority, while
 -- a human's assignee, status and due date survive. NULL keys (hand-made tasks)
 -- never conflict. Adds the 'review' source. Re-runnable.
--- Apply to a live database on its own:  npm run db:migrate -- --only=012
+-- A tracked `npm run db:migrate` applies it once.
 
 alter table public.tasks add column if not exists source_key text;
 create unique index if not exists tasks_source_key_idx on public.tasks(tenant_id, source_key);

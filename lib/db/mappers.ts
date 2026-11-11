@@ -14,6 +14,8 @@ export interface ClaimRow {
   control_number: string
   total_billed_cents: number
   source_adapter: Claim['sourceAdapter']
+  /** YYYY-MM-DD (013) — the by-month scorecard. */
+  date_of_service: string | null
 }
 export function toClaimRow(tenantId: string, payerId: string | null, claim: Claim): ClaimRow {
   return {
@@ -22,6 +24,7 @@ export function toClaimRow(tenantId: string, payerId: string | null, claim: Clai
     control_number: claim.controlNumber,
     total_billed_cents: claim.totalBilledCents,
     source_adapter: claim.sourceAdapter,
+    date_of_service: claim.dateOfService ? claim.dateOfService.slice(0, 10) : null,
   }
 }
 
@@ -96,6 +99,8 @@ export interface FindingRow {
   expected_cents: number
   actual_cents: number
   delta_cents: number
+  /** The diff's ranking figure (013) — never negative. */
+  recoverable_cents: number
   appealable: boolean
   status: Finding['status']
 }
@@ -107,6 +112,7 @@ export function toFindingRow(tenantId: string, claimLineId: string | null, f: Fi
     expected_cents: f.expectedCents,
     actual_cents: f.actualCents,
     delta_cents: f.deltaCents,
+    recoverable_cents: f.recoverableCents,
     appealable: f.appealable,
     status: f.status,
   }

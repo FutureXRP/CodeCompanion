@@ -40,7 +40,7 @@ test('toClaimLineRow preserves modifiers, units, and diagnosis pointers', () => 
   assert.equal(row.billed_cents, 15000)
 })
 
-test('toFindingRow stores delta + status and omits the derived recoverable figure', () => {
+test('toFindingRow stores delta, status and the recoverable figure (013)', () => {
   const f: Finding = {
     id: 'denial:PATIENT002:1', type: 'denial', claimControlNumber: 'PATIENT002', claimLineId: 'PATIENT002:1',
     payerName: 'Medicare', payerExternalId: '00123', cptHcpcs: '99215', modifiers: [],
@@ -54,7 +54,7 @@ test('toFindingRow stores delta + status and omits the derived recoverable figur
   assert.equal(row.delta_cents, 16000)
   assert.equal(row.appealable, true)
   assert.equal(row.status, 'open')
-  assert.equal('recoverable_cents' in row, false) // findings table has no recoverable_cents column
+  assert.equal(row.recoverable_cents, 16000) // 013 stores the ranking figure for the scorecard
 })
 
 test('toRemittanceLineRow + toAdjustmentRow map the 835 side', () => {
