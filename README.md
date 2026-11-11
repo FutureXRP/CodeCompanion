@@ -21,6 +21,7 @@ npm install
 npm run dev            # http://localhost:3000  (landing) · /command (app)
 npm test               # deterministic engine + adapter + repo tests
 npm run found-money    # the Rung 0 report on the sample 837/835/fee schedule
+npm run found-money:check  # preflight + report + de-identified summary — your own files: FOUND-MONEY-FROM-FILES.md
 npm run tebra-pull     # a Tebra pull → found money (mock)
 npm run tebra-validate # the day-one account validator (mock proves the checks)
 ```
