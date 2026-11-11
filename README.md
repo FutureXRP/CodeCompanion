@@ -2,65 +2,58 @@
 
 EHR-agnostic revenue recovery and RCM for independent primary care. Diffs what
 you billed (837) against what was paid (835) against your contracted rate, and
-surfaces the money the rest of the industry leaves on the table.
+surfaces the money the rest of the industry leaves on the table — then works
+the whole visit: the front desk before check-in, the encounter before it is
+approved, the claim after the payer answers.
 
-See `CLAUDE.md`, `ARCHITECTURE.md`, and `ROADMAP.md` for the full design + the
-"ladder" (found money → full RCM → predictive adjudication → settlement).
+See `CLAUDE.md`, `ARCHITECTURE.md`, and `ROADMAP.md` for the design and the
+"ladder" (found money → full RCM → predictive adjudication → settlement);
+`TEBRA-INTEGRATION.md` for the practice-management integration and its runbook;
+`GO-LIVE.md` + `DEPLOY.md` for production.
 
 ## Quick start (zero config)
 
 The app runs the full synthetic-data demo with **no environment variables** —
-auth and persistence degrade gracefully until you wire Supabase.
+every adapter is mock-first, auth and persistence degrade gracefully.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000  (landing) · /dashboard (app)
-npm test             # deterministic engine + adapter + mapper tests
-npm run found-money  # prints the found-money report to the terminal
-npm run rcm-demo     # in-house RCM cycle (mock clearinghouse)
+npm run dev            # http://localhost:3000  (landing) · /command (app)
+npm test               # deterministic engine + adapter + repo tests
+npm run found-money    # the Rung 0 report on the sample 837/835/fee schedule
+npm run tebra-pull     # a Tebra pull → found money (mock)
+npm run tebra-validate # the day-one account validator (mock proves the checks)
 ```
 
-## Deploy to Vercel
+## The loops, in visit order
 
-1. Import the repo in Vercel — it auto-detects Next.js (`next build`).
-2. Deploy. With no env vars, you get the public **synthetic-data demo** (zero
-   compliance risk — no real data, no login).
-3. Add environment variables (below) to switch on accounts, persistence, etc.
+| Page | What it does | Source |
+|---|---|---|
+| **Front Desk** `/frontdesk` | Coverage ended / missing, authorizations expired or used up, copay + balance to collect — before the patient is in the room | schedule + patient coverage from the PM |
+| **Pre-approval Review** `/review` | What would reject or deny as coded, and what is separately payable but missing, with contracted dollars — before the encounter is approved | unapproved encounters from the PM |
+| **Found Money** `/found-money` | Underpayments, un-appealed denials, unanswered claims, undercoding — after the payer answers | billed vs. contract vs. paid |
+| **Posting Workbench** `/workbench` | Appeals, resubmits, status checks, secondaries never billed, statements never sent, takebacks — ranked by dollars | the diff + claim tracking |
+| **Follow-up Queue** `/tasks` | The above as owned, aging tasks; the nightly sync keeps them current without losing a human's edits | the sync |
 
-## Environment variables
+Every dollar figure is deterministic — no LLM ever touches the math. Claude
+drafts appeal letters and explanations only (`CLAUDE.md`).
 
-| Variable | Enables |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Accounts/auth** — login + per-tenant route protection |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Persistence** — server-side writes (`/api/persist`, `/api/findings`) |
-| `ANTHROPIC_API_KEY` | Appeal-letter drafting |
-| `STEDI_API_KEY`, `STEDI_SANDBOX=true` | Sandbox clearinghouse submission |
-| `ALLOW_REAL_PHI` | Keep `false` until a BAA is signed (COMPLIANCE.md) |
+## Adapters
 
-When Supabase is configured, the dashboard requires a login; without it, the
-demo stays open. Real patient data must never flow until `ALLOW_REAL_PHI=true`
-**and** auth is enabled.
-
-## Supabase setup (accounts + persistence)
-
-1. **Schema:** open the Supabase SQL editor and run **`supabase/schema.sql`**
-   (idempotent; sets up tenants, `tenant_users`, `current_tenant_id()`, every
-   table, and RLS). Equivalent to migrations `005` + `006`.
-2. **Auth:** Authentication → Providers → enable **Email**. For a fast start,
-   turn **off** "Confirm email" (or wire the confirmation flow — `/auth/callback`
-   is already implemented). Set the **Site URL** to your deployment and add
-   `<your-site>/auth/callback` to the redirect allow-list.
-3. **Verify persistence** (after signing in):
-   ```bash
-   curl -X POST  https://<site>/api/persist     # → { ok, claims, findings, ... }
-   curl          https://<site>/api/findings    # → your persisted findings
-   ```
-   Data is written to the signed-in user's tenant; RLS keeps tenants isolated.
+- **Tebra** (`lib/adapters/tebra`, Web Services API 2.1 / SOAP) — charges with
+  contract-expected and adjudicated amounts, unapproved encounters, the schedule,
+  patient coverage, and the approve / send-back write path. Mock by default
+  (`TEBRA_USE_MOCK=true`); the live client is gated by `ALLOW_REAL_PHI`.
+- **athenahealth** (`lib/adapters/athena`) — encounter pull (REST, OAuth).
+- **EDI** (`lib/adapters/edi`) — raw X12 837 / 835 files, the universal path.
+- Everything normalizes into `lib/canonical`; nothing above the adapters sees a
+  vendor field.
 
 ## Stack
 
-Next.js 16 · Supabase (Postgres + Auth + RLS) · Anthropic Claude (language only)
-· EDI X12 837/835 + Stedi clearinghouse adapter · Stripe.
+Next.js 16 · **Neon** Postgres (PHI, RLS) · **Supabase Auth** (staff logins
+only) · Anthropic Claude (language only) · Inngest (the nightly sync) · Stedi
+(only if CodeCompanion submits claims itself) · Stripe (optional).
 
-Money is integer cents and every dollar figure is deterministic — no LLM ever
-touches the math (CLAUDE.md).
+Environment variables are documented in `.env.local.example`; `npm run
+readiness` reports what is configured and what still blocks go-live.

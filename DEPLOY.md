@@ -9,8 +9,10 @@ HIPAA tiers.
 | Hosting | **Google Cloud Run** | Managed, scales to zero, container-native | Free, via Google Cloud |
 | Database (PHI) | **Neon** Postgres | Managed Postgres, HIPAA on the Scale tier | Included on Scale |
 | Auth | **Supabase Auth** | Staff logins only — **no patient PHI** | Not needed (no PHI) |
-| Language tasks | **Anthropic** | Appeals / narratives / coding suggestions | Yes |
-| Eligibility | **Stedi** | 270/271 clearinghouse | Yes |
+| Practice management | **Tebra** (or athena) | Claims, eligibility, ERA — the source the app reads | With its own contract |
+| Language tasks | **Anthropic** | Appeals / narratives / coding suggestions | Yes — only if real PHI reaches it |
+| Scheduled jobs | **Inngest** | The nightly sync (`/api/inngest`) | Yes — job payloads carry counts only; the sync runs inside this app |
+| Eligibility / claims | **Stedi** | Only if CodeCompanion submits claims itself (not with Tebra) | Yes, if used |
 
 > Nothing here is needed until you put **real PHI** in the live app. Mock-first
 > (`ALLOW_REAL_PHI=false`) costs nothing, and the found-money proof runs locally
@@ -27,7 +29,11 @@ HIPAA tiers.
 - **Migration tooling** — `npm run db:migrate` stands up the full schema on Neon, with a compat
   shim so the Supabase-flavored migrations apply, and `current_tenant_id()` repointed at the GUC.
 - **Env template** — `.env.local.example` documents `DATABASE_URL` (Neon) + Supabase-Auth-only.
-- **Polite API client** — the athena adapter backs off on 429/503 (rate-limit safe).
+- **Polite API clients** — the athena adapter backs off on 429/503; the Tebra adapter paces to
+  Tebra's published limits, slices windows, and retries throttling.
+- **Operations** — idempotent sync (`npm run tebra-sync`), history backfill (`tebra-backfill`),
+  the day-one validator (`tebra-validate`), the nightly Inngest job, and the contract-export /
+  NCCI-table loaders. `TEBRA-INTEGRATION.md` is the runbook.
 
 **Done — Phase 2b (the repository port)**
 The `lib/db/` repositories now run on the Neon pool: the `.from(...)` calls became parameterized
@@ -44,6 +50,7 @@ the BAAs, and flip `ALLOW_REAL_PHI=true`.
 2. Copy the pooled connection string into `DATABASE_URL`
    (`postgres://user:pass@ep-xxx.neon.tech/dbname?sslmode=require`).
 3. Apply the schema + RLS: `DATABASE_URL=… npm run db:migrate` (compat shim → migrations → RLS-GUC).
+   A database that predates a migration takes it alone: `npm run db:migrate -- --only=012`.
 
 ## 2. Supabase (auth only)
 
@@ -58,18 +65,34 @@ no patient PHI, so it needs no HIPAA add-on. Set `NEXT_PUBLIC_SUPABASE_URL`,
 gcloud artifacts repositories create cc --repository-format=docker --location=us-central1
 gcloud builds submit --tag us-central1-docker.pkg.dev/PROJECT/cc/app:latest
 
-# Deploy
+# Deploy (mock-first; nothing real yet)
 gcloud run deploy codecompanion \
   --image us-central1-docker.pkg.dev/PROJECT/cc/app:latest \
   --region us-central1 --allow-unauthenticated \
-  --set-env-vars ATHENA_USE_MOCK=true,ALLOW_REAL_PHI=false
-# Put real secrets (DATABASE_URL, ATHENA_*, ANTHROPIC_API_KEY, STEDI_*) in
-# Secret Manager and attach with --set-secrets, not plaintext env.
+  --set-env-vars ATHENA_USE_MOCK=true,TEBRA_USE_MOCK=true,ALLOW_REAL_PHI=false
+# Put real secrets in Secret Manager and attach with --set-secrets, never plaintext env:
+#   DATABASE_URL, TEBRA_CUSTOMER_KEY, TEBRA_USER, TEBRA_PASSWORD, ANTHROPIC_API_KEY,
+#   INNGEST_SIGNING_KEY, INNGEST_EVENT_KEY (and ATHENA_* / STEDI_* if used).
+# Non-secret config as env: TEBRA_PRACTICE_NAME, TEBRA_SYNC_ENABLED, TEBRA_SYNC_CRON,
+#   TEBRA_CONTRACT_EXPORT_PATH, NCCI_PTP_PATH, NCCI_MUE_PATH, SYNC_TENANT_ID.
 ```
 
 Sign the **Google Cloud BAA** (free) before any real PHI. Keep `ALLOW_REAL_PHI=false`
-until every BAA in section 2 of `ATHENA-INTEGRATION.md` is signed and the security
-review is done; then flip it and run `npm run readiness`.
+until every BAA in `GO-LIVE.md` is signed and the security review is done; then flip it
+**on Cloud Run only** (never on Vercel) and run `npm run readiness`.
+
+### The nightly sync (Inngest)
+
+The job lives at `/api/inngest` (`inngest/functions/tebra-nightly-sync.ts`). Connect the
+deployed URL as an app in Inngest Cloud and set `INNGEST_SIGNING_KEY` + `INNGEST_EVENT_KEY`;
+it fires on `TEBRA_SYNC_CRON` (default 07:00 UTC) only while `TEBRA_SYNC_ENABLED=true`. The
+job itself runs inside this container — Inngest only schedules it and sees counts. Cloud Run
+must allow the request (the signing key authenticates it) and keep **min instances = 0** is
+fine: Inngest's call cold-starts the instance. To run it by hand: `npm run tebra-sync`.
+
+Files the practice supplies (`TEBRA_CONTRACT_EXPORT_PATH`, `NCCI_PTP_PATH`, `NCCI_MUE_PATH`)
+are read from the container's filesystem — bake them into the image (`COPY data/ /app/data/`)
+or mount a Cloud Storage bucket; they contain no PHI.
 
 ## 4. Local container smoke test
 
