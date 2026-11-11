@@ -9,6 +9,9 @@ import { DaySubmitPanel } from '@/components/ehr/DaySubmitPanel'
 import { createAthenaSource, athenaConfigFromEnv, pullAthenaEncounters } from '@/lib/adapters/athena'
 import { encounterToClaim } from '@/lib/adapters/ehr'
 import { AthenaPullButton } from '@/components/ehr/AthenaPullButton'
+import { createTebraSource, tebraConfigFromEnv } from '@/lib/adapters/tebra'
+import { runTebraFoundMoney, type TebraFoundMoney } from '@/lib/found-money/tebra'
+import { TebraPullButton } from '@/components/ehr/TebraPullButton'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -47,6 +50,47 @@ export default async function EhrPage() {
     athenaError = e instanceof Error ? e.message : String(e)
   }
   const athenaTotal = athenaRows.reduce((s, r) => s + r.chargeCents, 0)
+
+  // Tebra pull — one GetCharges record carries billed + contract-expected + adjudicated
+  // amounts per line, so the found-money diff runs straight off the pull. In the hosted
+  // env TEBRA_USE_MOCK=true → synthetic MockTebraSource (no creds, no PHI gate).
+  const tebraCfg = tebraConfigFromEnv()
+  let tebra: TebraFoundMoney | null = null
+  let tebraError: string | null = null
+  try {
+    tebra = await runTebraFoundMoney(createTebraSource(tebraCfg), { serviceDateFrom: claims[0]?.dateOfService ?? DEFAULT_DATE })
+  } catch (e) {
+    tebraError = e instanceof Error ? e.message : String(e)
+  }
+  const t = tebra
+  const tebraRows = t
+    ? t.claims.map((c) => {
+        const enc = t.encounters.find((e) => e.patientControlNumber === c.controlNumber)
+        const remit = t.remittances.find((r) => r.claimControlNumber === c.controlNumber)
+        const findings = t.report.findings.filter((f) => f.claimControlNumber === c.controlNumber)
+        const kinds = new Set(findings.map((f) => f.type))
+        const diff = kinds.has('denial')
+          ? { label: 'denied', variant: 'red' as const }
+          : kinds.has('underpayment')
+            ? { label: 'underpaid', variant: 'amber' as const }
+            : kinds.has('unadjudicated')
+              ? { label: 'no remit', variant: 'amber' as const }
+              : { label: 'paid to contract', variant: 'green' as const }
+        return {
+          id: c.controlNumber,
+          patient: enc?.subscriber ? `${enc.subscriber.firstName} ${enc.subscriber.lastName}`.trim() : c.controlNumber,
+          payer: c.payer.name,
+          cpts: c.lines.map((l) => l.cptHcpcs + (l.modifiers.length ? `-${l.modifiers.join(',')}` : '')).join(' · '),
+          billedCents: c.totalBilledCents,
+          expectedCents: c.lines.reduce((s, l) => s + (t.feeSchedule.rate(c.payer.externalId, l.cptHcpcs, l.modifiers[0]) ?? 0), 0),
+          paidCents: remit ? remit.totalPaidCents : null,
+          recoverableCents: findings.reduce((s, f) => s + f.recoverableCents, 0),
+          diff,
+        }
+      })
+    : []
+  const tebraBilled = tebraRows.reduce((s, r) => s + r.billedCents, 0)
+  const tebraPaid = tebraRows.reduce((s, r) => s + (r.paidCents ?? 0), 0)
 
   const scrubs = new Map(claims.map((c) => [c.controlNumber, scrubClaim(c, OKLAHOMA)]))
   const accountByMember = new Map(ledger.accounts.map((a) => [a.accountKey, a]))
@@ -111,6 +155,65 @@ export default async function EhrPage() {
         </div>
         <div style={{ padding: '10px 16px', fontSize: 11.5, color: '#9aa69f', borderTop: '1px solid #f0ece3', lineHeight: 1.5 }}>
           Pulled through <code>lib/adapters/athena</code> → canonical model. The same code path hits real athena (Preview / Production) when <code>ATHENA_USE_MOCK=false</code>.
+        </div>
+      </div>
+
+      {/* Tebra pull — charges + contract-expected + adjudication in one record, diffed on the spot */}
+      <div style={{ background: '#fff', border: '1px solid #ece7dd', borderRadius: 12, boxShadow: '0 1px 3px rgba(15,21,32,0.04)', overflow: 'hidden', margin: '0 0 18px' }}>
+        <div style={{ padding: '13px 16px', borderBottom: '1px solid #f0ece3', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#1f2d27' }}>Tebra — charges + ERA pull</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: tebraCfg.useMock ? '#2f8a5b' : '#b8862a', background: tebraCfg.useMock ? '#e6f4ec' : '#f6efdd', padding: '3px 10px', borderRadius: 999 }}>
+            {tebraCfg.useMock ? 'Mock · synthetic' : 'Live · Web Services API 2.1'}
+          </span>
+          {t && (
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>
+              {tebraRows.length} encounter{tebraRows.length === 1 ? '' : 's'} · {formatCents(tebraBilled)} billed · {formatCents(tebraPaid)} paid ·{' '}
+              <strong style={{ color: '#2f8a5b' }}>{formatCents(t.report.totals.recoverableCents)} recoverable</strong>
+            </span>
+          )}
+        </div>
+        {tebraError ? (
+          <div style={{ padding: '14px 16px', fontSize: 12.5, color: '#92400e', background: '#f6efdd', lineHeight: 1.55 }}>Pull unavailable: {tebraError}</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={th}>Encounter</th>
+                <th style={th}>Patient</th>
+                <th style={th}>Payer</th>
+                <th style={th}>Services</th>
+                <th style={{ ...th, ...num }}>Billed</th>
+                <th style={{ ...th, ...num }}>Contract</th>
+                <th style={{ ...th, ...num }}>Paid</th>
+                <th style={th}>Diff</th>
+                <th style={{ ...th, ...num }}>Recoverable</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tebraRows.map((r) => (
+                <tr key={r.id}>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{r.id}</td>
+                  <td style={{ ...td, fontWeight: 500, color: '#1f2d27' }}>{r.patient}</td>
+                  <td style={{ ...td, color: '#6b7280' }}>{r.payer}</td>
+                  <td style={{ ...td, fontFamily: 'DM Mono, monospace', fontSize: 12 }}>{r.cpts}</td>
+                  <td style={{ ...td, ...num }}>{formatCents(r.billedCents)}</td>
+                  <td style={{ ...td, ...num }}>{formatCents(r.expectedCents)}</td>
+                  <td style={{ ...td, ...num, color: r.paidCents === null ? '#9aa69f' : '#3a4640' }}>{r.paidCents === null ? '—' : formatCents(r.paidCents)}</td>
+                  <td style={td}><Badge label={r.diff.label} variant={r.diff.variant} /></td>
+                  <td style={{ ...td, ...num, fontWeight: r.recoverableCents > 0 ? 600 : 400, color: r.recoverableCents > 0 ? '#2f8a5b' : '#9aa69f' }}>
+                    {r.recoverableCents > 0 ? formatCents(r.recoverableCents) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div style={{ padding: '14px 16px', borderTop: '1px solid #f0ece3' }}>
+          <TebraPullButton />
+        </div>
+        <div style={{ padding: '10px 16px', fontSize: 11.5, color: '#9aa69f', borderTop: '1px solid #f0ece3', lineHeight: 1.5 }}>
+          Pulled through <code>lib/adapters/tebra</code> (Web Services API 2.1 · <code>GetCharges</code>) → canonical claims + remittances + Tebra&apos;s own contract rates → the
+          found-money diff. The same code path hits the real Tebra API when <code>TEBRA_USE_MOCK=false</code> (see <code>TEBRA-INTEGRATION.md</code>).
         </div>
       </div>
 

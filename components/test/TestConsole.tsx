@@ -1,13 +1,15 @@
 import Link from 'next/link'
 import { MODULES } from '@/lib/admin/modules'
 import { AthenaPullButton } from '@/components/ehr/AthenaPullButton'
+import { TebraPullButton } from '@/components/ehr/TebraPullButton'
 import { EligibilityTestButton } from '@/components/test/EligibilityTestButton'
 
 /**
- * One place to exercise the whole app on synthetic data. The two live actions run
+ * One place to exercise the whole app on synthetic data. The live actions run
  * the interactive features end to end; the checklist links every read-only module
  * so you can verify each one. The billing-submission rails are intentionally off —
- * athena runs billing — so they're listed as delegated, not test targets.
+ * the EHR (athena today, Tebra if the practice switches) runs billing — so they're
+ * listed as delegated, not test targets.
  */
 
 // Claim-submission / money-movement rails athena owns (the "except billing" set).
@@ -34,6 +36,10 @@ export function TestConsole() {
           <div style={{ flex: '1 1 340px', minWidth: 300 }}>
             <p style={{ fontSize: 12.5, color: '#4b5b52', margin: '0 0 8px', fontWeight: 500 }}>athena → found-money → Neon</p>
             <AthenaPullButton />
+          </div>
+          <div style={{ flex: '1 1 340px', minWidth: 300 }}>
+            <p style={{ fontSize: 12.5, color: '#4b5b52', margin: '0 0 8px', fontWeight: 500 }}>Tebra → charges + ERA → found-money → Neon</p>
+            <TebraPullButton />
           </div>
           <div style={{ flex: '1 1 340px', minWidth: 300 }}>
             <p style={{ fontSize: 12.5, color: '#4b5b52', margin: '0 0 8px', fontWeight: 500 }}>Real-time benefits (Stedi sandbox)</p>
@@ -64,7 +70,7 @@ export function TestConsole() {
 
       {/* Billing rails — off */}
       <div style={{ padding: '14px 20px', background: '#faf8f4' }}>
-        <p style={{ ...sectionLabel, margin: '0 0 8px' }}>Billing rails — off · athena runs billing</p>
+        <p style={{ ...sectionLabel, margin: '0 0 8px' }}>Billing rails — off · your EHR runs billing (athena today · Tebra if you switch)</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {billingOff.map((m) => (
             <span key={m.id} style={{ fontSize: 12, color: '#9aa69f', background: '#f0ece3', border: '1px solid #e7e1d6', borderRadius: 999, padding: '4px 11px' }}>

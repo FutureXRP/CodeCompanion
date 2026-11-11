@@ -29,7 +29,7 @@ export interface FoundMoneyReport {
   totals: FoundMoneyTotals
   meta: {
     generatedAt: string
-    source: 'samples' | 'files' | 'upload'
+    source: 'samples' | 'files' | 'upload' | 'tebra'
     claimCount: number
     remittanceCount: number
     lineCount: number

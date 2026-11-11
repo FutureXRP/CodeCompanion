@@ -8,7 +8,7 @@ import type { Cents } from './money'
  * and never sees a vendor specific. Types only — no logic, no vendor fields.
  */
 
-export type SourceAdapter = 'athena' | 'edi' | 'fhir'
+export type SourceAdapter = 'athena' | 'edi' | 'fhir' | 'tebra'
 
 export interface Payer {
   /** Stable external payer identifier (the payer's EDI id), e.g. "00123". */

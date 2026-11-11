@@ -46,7 +46,7 @@ export const MODULES: ModuleDef[] = [
   { id: 'enrollments', label: 'Enrollments', href: '/enrollments', group: 'billing', defaultOn: true, desc: 'Payer transaction enrollment.' },
   { id: 'scrub', label: 'Scrubber', href: '/scrub', group: 'billing', defaultOn: true, desc: 'Pre-submission edits.' },
 
-  { id: 'ehr', label: 'EHR Pull', href: '/ehr', group: 'clinical', delegable: true, defaultOn: true, desc: 'Pull encounters from the EHR.' },
+  { id: 'ehr', label: 'EHR Pull', href: '/ehr', group: 'clinical', delegable: true, defaultOn: true, desc: 'Pull encounters from the EHR (athena · Tebra).' },
   { id: 'coding', label: 'Coding', href: '/coding', group: 'clinical', delegable: true, defaultOn: true, desc: 'AI coding suggestions.' },
   { id: 'gaps', label: 'Care Gaps', href: '/gaps', group: 'clinical', delegable: true, defaultOn: true, desc: 'Care-gap revenue.' },
   { id: 'audit', label: 'Audit Shield', href: '/audit', group: 'clinical', delegable: true, defaultOn: true, desc: 'Coding-audit risk.' },

@@ -6,6 +6,9 @@
  *
  * The migrations use `create table if not exists` etc., so re-runs are safe.
  * Run:  DATABASE_URL=postgres://… npm run db:migrate
+ *
+ * Apply one new migration to a live database (no --reset, nothing else re-run):
+ *   npm run db:migrate -- --only=011
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
@@ -31,6 +34,9 @@ export function migrationPaths(root: string): string[] {
 async function run(): Promise<void> {
   const root = process.cwd()
   const pool = getPool()
+  const only = process.argv.find((a) => a.startsWith('--only='))?.slice('--only='.length)
+  const files = migrationPaths(root).filter((f) => !only || path.basename(f).includes(only))
+  if (only && files.length === 0) throw new Error(`--only=${only} matched no migration file.`)
   if (process.argv.includes('--reset')) {
     // Clean slate — drop everything so non-idempotent statements (CREATE POLICY)
     // re-apply. Safe for a fresh/test database; it deletes ALL data in public + auth.
@@ -38,7 +44,7 @@ async function run(): Promise<void> {
     await pool.query('drop schema if exists public cascade; drop schema if exists auth cascade; create schema public;')
     console.log('ok')
   }
-  for (const file of migrationPaths(root)) {
+  for (const file of files) {
     const sql = readFileSync(file, 'utf8')
     process.stdout.write(`-- applying ${path.relative(root, file)} … `)
     await pool.query(sql) // node-postgres runs multi-statement SQL when there are no params
