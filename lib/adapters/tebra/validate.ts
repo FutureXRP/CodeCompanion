@@ -1,6 +1,6 @@
 import { isValidNpi } from '../../scrub'
-import { isAdjudicated, normalizeStatus, parseAdjustmentReason, tebraCents } from './to-canonical'
-import type { TebraChargeRaw, TebraPracticeRaw } from './types'
+import { isAdjudicated, normalizeStatus, parseAdjustmentReason, tebraCents, visitStatus } from './to-canonical'
+import type { TebraAppointmentRaw, TebraChargeRaw, TebraPatientRaw, TebraPracticeRaw } from './types'
 
 /**
  * Day-one live validation — does the data the account returns look the way the
@@ -28,7 +28,16 @@ export interface ValidationReport {
 
 const pct = (n: number, d: number) => (d === 0 ? 0 : Math.round((n / d) * 100))
 
-export function validateTebraShape(input: { rows: TebraChargeRaw[]; practice?: TebraPracticeRaw; pendingRows?: TebraChargeRaw[] }): ValidationReport {
+export interface ValidationInput {
+  rows: TebraChargeRaw[]
+  practice?: TebraPracticeRaw
+  pendingRows?: TebraChargeRaw[]
+  /** The schedule pull, when the validator ran it: appointments + the patients it fetched. */
+  appointments?: TebraAppointmentRaw[]
+  patients?: Map<string, TebraPatientRaw | null>
+}
+
+export function validateTebraShape(input: ValidationInput): ValidationReport {
   const { rows, practice, pendingRows = [] } = input
   const checks: ValidationCheck[] = []
   const add = (id: string, label: string, status: ValidationStatus, detail: string) => checks.push({ id, label, status, detail })
@@ -107,6 +116,30 @@ export function validateTebraShape(input: { rows: TebraChargeRaw[]; practice?: T
   else {
     const tagged = pendingRows.filter((r) => r.EncounterStatus === 'Draft' || r.EncounterStatus === 'Review').length
     add('pending', 'Unapproved encounters', tagged === pendingRows.length ? 'pass' : 'warn', `${pendingRows.length} charge lines awaiting approval (${pendingRows.filter((r) => r.EncounterStatus === 'Draft').length} Draft, ${pendingRows.filter((r) => r.EncounterStatus === 'Review').length} Review).`)
+  }
+
+  // 12. The schedule + coverage (front desk)
+  if (input.appointments) {
+    const appts = input.appointments
+    if (appts.length === 0) add('appointments', 'Appointments returned', 'info', 'None in the window — nothing scheduled, or the StartDate/EndDate filter wants a different date-time format.')
+    else {
+      const withPatient = appts.filter((a) => a.PatientID?.trim()).length
+      const recognized = appts.filter((a) => visitStatus(a.ConfirmationStatus) !== 'unknown').length
+      add('appointments', 'Appointments returned', withPatient > 0 ? 'pass' : 'warn', `${appts.length} appointments, ${withPatient} with a patient; statuses recognized on ${recognized}.`)
+    }
+    const patients = [...(input.patients?.values() ?? [])]
+    if (patients.length > 0) {
+      const found = patients.filter((p): p is TebraPatientRaw => p !== null)
+      const covered = found.filter((p) => p.policies.length > 0).length
+      add(
+        'coverage',
+        'Patient coverage parsed (GetPatient)',
+        found.length === 0 ? 'fail' : pct(covered, found.length) >= 50 ? 'pass' : 'warn',
+        found.length === 0
+          ? 'GetPatient returned no readable patient — the nested element names may differ from the guide; check the raw response.'
+          : `${found.length}/${patients.length} patients readable; ${covered} carry at least one insurance policy${pct(covered, found.length) < 50 ? ' — policies may be nested under a tag the parser does not know yet' : ''}.`,
+      )
+    }
   }
 
   return finish(checks)

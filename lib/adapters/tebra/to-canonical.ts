@@ -1,17 +1,21 @@
 import { dollarsToCents } from '../../canonical'
 import type {
   Adjustment,
+  Authorization,
   Claim,
   ClaimTracking,
   ClaimTrackingStatus,
+  Coverage,
   FeeScheduleLine,
   Payer,
   Remittance,
   RemittanceLine,
+  ScheduledVisit,
+  VisitStatus,
 } from '../../canonical'
 import type { EhrEncounter, EhrServiceLine } from '../ehr'
 import { encounterToClaim } from '../ehr'
-import type { TebraChargeRaw, TebraPracticeRaw } from './types'
+import type { TebraAppointmentRaw, TebraChargeRaw, TebraPatientRaw, TebraPracticeRaw } from './types'
 
 /**
  * Tebra → canonical. One GetCharges record carries all three sides of the Rung 0
@@ -346,6 +350,91 @@ export function tebraChargesToClaimTracking(rows: TebraChargeRaw[]): ClaimTracki
     })
   }
   return out
+}
+
+// ── The front desk: appointments + patient coverage → ScheduledVisit ─────────
+
+/** Tebra's ConfirmationStatus → the canonical visit status. */
+export function visitStatus(status: string | undefined): VisitStatus {
+  const k = (status ?? '').toLowerCase().replace(/[^a-z]/g, '')
+  if (!k) return 'unknown'
+  if (k.includes('checkout') || k.includes('checkedout')) return 'checked_out'
+  if (k.includes('checkin') || k.includes('checkedin')) return 'checked_in'
+  if (k.includes('room')) return 'roomed'
+  if (k.includes('noshow')) return 'no_show'
+  if (k.includes('cancel')) return 'cancelled'
+  if (k.includes('resched')) return 'rescheduled'
+  if (k.includes('confirm')) return 'confirmed'
+  if (k.includes('sched') || k.includes('remind') || k.includes('tentative') || k.includes('ready')) return 'scheduled'
+  return 'unknown'
+}
+
+const SEQUENCE: Record<string, Coverage['sequence']> = { '1': 'P', '2': 'S', '3': 'T' }
+
+/** A patient's policies as canonical coverage, primary first. */
+export function tebraPatientCoverage(patient: TebraPatientRaw): Coverage[] {
+  return patient.policies
+    .filter((p) => (p.CompanyName?.trim() || p.PlanName?.trim()) && (p.Active ?? 'True').toLowerCase() !== 'false')
+    .map((p, i) => {
+      const name = p.CompanyName?.trim() || p.PlanName?.trim() || ''
+      const copay = tebraCents(p.Copay)
+      const deductible = tebraCents(p.Deductible)
+      return {
+        payer: { externalId: payerKey(name), name },
+        planName: p.PlanName?.trim() || undefined,
+        memberId: (p.Number ?? p.InsuredIDNumber ?? '').trim(),
+        groupNumber: p.GroupNumber?.trim() || undefined,
+        sequence: SEQUENCE[(p.Precedence ?? '').trim()] ?? (i === 0 ? 'P' : i === 1 ? 'S' : 'T'),
+        ...(copay > 0 ? { copayCents: copay } : {}),
+        ...(deductible > 0 ? { deductibleCents: deductible } : {}),
+        effectiveStart: tebraDate(p.EffectiveStartDate) || undefined,
+        effectiveEnd: tebraDate(p.EffectiveEndDate) || undefined,
+        relationshipToInsured: p.PatientRelationshipToInsured?.trim() || undefined,
+      }
+    })
+    .sort((a, b) => a.sequence.localeCompare(b.sequence))
+}
+
+export function tebraPatientAuthorizations(patient: TebraPatientRaw): Authorization[] {
+  const n = (v: string | undefined) => {
+    const x = Number((v ?? '').trim())
+    return Number.isFinite(x) && (v ?? '').trim() !== '' ? x : undefined
+  }
+  return patient.authorizations
+    .filter((a) => (a.AuthorizationNumber ?? a.Number ?? '').trim())
+    .map((a) => ({
+      number: (a.AuthorizationNumber ?? a.Number ?? '').trim(),
+      payerName: a.InsurancePlanName?.trim() || undefined,
+      visitsAuthorized: n(a.AuthorizedNumberOfVisits ?? a.NumberOfVisits),
+      visitsUsed: n(a.AuthorizedNumberOfVisitsUsed ?? a.NumberOfVisitsUsed),
+      startDate: tebraDate(a.StartDate) || undefined,
+      endDate: tebraDate(a.EndDate) || undefined,
+    }))
+}
+
+/** An appointment joined with its patient's coverage. Patient-less rows (blocks, "Other") are skipped by the caller. */
+export function tebraAppointmentToVisit(appt: TebraAppointmentRaw, patient: TebraPatientRaw | null): ScheduledVisit {
+  const start = (appt.StartDate ?? '').trim()
+  const name = appt.PatientFullName?.trim() || [patient?.fields.FirstName, patient?.fields.LastName].filter(Boolean).join(' ')
+  const balance = patient ? tebraCents(patient.fields.PatientBalance) : 0
+  return {
+    id: (appt.ID ?? '').trim(),
+    date: tebraDate(start) || '',
+    start: start || undefined,
+    end: appt.EndDate?.trim() || undefined,
+    patientRef: (appt.PatientID ?? '').trim(),
+    patientName: name,
+    provider: appt.ResourceName1?.trim() || undefined,
+    location: appt.ServiceLocationName?.trim() || undefined,
+    reason: appt.AppointmentReason1?.trim() || undefined,
+    status: visitStatus(appt.ConfirmationStatus),
+    payerScenario: appt.PatientCasePayerScenario?.trim() || patient?.fields.DefaultCasePayerScenario?.trim() || undefined,
+    authorizationNumber: appt.AuthorizationNumber?.trim() || undefined,
+    authorizationEnd: tebraDate(appt.AuthorizationEndDate) || undefined,
+    coverage: patient ? tebraPatientCoverage(patient) : [],
+    authorizations: patient ? tebraPatientAuthorizations(patient) : [],
+    ...(balance > 0 ? { patientBalanceCents: balance } : {}),
+  }
 }
 
 /** Contract-expected amounts (Tebra's Contract Rates) as fee-schedule lines, first occurrence per payer/code/modifier. */

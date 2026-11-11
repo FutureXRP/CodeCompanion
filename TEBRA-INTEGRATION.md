@@ -104,6 +104,18 @@ Known gaps, on purpose for now:
 
 ---
 
+## Front Desk — catch it before the patient is in the room
+
+`/frontdesk` (`lib/capture/frontdesk.ts`) is the earliest point in the visit: the day's schedule (`GetAppointments`) joined with each patient's policies and authorizations (`GetPatient`, one paced call per distinct patient), reviewed for what the desk must catch before check-in:
+
+- **No insurance on a billable case** (blocker) · **coverage ended** before the visit (blocker) · coverage **not yet effective** (check) · policy with **no member number** (check)
+- **Authorization expired** or **visits used up** (blocker) · authorization **ending within 14 days** (check) · workers-comp / auto / liability visit with **no authorization on file** (check)
+- **Copay to collect** (from the policy) and **open balance** (from the account) — the amount to ask for at check-in
+
+Real-time eligibility (270/271) is Tebra's own check against its clearinghouse; this page tells the desk when what is on file is not enough. Cancelled / rescheduled / no-show visits are shown dimmed and not reviewed. The nested `GetPatient` shape (cases › policies › authorizations) is parsed under a few candidate element names and the validator reports whether policies came through.
+
+---
+
 ## Pre-approval Review — capture before the claim goes out
 
 Everything above is the *after-the-visit* loop. `/review` (`lib/capture`) is the *before-it-goes-out* loop: it pulls the encounters nobody has approved yet (`GetCharges` with `IncludeUnapprovedCharges=T`, once for `EncounterStatus=Draft` and once for `Review`) and runs two deterministic layers against Tebra's own contract rates:

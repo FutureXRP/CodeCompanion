@@ -109,6 +109,83 @@ export interface TebraPracticeRaw {
   [extra: string]: string | undefined
 }
 
+/** GetAppointments record (guide §4.2.2) — flat. */
+export interface TebraAppointmentRaw {
+  ID?: string
+  PracticeName?: string
+  Type?: string // P = patient, O = other
+  ConfirmationStatus?: string // Scheduled | Confirmed | Check-in | No-show | Check-out | Rescheduled | Cancelled
+  ServiceLocationName?: string
+  PatientID?: string
+  PatientFullName?: string
+  PatientCaseID?: string
+  PatientCaseName?: string
+  PatientCasePayerScenario?: string
+  AuthorizationID?: string
+  AuthorizationNumber?: string
+  AuthorizationStartDate?: string
+  AuthorizationEndDate?: string
+  AuthorizationInsurancePlan?: string
+  StartDate?: string
+  EndDate?: string
+  AllDay?: string
+  Recurring?: string
+  AppointmentReason1?: string
+  ResourceName1?: string
+  Notes?: string
+  PracticeID?: string
+  AppointmentDuration?: string
+  [extra: string]: string | undefined
+}
+
+/** One insurance policy on a patient case (guide §4.6.2, Cases › InsurancePolicies). */
+export interface TebraInsurancePolicyRaw {
+  PatientCaseID?: string
+  InsurancePolicyID?: string
+  CompanyID?: string
+  CompanyName?: string
+  PlanID?: string
+  PlanName?: string
+  Number?: string // the policy / member number
+  GroupNumber?: string
+  Copay?: string
+  Deductible?: string
+  EffectiveStartDate?: string
+  EffectiveEndDate?: string
+  PatientRelationshipToInsured?: string
+  InsuredIDNumber?: string
+  InsuredFullName?: string
+  Precedence?: string
+  Active?: string
+  [extra: string]: string | undefined
+}
+
+/** An authorization on a policy (guide §4.6.2, Authorizations). */
+export interface TebraAuthorizationRaw {
+  AuthorizationNumber?: string
+  Number?: string
+  AuthorizedNumberOfVisits?: string
+  NumberOfVisits?: string
+  AuthorizedNumberOfVisitsUsed?: string
+  NumberOfVisitsUsed?: string
+  InsurancePlanName?: string
+  StartDate?: string
+  EndDate?: string
+  [extra: string]: string | undefined
+}
+
+/** GetPatient (guide §4.6): the flat patient fields plus the nested policies and authorizations. */
+export interface TebraPatientRaw {
+  fields: Record<string, string>
+  policies: TebraInsurancePolicyRaw[]
+  authorizations: TebraAuthorizationRaw[]
+}
+
+export interface TebraAppointmentQuery {
+  from: string // YYYY-MM-DD
+  to: string
+}
+
 export type TebraEncounterStatus = 'Draft' | 'Review' | 'Approved' | 'Rejected'
 
 /**
@@ -142,4 +219,8 @@ export interface TebraSource {
    * Rejected (back to the provider). Gated above the adapter by TEBRA_ALLOW_WRITES.
    */
   updateEncounterStatus(encounterId: string, status: TebraEncounterStatus): Promise<{ encounterId: string; status: TebraEncounterStatus }>
+  /** The schedule (guide §4.2) — what the front desk works from before the patient arrives. */
+  getAppointments(query: TebraAppointmentQuery): Promise<TebraAppointmentRaw[]>
+  /** One patient with cases, policies and authorizations (guide §4.6). */
+  getPatient(patientId: string): Promise<TebraPatientRaw | null>
 }

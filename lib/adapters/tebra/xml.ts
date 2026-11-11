@@ -62,6 +62,23 @@ export function extractFirst(xml: string, tag: string): Record<string, string> |
   return block === undefined ? null : leafMap(block)
 }
 
+/** Records under the first of several candidate tags that yields any — for nested shapes whose element names vary by WSDL version. */
+export function extractRecordsAny(xml: string, tags: string[]): Record<string, string>[] {
+  for (const tag of tags) {
+    const found = extractRecords(xml, tag)
+    if (found.length > 0) return found
+  }
+  return []
+}
+
+export function extractFirstAny(xml: string, tags: string[]): Record<string, string> | null {
+  for (const tag of tags) {
+    const found = extractFirst(xml, tag)
+    if (found) return found
+  }
+  return null
+}
+
 /** `<string>` items under a list element (e.g. SecurityResponse.PermissionsMissing). */
 export function extractStringList(xml: string, tag: string): string[] {
   const [block] = extractBlocks(xml, tag)

@@ -188,6 +188,59 @@ export interface ClaimTracking {
   patientBilledDate?: string
 }
 
+// ── The front desk: scheduled visits and what the patient's coverage says ────
+
+/** One insurance policy on a patient's case, as the PM system holds it. PHI. */
+export interface Coverage {
+  payer: Payer
+  planName?: string
+  memberId: string
+  groupNumber?: string
+  /** Primary / secondary / tertiary. */
+  sequence: 'P' | 'S' | 'T'
+  copayCents?: Cents
+  deductibleCents?: Cents
+  effectiveStart?: string
+  effectiveEnd?: string
+  relationshipToInsured?: string
+}
+
+/** A payer authorization on file (visits authorized / used, validity window). */
+export interface Authorization {
+  number: string
+  payerName?: string
+  visitsAuthorized?: number
+  visitsUsed?: number
+  startDate?: string
+  endDate?: string
+}
+
+export type VisitStatus = 'scheduled' | 'confirmed' | 'checked_in' | 'roomed' | 'checked_out' | 'no_show' | 'cancelled' | 'rescheduled' | 'unknown'
+
+/** A scheduled visit joined with the patient's coverage — what the front desk works from before the patient arrives. PHI. */
+export interface ScheduledVisit {
+  id: string
+  /** YYYY-MM-DD of the visit. */
+  date: string
+  /** Local start time as the PM reports it (ISO datetime when available). */
+  start?: string
+  end?: string
+  patientRef: string
+  patientName: string
+  provider?: string
+  location?: string
+  reason?: string
+  status: VisitStatus
+  /** The PM's payer scenario for the case: Medicare, Medicaid, Commercial, Workers Comp, Self Pay… */
+  payerScenario?: string
+  /** The authorization the appointment itself is linked to, when any. */
+  authorizationNumber?: string
+  authorizationEnd?: string
+  coverage: Coverage[]
+  authorizations: Authorization[]
+  patientBalanceCents?: Cents
+}
+
 export interface FeeScheduleLine {
   payerExternalId: string
   cptHcpcs: string

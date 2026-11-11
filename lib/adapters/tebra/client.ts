@@ -1,5 +1,14 @@
-import type { TebraChargeQuery, TebraChargeRaw, TebraEncounterStatus, TebraPracticeRaw, TebraSource } from './types'
-import { escapeXml, extractFirst, extractRecords, extractStringList } from './xml'
+import type {
+  TebraAppointmentQuery,
+  TebraAppointmentRaw,
+  TebraChargeQuery,
+  TebraChargeRaw,
+  TebraEncounterStatus,
+  TebraPatientRaw,
+  TebraPracticeRaw,
+  TebraSource,
+} from './types'
+import { escapeXml, extractFirst, extractFirstAny, extractRecords, extractRecordsAny, extractStringList } from './xml'
 
 /**
  * Tebra Web Services API 2.1 client (SOAP). Builds the envelopes from the
@@ -209,6 +218,31 @@ export class TebraClient implements TebraSource {
   async getPractices(): Promise<TebraPracticeRaw[]> {
     const xml = await this.call('GetPractices', this.requestBody(`<sch:Filter>${xmlFields({ PracticeName: this.cfg.practiceName })}</sch:Filter>`))
     return extractRecords(xml, 'PracticeData')
+  }
+
+  /** GetAppointments (guide §4.2): the schedule for a date range (both ends, as date-times). */
+  async getAppointments(query: TebraAppointmentQuery): Promise<TebraAppointmentRaw[]> {
+    if (isoToUtc(query.to) < isoToUtc(query.from)) throw new Error("The appointment window's end precedes its start.")
+    const filter = xmlFields({ EndDate: `${query.to}T23:59:59`, PracticeName: this.cfg.practiceName, StartDate: `${query.from}T00:00:00` })
+    const xml = await this.call('GetAppointments', this.requestBody(`<sch:Filter>${filter}</sch:Filter>`))
+    return extractRecords(xml, 'AppointmentData')
+  }
+
+  /**
+   * GetPatient (guide §4.6): one patient with every case, policy and
+   * authorization. The nested element names vary by WSDL version, so the
+   * policy / authorization blocks are found under a few candidate tags.
+   */
+  async getPatient(patientId: string): Promise<TebraPatientRaw | null> {
+    if (!patientId.trim()) throw new Error('getPatient needs a patient id.')
+    const xml = await this.call('GetPatient', this.requestBody(`<sch:Filter>${xmlFields({ PatientID: patientId })}</sch:Filter>`))
+    const fields = extractFirstAny(xml, ['PatientData', 'Patient', 'GetPatientResult'])
+    if (!fields || !(fields.ID || fields.FirstName || fields.LastName)) return null
+    return {
+      fields,
+      policies: extractRecordsAny(xml, ['InsurancePolicyData', 'PatientInsurancePolicyData', 'InsurancePolicy']),
+      authorizations: extractRecordsAny(xml, ['AuthorizationData', 'InsurancePolicyAuthorizationData', 'Authorization']),
+    }
   }
 
   /**

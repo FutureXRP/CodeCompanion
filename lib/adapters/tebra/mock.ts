@@ -1,5 +1,14 @@
 import type { FeeScheduleLine } from '../../canonical'
-import type { TebraChargeQuery, TebraChargeRaw, TebraEncounterStatus, TebraPracticeRaw, TebraSource } from './types'
+import type {
+  TebraAppointmentQuery,
+  TebraAppointmentRaw,
+  TebraChargeQuery,
+  TebraChargeRaw,
+  TebraEncounterStatus,
+  TebraPatientRaw,
+  TebraPracticeRaw,
+  TebraSource,
+} from './types'
 
 /** In-memory approval state so the write path is visible in the mock (resets with the process). */
 const approvalOverrides = new Map<string, TebraEncounterStatus>()
@@ -49,6 +58,78 @@ export class MockTebraSource implements TebraSource {
     if (!known) throw new Error(`Tebra UpdateEncounterStatus error: encounter ${encounterId} is not Draft/Review (only those can be updated).`)
     approvalOverrides.set(encounterId, status)
     return { encounterId, status }
+  }
+
+  async getAppointments(query: TebraAppointmentQuery): Promise<TebraAppointmentRaw[]> {
+    return sampleTebraAppointments(query.from)
+  }
+
+  async getPatient(patientId: string): Promise<TebraPatientRaw | null> {
+    return sampleTebraPatient(patientId)
+  }
+}
+
+/**
+ * A clinic morning, as GetAppointments returns it. The patients are the ones
+ * the pre-approval encounters belong to plus two walk-in-day regulars; each one
+ * gives the front desk something to catch (see sampleTebraPatient).
+ */
+export function sampleTebraAppointments(date = '2026-01-15'): TebraAppointmentRaw[] {
+  const base = { PracticeName: 'SquareOne Medical', Type: 'P', ServiceLocationName: 'SquareOne Medical', PracticeID: '1', AllDay: 'false', Recurring: 'false' }
+  const at = (h: number, m = 0) => `${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
+  return [
+    { ...base, ID: 'A-7001', StartDate: at(8, 0), EndDate: at(8, 30), ConfirmationStatus: 'Confirmed', PatientID: 'P1101', PatientFullName: 'HARPER, ELLEN', PatientCaseID: 'CASE-1101', PatientCaseName: 'Medicare', PatientCasePayerScenario: 'Medicare', AppointmentReason1: 'Annual Wellness Visit', ResourceName1: 'Blair, Matthew', AppointmentDuration: '30' },
+    { ...base, ID: 'A-7002', StartDate: at(8, 30), EndDate: at(8, 50), ConfirmationStatus: 'Scheduled', PatientID: 'P1102', PatientFullName: 'REYES, CARLOS', PatientCaseID: 'CASE-1102', PatientCaseName: 'Commercial', PatientCasePayerScenario: 'Commercial', AppointmentReason1: 'Sick visit', ResourceName1: 'Patel, Anjali', AppointmentDuration: '20' },
+    { ...base, ID: 'A-7003', StartDate: at(9, 0), EndDate: at(9, 20), ConfirmationStatus: 'Confirmed', PatientID: 'P1103', PatientFullName: 'TRAN, MINH', PatientCaseID: 'CASE-1103', PatientCaseName: 'Medicaid', PatientCasePayerScenario: 'Medicaid', AppointmentReason1: 'Diabetes follow-up', ResourceName1: 'Blair, Matthew', AppointmentDuration: '20' },
+    { ...base, ID: 'A-7004', StartDate: at(9, 20), EndDate: at(9, 40), ConfirmationStatus: 'Scheduled', PatientID: 'P1104', PatientFullName: 'OWENS, GRACE', PatientCaseID: 'CASE-1104', PatientCaseName: 'Commercial', PatientCasePayerScenario: 'Commercial', AppointmentReason1: 'Labs review', ResourceName1: 'Patel, Anjali', AppointmentDuration: '20' },
+    { ...base, ID: 'A-7005', StartDate: at(10, 0), EndDate: at(10, 20), ConfirmationStatus: 'Confirmed', PatientID: 'P1105', PatientFullName: 'KOWALSKI, STAN', PatientCaseID: 'CASE-1105', PatientCaseName: 'Medicare', PatientCasePayerScenario: 'Medicare', AppointmentReason1: 'Chronic care', ResourceName1: 'Blair, Matthew', AppointmentDuration: '20' },
+    { ...base, ID: 'A-7006', StartDate: at(10, 20), EndDate: at(10, 50), ConfirmationStatus: 'Scheduled', PatientID: 'P1107', PatientFullName: 'BAKER, LOUISE', PatientCaseID: 'CASE-1107', PatientCaseName: 'Workers Comp', PatientCasePayerScenario: 'Workers Comp', AuthorizationID: 'AUTH-55', AuthorizationNumber: 'WC-8812', AuthorizationStartDate: '2025-10-01', AuthorizationEndDate: '2025-12-31', AuthorizationInsurancePlan: 'CompSource Mutual', AppointmentReason1: 'Injury follow-up', ResourceName1: 'Patel, Anjali', AppointmentDuration: '30' },
+    { ...base, ID: 'A-7007', StartDate: at(11, 0), EndDate: at(11, 20), ConfirmationStatus: 'Scheduled', PatientID: 'P1108', PatientFullName: 'SINGH, RAVI', PatientCaseID: 'CASE-1108', PatientCaseName: 'Commercial', PatientCasePayerScenario: 'Commercial', AppointmentReason1: 'New patient', ResourceName1: 'Blair, Matthew', AppointmentDuration: '20' },
+    { ...base, ID: 'A-7008', StartDate: at(11, 20), EndDate: at(11, 40), ConfirmationStatus: 'Cancelled', PatientID: 'P1109', PatientFullName: 'MORALES, ANA', PatientCaseID: 'CASE-1109', PatientCaseName: 'Self Pay', PatientCasePayerScenario: 'Self Pay', AppointmentReason1: 'Follow-up', ResourceName1: 'Patel, Anjali', AppointmentDuration: '20' },
+  ]
+}
+
+/** GetPatient for the patients on the schedule — coverage, authorizations, balances. */
+export function sampleTebraPatient(patientId: string): TebraPatientRaw | null {
+  const patient = (fields: Record<string, string>, policies: TebraPatientRaw['policies'] = [], authorizations: TebraPatientRaw['authorizations'] = []): TebraPatientRaw => ({
+    fields: { Active: 'True', ID: patientId, PracticeName: 'SquareOne Medical', InsuranceBalance: '0.00', PatientBalance: '0.00', TotalBalance: '0.00', ...fields },
+    policies,
+    authorizations,
+  })
+  switch (patientId) {
+    case 'P1101': // Medicare + SoonerCare secondary — nothing to collect
+      return patient({ FirstName: 'ELLEN', LastName: 'HARPER', DOB: '04/09/1954', Gender: 'Female' }, [
+        { PatientCaseID: 'CASE-1101', InsurancePolicyID: 'POL-1', CompanyName: 'Medicare', PlanName: 'Medicare Part B', Number: '1EG4TE5MK72', Copay: '0.00', Deductible: '257.00', EffectiveStartDate: '2019-04-01', PatientRelationshipToInsured: 'S', Precedence: '1', Active: 'True' },
+        { PatientCaseID: 'CASE-1101', InsurancePolicyID: 'POL-2', CompanyName: 'SoonerCare', PlanName: 'SoonerCare Traditional', Number: 'OK5583920', Copay: '0.00', EffectiveStartDate: '2024-01-01', PatientRelationshipToInsured: 'S', Precedence: '2', Active: 'True' },
+      ])
+    case 'P1102': // Aetna with a $25 copay
+      return patient({ FirstName: 'CARLOS', LastName: 'REYES', DOB: '08/21/1981', Gender: 'Male' }, [
+        { PatientCaseID: 'CASE-1102', InsurancePolicyID: 'POL-3', CompanyName: 'Aetna', PlanName: 'Aetna Choice POS II', Number: 'W223344556', GroupNumber: 'GRP-7781', Copay: '25.00', Deductible: '1500.00', EffectiveStartDate: '2026-01-01', EffectiveEndDate: '2026-12-31', PatientRelationshipToInsured: 'S', Precedence: '1', Active: 'True' },
+      ])
+    case 'P1103': // SoonerCare — no copay
+      return patient({ FirstName: 'MINH', LastName: 'TRAN', DOB: '12/02/1972', Gender: 'Male' }, [
+        { PatientCaseID: 'CASE-1103', InsurancePolicyID: 'POL-4', CompanyName: 'SoonerCare', PlanName: 'SoonerCare Traditional', Number: 'OK4471920', Copay: '0.00', EffectiveStartDate: '2023-06-01', PatientRelationshipToInsured: 'S', Precedence: '1', Active: 'True' },
+      ])
+    case 'P1104': // BCBS policy that ENDED — and an old balance
+      return patient({ FirstName: 'GRACE', LastName: 'OWENS', DOB: '06/30/1990', Gender: 'Female', PatientBalance: '42.50', TotalBalance: '42.50' }, [
+        { PatientCaseID: 'CASE-1104', InsurancePolicyID: 'POL-5', CompanyName: 'Blue Cross Blue Shield of Oklahoma', PlanName: 'BlueChoice PPO', Number: 'ZGP88120044', GroupNumber: '112233', Copay: '30.00', Deductible: '2000.00', EffectiveStartDate: '2025-01-01', EffectiveEndDate: '2025-12-31', PatientRelationshipToInsured: 'S', Precedence: '1', Active: 'True' },
+      ])
+    case 'P1105': // Medicare, nothing to collect
+      return patient({ FirstName: 'STAN', LastName: 'KOWALSKI', DOB: '02/14/1949', Gender: 'Male' }, [
+        { PatientCaseID: 'CASE-1105', InsurancePolicyID: 'POL-6', CompanyName: 'Medicare', PlanName: 'Medicare Part B', Number: '7XD2PN4WE33', Copay: '0.00', Deductible: '257.00', EffectiveStartDate: '2014-02-01', PatientRelationshipToInsured: 'S', Precedence: '1', Active: 'True' },
+      ])
+    case 'P1107': // Workers comp — the authorization expired and is used up
+      return patient(
+        { FirstName: 'LOUISE', LastName: 'BAKER', DOB: '03/03/1979', Gender: 'Female' },
+        [{ PatientCaseID: 'CASE-1107', InsurancePolicyID: 'POL-7', CompanyName: 'CompSource Mutual', PlanName: 'Workers Compensation', Number: 'WC-2025-4471', Copay: '0.00', EffectiveStartDate: '2025-10-01', PatientRelationshipToInsured: 'O', Precedence: '1', Active: 'True' }],
+        [{ Number: 'WC-8812', NumberOfVisits: '6', NumberOfVisitsUsed: '6', InsurancePlanName: 'CompSource Mutual', StartDate: '2025-10-01', EndDate: '2025-12-31' }],
+      )
+    case 'P1108': // New patient, commercial case, NO policy entered
+      return patient({ FirstName: 'RAVI', LastName: 'SINGH', DOB: '07/19/1993', Gender: 'Male' })
+    case 'P1109': // Self pay
+      return patient({ FirstName: 'ANA', LastName: 'MORALES', DOB: '11/11/1988', Gender: 'Female', PatientBalance: '85.00', TotalBalance: '85.00' })
+    default:
+      return null
   }
 }
 

@@ -1,15 +1,16 @@
-import type { Claim, ClaimTracking, FeeScheduleLine, Remittance } from '../../canonical'
+import type { Claim, ClaimTracking, FeeScheduleLine, Remittance, ScheduledVisit } from '../../canonical'
 import type { EhrEncounter } from '../ehr'
 import { MockTebraSource } from './mock'
 import { TebraClient, type RequestElementOrder, type SoapTransport } from './client'
 import {
+  tebraAppointmentToVisit,
   tebraChargesToClaimTracking,
   tebraChargesToEncounters,
   tebraChargesToFeeScheduleLines,
   tebraChargesToRemittances,
 } from './to-canonical'
 import { encounterToClaim } from '../ehr'
-import type { TebraChargeQuery, TebraChargeRaw, TebraPracticeRaw, TebraSource } from './types'
+import type { TebraAppointmentQuery, TebraAppointmentRaw, TebraChargeQuery, TebraChargeRaw, TebraPatientRaw, TebraPracticeRaw, TebraSource } from './types'
 
 export * from './types'
 export * from './client'
@@ -117,6 +118,30 @@ export async function pullTebraPending(source: TebraSource, query: Omit<TebraCha
     }
   }
   return normalizePull(source, rows)
+}
+
+export interface TebraSchedulePull {
+  appointments: TebraAppointmentRaw[]
+  patients: Map<string, TebraPatientRaw | null>
+  visits: ScheduledVisit[]
+}
+
+/**
+ * The schedule for a date range, each visit joined with its patient's
+ * coverage and authorizations (one GetPatient per distinct patient, paced).
+ * Rows without a patient — blocks, "Other" appointments — are left out.
+ */
+export async function pullTebraSchedule(source: TebraSource, query: TebraAppointmentQuery): Promise<TebraSchedulePull> {
+  const appointments = (await source.getAppointments(query)).filter((a) => a.PatientID?.trim())
+  const patients = new Map<string, TebraPatientRaw | null>()
+  for (const a of appointments) {
+    const id = a.PatientID!.trim()
+    if (!patients.has(id)) patients.set(id, await source.getPatient(id).catch(() => null))
+  }
+  const visits = appointments
+    .map((a) => tebraAppointmentToVisit(a, patients.get(a.PatientID!.trim()) ?? null))
+    .sort((x, y) => (x.start ?? '').localeCompare(y.start ?? '') || x.id.localeCompare(y.id))
+  return { appointments, patients, visits }
 }
 
 async function normalizePull(source: TebraSource, rows: TebraChargeRaw[]): Promise<TebraCanonicalPull> {

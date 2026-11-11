@@ -10,7 +10,7 @@
 import { loadEnvLocal } from './load-env-local'
 loadEnvLocal()
 
-import { createTebraSource, pullTebraCanonical, pullTebraPending, tebraConfigFromEnv, validateTebraShape } from '../lib/adapters/tebra'
+import { createTebraSource, pullTebraCanonical, pullTebraPending, pullTebraSchedule, tebraConfigFromEnv, validateTebraShape } from '../lib/adapters/tebra'
 
 async function main(): Promise<void> {
   const cfg = tebraConfigFromEnv()
@@ -26,7 +26,10 @@ async function main(): Promise<void> {
   const source = createTebraSource(cfg)
   const pull = await pullTebraCanonical(source, { serviceDateFrom: from, serviceDateTo: to })
   const pending = await pullTebraPending(source, { serviceDateFrom: from, serviceDateTo: to })
-  const report = validateTebraShape({ rows: pull.rows, practice: pull.practice, pendingRows: pending.rows })
+  // The schedule: the last 7 days of the window (one GetPatient per distinct patient, paced).
+  const scheduleFrom = new Date(Math.max(new Date(`${from}T00:00:00Z`).getTime(), new Date(`${to}T00:00:00Z`).getTime() - 6 * 86_400_000)).toISOString().slice(0, 10)
+  const schedule = await pullTebraSchedule(source, { from: scheduleFrom, to })
+  const report = validateTebraShape({ rows: pull.rows, practice: pull.practice, pendingRows: pending.rows, appointments: schedule.appointments, patients: schedule.patients })
 
   const mark = { pass: '✓', warn: '!', fail: '✗', info: '·' }
   for (const c of report.checks) {

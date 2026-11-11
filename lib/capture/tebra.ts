@@ -1,9 +1,20 @@
 import type { FeeScheduleLine } from '../canonical'
 import { FeeSchedule } from '../adapters/fee-schedule'
-import { pullTebraPending, type TebraCanonicalPull, type TebraChargeQuery, type TebraSource } from '../adapters/tebra'
+import { pullTebraPending, pullTebraSchedule, type TebraAppointmentQuery, type TebraCanonicalPull, type TebraChargeQuery, type TebraSchedulePull, type TebraSource } from '../adapters/tebra'
 import type { EditTables } from '../scrub'
 import { reviewClaims } from './review'
+import { reviewSchedule, type FrontDeskReport } from './frontdesk'
 import type { CaptureReport } from './types'
+
+export interface TebraFrontDesk extends TebraSchedulePull {
+  report: FrontDeskReport
+}
+
+/** The front desk's morning: the schedule with coverage, reviewed. */
+export async function runTebraFrontDesk(source: TebraSource, query: TebraAppointmentQuery, now: Date = new Date()): Promise<TebraFrontDesk> {
+  const pull = await pullTebraSchedule(source, query)
+  return { ...pull, report: reviewSchedule(pull.visits, now) }
+}
 
 /**
  * Pre-approval review straight from Tebra: pull the Draft / Review encounters,
