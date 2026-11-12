@@ -8,7 +8,7 @@ HIPAA tiers.
 |---|---|---|---|
 | Hosting | **Google Cloud Run** | Managed, scales to zero, container-native | Free, via Google Cloud |
 | Database (PHI) | **Neon** Postgres | Managed Postgres, HIPAA on the Scale tier | Included on Scale |
-| Auth | **Supabase Auth** | Staff logins only — **no patient PHI** | Not needed (no PHI) |
+| Auth | **Supabase Auth** today → **Clerk** (recommended, §2) | Staff logins + two-factor only — **no patient PHI** | Not needed (no PHI); Clerk offers one on its Enterprise plan if ever wanted |
 | Practice management | **Tebra** (or athena) | Claims, eligibility, ERA — the source the app reads | With its own contract |
 | Language tasks | **Anthropic** | Appeals / narratives / coding suggestions | Yes — only if real PHI reaches it |
 | Scheduled jobs | **Inngest** | The nightly sync (`/api/inngest`) | Yes — job payloads carry counts only; the sync runs inside this app |
@@ -49,16 +49,34 @@ the BAAs, and flip `ALLOW_REAL_PHI=true`.
 1. Create a Neon project on the **Scale** plan; enable **HIPAA** and sign the BAA.
 2. Copy the pooled connection string into `DATABASE_URL`
    (`postgres://user:pass@ep-xxx.neon.tech/dbname?sslmode=require`).
-3. Apply the schema + RLS: `DATABASE_URL=… npm run db:migrate` (compat shim → migrations → RLS-GUC).
-   Applied files are tracked in `schema_migrations`, so the same command later applies only
-   what is new. A database set up before tracking existed takes a one-time
+3. Apply the schema + RLS: `MIGRATE_DATABASE_URL=… npm run db:migrate` (compat shim → migrations → RLS-GUC),
+   as the project's **owner** role. Applied files are tracked in `schema_migrations`, so the same
+   command later applies only what is new. A database set up before tracking existed takes a one-time
    `npm run db:migrate -- --baseline=010` (records 000–010 as applied), then the plain command.
+4. **The runtime role** (migration 014 — COMPLIANCE.md, "Database isolation"). In the Neon console
+   create a login role for the app (say `cc_app`), then as the owner run
+   `grant codecompanion_app to cc_app;`. Put `cc_app`'s connection string in `DATABASE_URL` and keep
+   the owner's in `MIGRATE_DATABASE_URL`. The app now has data access only — no DDL, no RLS bypass.
+5. **Prove it**: `npm run db:check` must be clean (non-owner role, no bypass, every table forced, the
+   service context present). With `ALLOW_REAL_PHI=true` the app runs the same check before its first
+   transaction and refuses to store anything until it passes.
 
-## 2. Supabase (auth only)
+## 2. Staff login (Supabase today, moving to Clerk)
 
-Keep your existing Supabase project for **staff logins** on the cheap Pro tier — it holds
-no patient PHI, so it needs no HIPAA add-on. Set `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+The login system holds staff identities only — never patient data — so it needs no BAA; it
+needs to be reliable, to do two-factor, and to cost nothing at a two-provider practice's size.
+Supabase Auth is wired today (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`) but is being replaced; until then the login gate is off
+(`REQUIRE_LOGIN`, COMPLIANCE.md) and forced on with real PHI.
+
+The replacement is **Clerk**: the SDK (`@clerk/nextjs`) is already a dependency, the sign-in UI
+is prebuilt, two-factor (authenticator app, SMS, backup codes) is a switch in its dashboard, it
+sends its own emails, and the free tier covers the practice. One account to create, three
+environment variables to set. A HIPAA BAA is available on its Enterprise plan should the
+practice ever want one over the identity store. The alternative, if everything must sit under
+the Google Cloud BAA, is **Google Cloud Identity Platform**: covered by that BAA, two-factor
+built in, more wiring. Either way `isLoginRequired()` stays the gate; the provider plugs into
+the dashboard layout and `lib/supabase/middleware.ts`'s successor.
 
 ## 3. Cloud Run (hosting)
 

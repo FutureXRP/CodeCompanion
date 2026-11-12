@@ -1,5 +1,5 @@
 /**
- * Apply the schema to Neon (DATABASE_URL). Order:
+ * Apply the schema to Neon (MIGRATE_DATABASE_URL — the owner; else DATABASE_URL). Order:
  *   1. db/neon/000_compat.sql        — Supabase-ism shim (roles + auth schema)
  *   2. supabase/migrations/*.sql     — the real schema + RLS, in numeric order
  *   3. db/neon/zzz_rls_guc.sql       — repoint current_tenant_id() at the GUC
@@ -76,6 +76,9 @@ const TRACKING = 'create table if not exists schema_migrations (filename text pr
 async function run(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   const root = process.cwd()
+  // Migrations run as the table owner (MIGRATE_DATABASE_URL); the app itself runs
+  // as a member of codecompanion_app (DATABASE_URL) once migration 014 is applied.
+  if (process.env.MIGRATE_DATABASE_URL) process.env.DATABASE_URL = process.env.MIGRATE_DATABASE_URL
   const pool = getPool()
   const all = migrationPaths(root)
 

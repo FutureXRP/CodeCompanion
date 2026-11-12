@@ -74,12 +74,28 @@ test('readiness: everything except BAAs/review → automatedPass, not ready', ()
 
 test('readiness: all gates set → ready', () => {
   const env = {
-    DATABASE_URL: 'postgres://neon', NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a',
+    DATABASE_URL: 'postgres://app:x@ep.neon.tech/db?sslmode=require', NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a',
     ANTHROPIC_API_KEY: 'k', ALLOW_REAL_PHI: 'true', BAA_SIGNED: 'true', HIPAA_SECURITY_REVIEW: 'true',
   }
   const r = goLiveReadiness(env)
   assert.equal(r.blockers.length, 0)
   assert.equal(r.ready, true)
+})
+
+test('readiness: with real PHI allowed, a plaintext database connection or the Vercel host is a blocker', () => {
+  const base = {
+    DATABASE_URL: 'postgres://app:x@ep.neon.tech/db', NEXT_PUBLIC_SUPABASE_URL: 'u', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'a',
+    ANTHROPIC_API_KEY: 'k', ALLOW_REAL_PHI: 'true', BAA_SIGNED: 'true', HIPAA_SECURITY_REVIEW: 'true',
+  }
+  const plain = goLiveReadiness(base)
+  assert.ok(plain.blockers.some((b) => b.id === 'db_tls'))
+  assert.ok(plain.blockers.some((b) => b.id === 'phi_hosting'))
+  const vercel = goLiveReadiness({ ...base, DATABASE_URL: `${base.DATABASE_URL}?sslmode=require`, VERCEL: '1' })
+  assert.ok(vercel.blockers.some((b) => b.id === 'phi_hosting'))
+  assert.match(vercel.checks.find((c) => c.id === 'phi_hosting')!.detail, /Vercel/)
+  // Synthetic data: the same checks are informational, never blockers.
+  const synthetic = goLiveReadiness({ ...base, ALLOW_REAL_PHI: undefined, VERCEL: '1' })
+  assert.ok(!synthetic.blockers.some((b) => ['db_tls', 'phi_hosting'].includes(b.id)))
 })
 
 test('readiness: Tebra live mode requires its credentials; Stedi only when chosen', () => {
@@ -109,8 +125,21 @@ test('every tenant_id table in migrations has RLS enabled + a policy', () => {
     checked += 1
     assert.ok(new RegExp(`alter table ${name} enable row level security`).test(sql), `${name} missing: enable row level security`)
     assert.ok(new RegExp(`create policy \\w+\\s+on ${name}\\b`).test(sql), `${name} missing: a row-level policy`)
+    assert.ok(new RegExp(`alter table ${name} force row level security`).test(sql), `${name} missing: force row level security (the owner is exempt otherwise — see 014)`)
   }
   assert.ok(checked >= 10, `expected to verify many tenant tables, only saw ${checked}`)
+})
+
+test('every table that enables RLS also forces it, and the service context exists (migration 014)', () => {
+  const dir = join(process.cwd(), 'supabase/migrations')
+  const sql = readdirSync(dir).filter((f) => f.endsWith('.sql')).map((f) => readFileSync(join(dir, f), 'utf8')).join('\n')
+  const enabled = [...sql.matchAll(/alter table (\w+) enable row level security/g)].map((m) => m[1])
+  assert.ok(enabled.length >= 30, `expected many RLS tables, saw ${enabled.length}`)
+  for (const name of enabled) {
+    assert.ok(new RegExp(`alter table ${name} force row level security`).test(sql), `${name} enables RLS but never forces it`)
+  }
+  assert.match(sql, /create or replace function app_is_service\(\)/)
+  assert.match(sql, /create policy %I on public\.%I for all using \(app_is_service\(\)\) with check \(app_is_service\(\)\)/)
 })
 
 test('the behavioral corpus carries no tenant_id column (the de-id boundary)', () => {

@@ -14,10 +14,20 @@ Stedi is used only if CodeCompanion submits claims itself.
 
 ## What is code-complete (engineering done)
 
-- **Canonical model + RLS** — every tenant-scoped table enables row-level security
-  in the migration that creates it (`005`–`011`), isolated by `current_tenant_id()`
-  (on Neon, a per-request GUC). A static guard test fails CI if a tenant table
-  ships without RLS.
+- **Canonical model + RLS that bites** — every tenant-scoped table enables **and
+  forces** row-level security (`005`–`014`), isolated by `current_tenant_id()` (on
+  Neon, a per-request GUC) with a transaction-scoped service context for the
+  bootstrap paths. The app runs as a non-owner role; with real PHI allowed it
+  refuses to touch data until `lib/db/isolation.ts` proves the database enforces
+  isolation (`npm run db:check`). A static guard test fails CI if a table ships
+  without enable + force + a policy.
+- **The PHI gate as code** — `lib/compliance/gate.ts` refuses real data on the
+  Vercel demo host, without the BAA / security-review acknowledgements, or
+  without verified TLS to the database; every live adapter, the file loaders, the
+  appeal drafter and the sync ask it first.
+- **Hardened edges** — security headers on every response (HSTS, nosniff, no
+  framing, no plugins, strict referrer, locked permissions), database TLS verified
+  by default, secure cookies, no `X-Powered-By`.
 - **Immutable audit log** — append-only `audit_log`; `writeAudit()` is wired into
   every PHI path: persisted runs, payments, eligibility, enrollment, **live Tebra
   pulls** (`tebra_charges`) and **Tebra writes** (`tebra_encounter_status`).
@@ -44,10 +54,12 @@ Stedi is used only if CodeCompanion submits claims itself.
 2. **HIPAA security risk assessment** — a qualified review of the deployment.
    Then set `HIPAA_SECURITY_REVIEW=true`.
 3. **Provision production infra** — Cloud Run + the Neon Scale tier (DEPLOY.md);
-   `DATABASE_URL`; `npm run db:migrate` applies what is new (tracked in
-   `schema_migrations`). A database set up before tracking existed: once,
-   `npm run db:migrate -- --baseline=010`, then the plain command. A Supabase
-   project for staff logins.
+   `MIGRATE_DATABASE_URL` (owner) for `npm run db:migrate`, which applies what is
+   new (tracked in `schema_migrations`); a database set up before tracking existed:
+   once, `npm run db:migrate -- --baseline=010`, then the plain command. Then the
+   runtime role (`grant codecompanion_app to …`) in `DATABASE_URL`, and
+   `npm run db:check` clean. The staff-login provider with two-factor (DEPLOY.md §2),
+   and `REQUIRE_LOGIN=true`.
 4. **Tebra account** — the Customer Key (a System Administrator's Customer Care
    case), a dedicated API user with the System Admin role, the practice's contract
    rates loaded into *Contracts and Fees* (and exported to

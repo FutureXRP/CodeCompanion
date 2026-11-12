@@ -10,6 +10,7 @@ import {
   tebraChargesToRemittances,
 } from './to-canonical'
 import { encounterToClaim } from '../ehr'
+import { realPhiRefusal } from '../../compliance/gate'
 import type { TebraAppointmentQuery, TebraAppointmentRaw, TebraChargeQuery, TebraChargeRaw, TebraPatientRaw, TebraPracticeRaw, TebraSource } from './types'
 
 export * from './types'
@@ -32,6 +33,8 @@ export interface TebraConfig {
   /** Default true — synthetic mock. Set false (TEBRA_USE_MOCK=false) for the real client. */
   useMock?: boolean
   allowRealPhi?: boolean
+  /** Why real PHI is refused right now (lib/compliance/gate.ts), when it is — shown instead of the generic message. */
+  phiRefusal?: string
   customerKey?: string
   user?: string
   password?: string
@@ -47,8 +50,9 @@ export function createTebraSource(config: TebraConfig = {}): TebraSource {
   if (config.useMock !== false) return new MockTebraSource()
   if (!config.allowRealPhi) {
     throw new Error(
-      'Tebra live integration pulls real patient data from Tebra — gated by COMPLIANCE.md. ' +
-        'Set allowRealPhi=true (ALLOW_REAL_PHI) only after the BAA path is closed. Keep TEBRA_USE_MOCK=true for synthetic testing.',
+      config.phiRefusal ??
+        'Tebra live integration pulls real patient data from Tebra — gated by COMPLIANCE.md. ' +
+          'Set allowRealPhi=true (ALLOW_REAL_PHI) only after the BAA path is closed. Keep TEBRA_USE_MOCK=true for synthetic testing.',
     )
   }
   if (!config.customerKey || !config.user || !config.password || !config.practiceName) {
@@ -69,9 +73,13 @@ export function createTebraSource(config: TebraConfig = {}): TebraSource {
 export function tebraConfigFromEnv(): TebraConfig {
   const windowDays = Number(process.env.TEBRA_MAX_WINDOW_DAYS)
   const order = process.env.TEBRA_REQUEST_ORDER
+  // Real PHI is allowed only when the switch is on AND the deployment is safe for
+  // it (not the Vercel demo, BAA + review acknowledged, TLS to the database).
+  const refusal = realPhiRefusal('Tebra live integration', process.env)
   return {
     useMock: process.env.TEBRA_USE_MOCK !== 'false', // must explicitly opt into the real client
-    allowRealPhi: process.env.ALLOW_REAL_PHI === 'true',
+    allowRealPhi: refusal === null,
+    phiRefusal: refusal ?? undefined,
     customerKey: process.env.TEBRA_CUSTOMER_KEY,
     user: process.env.TEBRA_USER,
     password: process.env.TEBRA_PASSWORD,

@@ -183,6 +183,34 @@ Tebra signs a BAA with the practice as its vendor. CodeCompanion's own stack is 
 
 ---
 
+## What the dashboard becomes on Tebra — module by module
+
+The Web Services API we are buying carries everything billing: charges, adjudication, the schedule, each patient's policies and authorizations, payments and transactions. It does not carry the clinical note. That one line decides what each module can become.
+
+| Module | On Tebra | When | Notes |
+|---|---|---|---|
+| Front Desk, Pre-approval Review, Found Money, Posting Workbench, Follow-up Queue, Scorecard, EHR Pull | **Built** | live the day a Customer Key exists | the loop in `TRAINING-MANUAL.md` |
+| Command Center | **Re-point** at the pull | next | today the synthetic clinic day; becomes the Tebra home: today's blockers, fix-first encounters, the workbench's top items, overdue tasks |
+| Dashboard | **Replace** | next | hard-coded athena-era tiles; fold into Command Center or retire |
+| A/R & Denials | **Re-point** at the pull | next | aging buckets (0–30 / 31–60 / 61–90 / 90+) from the bill dates, denials by CARC, by payer and provider |
+| Audit Shield | **Rebuild from billing data** | next | E/M level distribution per provider against national benchmarks, modifier-25 rate, 99215 share — deterministic; the "note missing MDM" half needs the note |
+| Care Gaps | **Rebuild from claims history** | next | claims-based gaps: Medicare patients with no AWV in 12 months, diabetics with no A1c or eye exam billed, vaccines and colorectal screening absent — revenue the practice is leaving on the table; lab-value gaps need the clinical side |
+| Analytics | **Fold into Scorecard** | next | add a by-provider table to the Scorecard; retire the page |
+| Settings | **Tebra version** | next | connection status, contract rates loaded, NCCI tables, sync status, last validation |
+| Claims (RCM) | **Re-point, read-only** | later | not submission (Tebra's); a "where is every claim" list from the claim tracking: pending, rejected, no response, denied, paid |
+| Patient Balances | **Re-point, read-only** | later | balances from the charges and GetPayments; statements stay in Tebra |
+| Schedule (no-show risk) | **Rebuild from appointment history** | later | each patient's historical no-show rate from GetAppointments statuses — deterministic, not a model |
+| Practice Pulse | **Retire** | — | its billing half is the Workbench and the Queue; its clinical half needs the note |
+| Coding | **Needs the note** | waiting on Tebra (question 25: FHIR for practice accounts) and the Anthropic BAA | until then the deterministic capture rules on the Review page are the coding suggestions |
+| Eligibility, Clearinghouse, Enrollments, Patient Billing, Scrubber page | **Off** | — | Tebra's rails (eligibility, submission, ERA posting, statements, card payments); the scrubber runs inside the Review |
+| Upload & Test | **Owner's tool** | — | the 837/835 history load (`FOUND-MONEY-FROM-FILES.md`); hidden from staff |
+| Corpus, Predict | **Hidden** | Rung 2 | the de-identified corpus fills from stored runs; prediction waits for calibration |
+| Sandbox, Workday | **Dev / demo** | — | not for staff |
+
+Also feasible from the same API and not yet built: the unapplied-payment matcher (`GetPayments` unapplied ↔ open balances), secondary-payer accounting, and the read-only claim-status list above. The build order that pays soonest: Command Center as the Tebra home → A/R & Denials → Audit Shield → claims-based Care Gaps → Scorecard by provider and the Settings page → the claims list and Patient Balances → the no-show rate.
+
+---
+
 ## Questions to settle with Tebra before signing
 
 1. Is API access included at the quoted tier, and will Customer Care issue the Customer Key for a practice (not a billing company)?

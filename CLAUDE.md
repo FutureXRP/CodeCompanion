@@ -55,7 +55,7 @@ Nothing above `lib/adapters/` may import an Athena type, an Epic type, an X12 se
 ### Conventions
 - TypeScript, strict mode. No `any` in canonical or diff code.
 - Money as integer cents, never floats.
-- All tenant-scoped tables carry `tenant_id` and an RLS policy. New table without RLS = incomplete.
+- All tenant-scoped tables carry `tenant_id` and an RLS policy, **enable and force** row level security, and get a `<table>_service` policy (`app_is_service()`, migration 014). New table without all of that = incomplete; the static guard test fails.
 - EDI parsing uses a maintained X12 library. Do not hand-roll the 837/835 grammar.
 - `safeStr()` style guards stay — never render raw nested objects into React.
 

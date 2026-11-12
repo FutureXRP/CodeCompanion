@@ -60,4 +60,6 @@ only) · Anthropic Claude (language only) · Inngest (the nightly sync) · Stedi
 Environment variables are documented in `.env.local.example`; `npm run
 readiness` reports what is configured and what still blocks go-live. The
 staff-login gate is off by default while the data is synthetic
-(`REQUIRE_LOGIN=true` turns it on; `ALLOW_REAL_PHI=true` forces it on).
+(`REQUIRE_LOGIN=true` turns it on; `ALLOW_REAL_PHI=true` forces it on). `npm run
+db:check` proves the database enforces tenant isolation before any real data
+(`COMPLIANCE.md`).

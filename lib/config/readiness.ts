@@ -12,6 +12,7 @@
  */
 
 import { isLoginRequired } from '../db/config'
+import { phiHostingProblems } from '../compliance/gate'
 
 export type CheckStatus = 'pass' | 'fail' | 'pending'
 
@@ -48,9 +49,15 @@ export function goLiveReadiness(env: Env = process.env): ReadinessReport {
   const stediNeeded = env.CLEARINGHOUSE_PROVIDER === 'stedi'
   const ratesOnFile = set(env, 'TEBRA_CONTRACT_EXPORT_PATH') || set(env, 'FEE_SCHEDULE_PATH')
 
+  const phi = env.ALLOW_REAL_PHI === 'true'
+  const hosting = phiHostingProblems(env)
+  const dbTls = set(env, 'DATABASE_URL') && /sslmode=require/.test(env.DATABASE_URL!) && env.PG_SSL_STRICT !== 'false'
+
   const checks: ReadinessCheck[] = [
     // ── Infra / configuration ──
     { id: 'database', label: 'Neon Postgres configured (DATABASE_URL)', required: true, detail: 'PHI at rest — the data plane; run npm run db:migrate (DEPLOY.md)', status: set(env, 'DATABASE_URL') ? 'pass' : 'fail' },
+    { id: 'db_tls', label: 'Database connection requires TLS, certificate verified', required: phi, detail: 'DATABASE_URL carries sslmode=require; PG_SSL_STRICT=false is refused with real PHI. Isolation itself: npm run db:check', status: dbTls ? 'pass' : phi ? 'fail' : 'pending' },
+    { id: 'phi_hosting', label: 'Deployment safe for real PHI (lib/compliance/gate.ts)', required: phi, detail: hosting.length ? hosting.join('; ') : 'Not the Vercel demo host; BAA + security review acknowledged; TLS to the database; the login gate on', status: hosting.length === 0 ? 'pass' : phi ? 'fail' : 'pending' },
     { id: 'supabase', label: 'Supabase Auth configured (URL + anon key)', required: true, detail: 'Staff logins only — no patient PHI', status: set(env, 'NEXT_PUBLIC_SUPABASE_URL') && set(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY') ? 'pass' : 'fail' },
     { id: 'login', label: 'Staff login gate on (REQUIRE_LOGIN)', required: false, detail: 'Off while the data is synthetic; REQUIRE_LOGIN=true turns it on, and ALLOW_REAL_PHI=true forces it on', status: isLoginRequired(env) ? 'pass' : 'pending' },
     { id: 'service_role', label: 'Supabase service-role key set', required: false, detail: 'Supabase-admin tasks only; data writes go to Neon', status: set(env, 'SUPABASE_SERVICE_ROLE_KEY') ? 'pass' : 'pending' },

@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Finding } from '../canonical'
 import { formatCents } from '../canonical'
 import { getAnthropicClient, APPEAL_MODEL } from './client'
+import { realPhiRefusal } from '../compliance/gate'
 
 /**
  * Appeal-letter drafting (Layer 7 — language task).
@@ -98,13 +99,16 @@ export async function draftAppealLetter(finding: Finding): Promise<AppealDraft> 
     return { letter: appealTemplate(finding), mode: 'template', note: 'Not an appealable finding.' }
   }
 
-  // PHI gate: never send real patient data to the model before the BAA gate (COMPLIANCE.md).
-  const usingRealData = process.env.EDI_USE_SAMPLE_FILES === 'false'
-  if (usingRealData && process.env.ALLOW_REAL_PHI !== 'true') {
+  // PHI gate: never send real claim details to the model unless the whole gate is
+  // open (the switch, the BAA + review acknowledgements, a BAA-covered host).
+  // Real data = real 837/835 files, or the live Tebra pull.
+  const usingRealData = process.env.EDI_USE_SAMPLE_FILES === 'false' || process.env.TEBRA_USE_MOCK === 'false'
+  const refusal = usingRealData ? realPhiRefusal('Sending claim details to the model') : null
+  if (refusal) {
     return {
       letter: appealTemplate(finding),
       mode: 'template',
-      note: 'Real claim data with ALLOW_REAL_PHI=false — used the offline template (Anthropic BAA gate not open).',
+      note: `${refusal} Used the offline template.`,
     }
   }
 

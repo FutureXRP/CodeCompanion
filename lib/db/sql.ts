@@ -1,11 +1,23 @@
 import { Pool, type PoolClient } from 'pg'
+import { assertIsolationEnforced } from './isolation'
 
 /**
  * Neon (Postgres) data-plane connection — the cheap HIPAA home for PHI, replacing
  * the Supabase JS client for DATA. Supabase stays for AUTH only: it identifies the
  * user; we resolve their tenant and run queries with a per-request GUC
- * (`app.current_tenant`) so the existing RLS policies (005/009) enforce isolation
- * on Neon exactly as they did on Supabase (see db/neon/zzz_rls_guc.sql).
+ * (`app.current_tenant`) so the RLS policies (005/009/014) enforce isolation on
+ * Neon exactly as they did on Supabase (see db/neon/zzz_rls_guc.sql).
+ *
+ * Two contexts, both transaction-scoped so nothing leaks across a pooled
+ * connection:
+ *   withTenant(id)  — app.current_tenant = id; the tenant policies apply.
+ *   withService()   — app.role = 'service'; the <table>_service policies apply
+ *                     (tenant bootstrap, the sync's tenant lookup, the corpus).
+ * Since migration 014 forces RLS on every table, a query outside either context
+ * sees nothing and writes nothing — even for the table owner.
+ *
+ * With real PHI allowed, the first transaction in the process verifies that the
+ * database really enforces isolation (lib/db/isolation.ts) and refuses otherwise.
  *
  * Repos accept a `Queryable`, so they are unit-testable with pg / pg-mem without a
  * live database — and the same code runs against the real pool in production.
@@ -23,23 +35,46 @@ export function getPool(): Pool {
     pool = new Pool({
       connectionString: url,
       max: Number(process.env.PG_POOL_MAX ?? 5),
-      // Neon requires TLS. Verify the chain unless explicitly relaxed (some pooled
-      // endpoints present a cert the default store does not chain to).
-      ssl: /sslmode=require/.test(url) ? { rejectUnauthorized: process.env.PG_SSL_STRICT === 'true' } : undefined,
+      // Neon requires TLS. The certificate chain is verified by default;
+      // PG_SSL_STRICT=false relaxes that for an endpoint whose certificate does
+      // not chain — never with real PHI (the compliance gate refuses the pair).
+      ssl: /sslmode=require/.test(url) ? { rejectUnauthorized: process.env.PG_SSL_STRICT !== 'false' } : undefined,
     })
   }
   return pool
 }
 
+// Verified once per process when real PHI is allowed; a failure is retried on
+// the next call (the fix is a migration or a role change, not a restart).
+let isolationVerified: Promise<void> | null = null
+function verifyIsolation(client: Queryable): Promise<void> {
+  if (process.env.ALLOW_REAL_PHI !== 'true') return Promise.resolve()
+  if (!isolationVerified) {
+    isolationVerified = assertIsolationEnforced(client).then(
+      () => undefined,
+      (e) => {
+        isolationVerified = null
+        throw e
+      },
+    )
+  }
+  return isolationVerified
+}
+/** Forget a previous verification (tests, the check script). */
+export function resetIsolationVerification(): void {
+  isolationVerified = null
+}
+
 /**
  * Run `fn` in a transaction with the tenant GUC set, so RLS scopes every statement
- * to this tenant. Repos ALSO pass tenant_id explicitly — belt and suspenders, and
- * the single-tenant active guard until a non-owner role + FORCE RLS is enabled.
+ * to this tenant. Repos ALSO pass tenant_id explicitly — belt and suspenders.
  */
 export async function withTenant<T>(tenantId: string, fn: (db: Queryable) => Promise<T>): Promise<T> {
   const client = await getPool().connect()
   try {
+    await verifyIsolation(client)
     await client.query('begin')
+    await client.query("select set_config('app.role', '', true)")
     await client.query('select set_config($1, $2, true)', ['app.current_tenant', tenantId])
     const out = await fn(client)
     await client.query('commit')
@@ -52,11 +87,22 @@ export async function withTenant<T>(tenantId: string, fn: (db: Queryable) => Pro
   }
 }
 
-/** A query outside any tenant scope — the service path: membership lookup, tenant bootstrap, de-id corpus. */
+/**
+ * A transaction in the service context — outside any tenant scope: membership
+ * lookup, tenant bootstrap, the sync's tenant resolution, the de-id corpus.
+ */
 export async function withService<T>(fn: (db: Queryable) => Promise<T>): Promise<T> {
   const client = await getPool().connect()
   try {
-    return await fn(client)
+    await verifyIsolation(client)
+    await client.query('begin')
+    await client.query("select set_config('app.role', 'service', true)")
+    const out = await fn(client)
+    await client.query('commit')
+    return out
+  } catch (err) {
+    try { await client.query('rollback') } catch { /* already failing */ }
+    throw err
   } finally {
     client.release()
   }

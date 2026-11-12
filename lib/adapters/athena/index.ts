@@ -3,6 +3,7 @@ import { athenaBundleToEhrEncounter } from './to-canonical'
 import { MockAthenaSource } from './mock'
 import { AthenaClient, type HttpTransport } from './client'
 import type { AthenaSource, AthenaEncounterQuery } from './types'
+import { realPhiRefusal } from '../../compliance/gate'
 
 export * from './types'
 export * from './client'
@@ -20,6 +21,8 @@ export interface AthenaConfig {
   /** Default true — synthetic mock. Set false (ATHENA_USE_MOCK=false) for the real client. */
   useMock?: boolean
   allowRealPhi?: boolean
+  /** Why real PHI is refused right now (lib/compliance/gate.ts), when it is — shown instead of the generic message. */
+  phiRefusal?: string
   clientId?: string
   clientSecret?: string
   practiceId?: string
@@ -32,8 +35,9 @@ export function createAthenaSource(config: AthenaConfig = {}): AthenaSource {
   if (config.useMock !== false) return new MockAthenaSource()
   if (!config.allowRealPhi) {
     throw new Error(
-      'Athena live integration pulls real patient data from athenahealth — gated by COMPLIANCE.md. ' +
-        'Set allowRealPhi=true (ALLOW_REAL_PHI) only after a BAA with athenahealth. Keep ATHENA_USE_MOCK=true for synthetic testing.',
+      config.phiRefusal ??
+        'Athena live integration pulls real patient data from athenahealth — gated by COMPLIANCE.md. ' +
+          'Set allowRealPhi=true (ALLOW_REAL_PHI) only after a BAA with athenahealth. Keep ATHENA_USE_MOCK=true for synthetic testing.',
     )
   }
   if (!config.clientId || !config.clientSecret || !config.practiceId) {
@@ -49,9 +53,11 @@ export function createAthenaSource(config: AthenaConfig = {}): AthenaSource {
 }
 
 export function athenaConfigFromEnv(): AthenaConfig {
+  const refusal = realPhiRefusal('athena live integration', process.env)
   return {
     useMock: process.env.ATHENA_USE_MOCK !== 'false', // must explicitly opt into the real client
-    allowRealPhi: process.env.ALLOW_REAL_PHI === 'true',
+    allowRealPhi: refusal === null,
+    phiRefusal: refusal ?? undefined,
     clientId: process.env.ATHENA_CLIENT_ID,
     clientSecret: process.env.ATHENA_CLIENT_SECRET,
     practiceId: process.env.ATHENA_PRACTICE_ID,

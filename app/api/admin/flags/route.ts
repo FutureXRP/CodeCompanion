@@ -45,6 +45,6 @@ export async function POST(request: Request) {
   }
 
   const res = NextResponse.json({ flags })
-  res.cookies.set(FLAGS_COOKIE, serializeOverrides(flags), { path: '/', httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 })
+  res.cookies.set(FLAGS_COOKIE, serializeOverrides(flags), { path: '/', httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 365 })
   return res
 }

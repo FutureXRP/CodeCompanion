@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import type { Claim, Remittance } from '../../canonical'
 import { parse837 } from './parse-837'
 import { parse835 } from './parse-835'
+import { assertRealPhiAllowed } from '../../compliance/gate'
 
 /**
  * EDI adapter — the universal ingestion path (X12 837/835).
@@ -20,13 +21,9 @@ function useSampleFiles(): boolean {
   return process.env.EDI_USE_SAMPLE_FILES !== 'false'
 }
 
+/** EDI_USE_SAMPLE_FILES=false means real claim files: the whole gate applies, not just the switch. */
 function assertPhiAllowed(): void {
-  if (process.env.ALLOW_REAL_PHI !== 'true') {
-    throw new Error(
-      'EDI_USE_SAMPLE_FILES=false implies real claim data, but ALLOW_REAL_PHI is ' +
-        'not true. Refusing to read real PHI until the COMPLIANCE.md gate is closed.',
-    )
-  }
+  assertRealPhiAllowed('Reading real 837/835 claim files (EDI_USE_SAMPLE_FILES=false)')
 }
 
 // Pure-text mappers (no filesystem) — safe to call from any runtime.

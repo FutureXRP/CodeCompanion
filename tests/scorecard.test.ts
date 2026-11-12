@@ -89,7 +89,7 @@ test('db-migrate: tracked selection, --only, --reset, --baseline', () => {
 
   const applied = new Set(names.filter((n) => n < '011' || n.startsWith('000_') || n.startsWith('zzz_')))
   const pending = selectMigrations(all, applied, { reset: false }).map((f) => f.split(/[\\/]/).pop()!)
-  assert.deepEqual(pending, ['011_tebra_source_adapter.sql', '012_tasks_source_key.sql', '013_scorecard_columns.sql'])
+  assert.deepEqual(pending, ['011_tebra_source_adapter.sql', '012_tasks_source_key.sql', '013_scorecard_columns.sql', '014_rls_force.sql'])
   assert.equal(selectMigrations(all, new Set(names), { reset: false }).length, 0)
   assert.equal(selectMigrations(all, new Set(names), { reset: true }).length, all.length)
   assert.equal(selectMigrations(all, new Set(), { reset: false, only: '012' }).length, 1)
