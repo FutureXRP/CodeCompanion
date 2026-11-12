@@ -1,12 +1,16 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isLoginRequired } from '@/lib/db/config'
 
 /**
  * Session refresh + route protection for Supabase Auth.
  *
  * Degrades gracefully: with no Supabase env, this is a no-op so the synthetic
- * demo (and a zero-config Vercel deploy) keeps working with no login. Once the
- * URL + anon key are set, dashboard routes require an authenticated user.
+ * demo (and a zero-config Vercel deploy) keeps working with no login. With the
+ * URL + anon key set, the session is refreshed on every request so a signed-in
+ * user is recognized — but visitors are only turned away when the login gate
+ * is on (REQUIRE_LOGIN=true, or always when ALLOW_REAL_PHI=true; see
+ * isLoginRequired). While the practice runs on synthetic data the gate is off.
  *
  * Resilience: getUser() is a network round-trip to Supabase on EVERY request. It
  * is raced against a timeout so a slow or unreachable Supabase can never hang the
@@ -61,7 +65,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
       data: { user },
     } = await withTimeout(supabase.auth.getUser(), GETUSER_TIMEOUT_MS)
 
-    if (!user && !isPublicPath(pathname)) {
+    if (!user && !isPublicPath(pathname) && isLoginRequired()) {
       const redirectUrl = request.nextUrl.clone()
       redirectUrl.pathname = '/login'
       redirectUrl.searchParams.set('redirectTo', pathname)

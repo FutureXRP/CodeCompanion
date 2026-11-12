@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { isSupabaseConfigured, isNeonConfigured } from '@/lib/db/config'
+import { isLoginRequired, isSupabaseConfigured, isNeonConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
 import { withService } from '@/lib/db/sql'
 import { resolveTenantId, loadTenantName } from '@/lib/db/tenant'
@@ -32,10 +32,20 @@ export default async function AccountPage() {
   }
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const user = await supabase.auth.getUser().then((r) => r.data.user).catch(() => null)
+  if (!user) {
+    if (isLoginRequired()) redirect('/login')
+    return (
+      <div style={{ padding: '34px 40px 48px', maxWidth: 720, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 25, fontWeight: 600, color: INK, margin: '0 0 6px', letterSpacing: '-0.025em' }}>Account</h1>
+        <div style={{ marginTop: 16, background: '#f6efdd', border: '1px solid #f6e0b5', borderRadius: 12, padding: '16px 18px', fontSize: 13.5, color: '#92400e', lineHeight: 1.55 }}>
+          You are not signed in. The login gate is <strong>off</strong> on this deployment while the staff-login provider is being
+          replaced, so every page opens without an account. Set <code>REQUIRE_LOGIN=true</code> to turn the gate back on; it is always
+          on when real patient data is allowed.
+        </div>
+      </div>
+    )
+  }
 
   // The practice name lives in Neon now (Supabase is auth-only).
   let practiceName: string | null = null

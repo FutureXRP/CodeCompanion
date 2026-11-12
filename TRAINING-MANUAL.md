@@ -20,7 +20,7 @@ Every page follows the visit from the schedule to the bank. Each page answers on
 | **Follow-up Queue** | Everyone | Who owns each open item, and is it overdue? | Daily |
 | **Scorecard** | Owner | Is the revenue cycle getting better or worse, by payer and by month? | Monthly, and 90 days after the switch |
 
-Signing in is at the app address with your work email and password. The left sidebar lists the pages above, plus EHR Pull, Admin and your account. Everything else that used to be in the sidebar (claims submission, clearinghouse, enrollments, eligibility, patient billing) is handled by Tebra and has been switched off.
+For now the app opens at its address without a sign-in; staff accounts arrive with the new login provider, and the pages are the same either way. The left sidebar lists the pages above, plus EHR Pull, Admin and your account. Everything else that used to be in the sidebar (claims submission, clearinghouse, enrollments, eligibility, patient billing) is handled by Tebra and has been switched off.
 
 > [!TIP]
 > **The daily rhythm in one line.** Front desk opens Front Desk at 7:30. Providers finish notes and charges in Tebra. The biller opens Pre-approval Review before approving anything, then works the Posting Workbench top to bottom and marks tasks in the Follow-up Queue. The owner reads the Scorecard on the first of the month.

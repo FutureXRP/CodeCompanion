@@ -11,6 +11,8 @@
  * required only when CodeCompanion submits claims itself.
  */
 
+import { isLoginRequired } from '../db/config'
+
 export type CheckStatus = 'pass' | 'fail' | 'pending'
 
 export interface ReadinessCheck {
@@ -50,6 +52,7 @@ export function goLiveReadiness(env: Env = process.env): ReadinessReport {
     // ── Infra / configuration ──
     { id: 'database', label: 'Neon Postgres configured (DATABASE_URL)', required: true, detail: 'PHI at rest — the data plane; run npm run db:migrate (DEPLOY.md)', status: set(env, 'DATABASE_URL') ? 'pass' : 'fail' },
     { id: 'supabase', label: 'Supabase Auth configured (URL + anon key)', required: true, detail: 'Staff logins only — no patient PHI', status: set(env, 'NEXT_PUBLIC_SUPABASE_URL') && set(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY') ? 'pass' : 'fail' },
+    { id: 'login', label: 'Staff login gate on (REQUIRE_LOGIN)', required: false, detail: 'Off while the data is synthetic; REQUIRE_LOGIN=true turns it on, and ALLOW_REAL_PHI=true forces it on', status: isLoginRequired(env) ? 'pass' : 'pending' },
     { id: 'service_role', label: 'Supabase service-role key set', required: false, detail: 'Supabase-admin tasks only; data writes go to Neon', status: set(env, 'SUPABASE_SERVICE_ROLE_KEY') ? 'pass' : 'pending' },
     { id: 'anthropic', label: 'Anthropic API key set', required: true, detail: 'Appeal / narrative drafting (a BAA before real PHI reaches it)', status: set(env, 'ANTHROPIC_API_KEY') ? 'pass' : 'fail' },
     {

@@ -25,7 +25,7 @@ Do not skip rungs. Do not build Rung 2/3 scaffolding speculatively unless a task
 
 - **Stack:** Next.js 16, Supabase (Postgres + RLS), Anthropic Claude API, Stripe.
 - **Existing modules** (currently bound to an Athena mock): Dashboard, Coding, Care Gaps, Audit Shield, Practice Pulse, Schedule Risk, Revenue Analytics, Settings.
-- **Mock-first:** Athena runs against a mock (`ATHENA_USE_MOCK=true`). No real patient data flows yet. No BAAs signed yet. See `COMPLIANCE.md` — this is a hard gate, not a preference.
+- **Mock-first:** Athena runs against a mock (`ATHENA_USE_MOCK=true`). No real patient data flows yet. No BAAs signed yet. See `COMPLIANCE.md` — this is a hard gate, not a preference. The staff-login gate is deliberately off while the data is synthetic (`isLoginRequired` in `lib/db/config.ts`: `REQUIRE_LOGIN=true` turns it on, `ALLOW_REAL_PHI=true` forces it on — never weaken that).
 - The refactor goal is to lift Athena out of the modules into `lib/adapters/athena`, introduce the canonical model, add the EDI adapter, and re-point modules at the canonical model.
 - **Tebra adapter** (`lib/adapters/tebra`, Web Services API 2.1 / SOAP) mirrors the athena adapter. One `GetCharges` record carries billed + contract-expected + adjudicated amounts per line, so Found Money runs straight off a pull (`lib/found-money/tebra.ts`). Mock-first: `TEBRA_USE_MOCK=true`. See `TEBRA-INTEGRATION.md`.
 - **Training manual** (`TRAINING-MANUAL.md`; `npm run training:shots` retakes the screenshots from a running app, `npm run training:pdf` renders `docs/training/CodeCompanion-Training-Manual.pdf`) is the staff-facing description of the Tebra loop. When a loop page's labels, flags or buttons change, update the manual in the same session.

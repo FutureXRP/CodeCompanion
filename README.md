@@ -58,4 +58,6 @@ only) · Anthropic Claude (language only) · Inngest (the nightly sync) · Stedi
 (only if CodeCompanion submits claims itself) · Stripe (optional).
 
 Environment variables are documented in `.env.local.example`; `npm run
-readiness` reports what is configured and what still blocks go-live.
+readiness` reports what is configured and what still blocks go-live. The
+staff-login gate is off by default while the data is synthetic
+(`REQUIRE_LOGIN=true` turns it on; `ALLOW_REAL_PHI=true` forces it on).

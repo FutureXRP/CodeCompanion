@@ -32,9 +32,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Writes to Tebra are off (TEBRA_ALLOW_WRITES). Approve or reject in Tebra directly.' }, { status: 403 })
     }
 
+    // A live write is attributed to a signed-in user and audited; the mock only
+    // changes in-memory state, so it needs neither (and works with the login gate off).
     let userId: string | null = null
     let tenantId: string | null = null
-    if (isNeonConfigured()) {
+    if (isNeonConfigured() && !cfg.useMock) {
       const authed = await createClient()
       const { data: { user } } = await authed.auth.getUser()
       if (!user) return NextResponse.json({ error: 'Not authenticated. Please sign in.' }, { status: 401 })

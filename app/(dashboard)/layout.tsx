@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { isSupabaseConfigured } from '@/lib/db/config'
+import { isLoginRequired, isSupabaseConfigured } from '@/lib/db/config'
 import { createClient } from '@/lib/supabase/server'
 import { readModuleFlags } from '@/lib/admin/server'
 import { disabledIds } from '@/lib/admin/flags'
@@ -11,15 +11,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const authEnabled = isSupabaseConfigured()
   let userEmail: string | null = null
 
-  // When Supabase is configured the platform requires a login; without it the
-  // synthetic demo stays open (so a zero-config Vercel deploy still works).
+  // With Supabase configured, a signed-in user is recognized (their email, their
+  // stored tenant data). Visitors are turned away only when the login gate is on
+  // — REQUIRE_LOGIN=true, or always with ALLOW_REAL_PHI=true. While the practice
+  // runs on synthetic data the gate is off, and an unreachable or broken auth
+  // project must never take the pages down with it.
   if (authEnabled) {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) redirect('/login')
-    userEmail = user.email ?? null
+    try {
+      const supabase = await createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      userEmail = user?.email ?? null
+      if (!user && isLoginRequired()) redirect('/login')
+    } catch (e) {
+      // redirect() signals by throwing — let it through; swallow only auth failures.
+      if (e instanceof Error && e.message === 'NEXT_REDIRECT') throw e
+      if (typeof (e as { digest?: unknown })?.digest === 'string' && String((e as { digest: string }).digest).startsWith('NEXT_REDIRECT')) throw e
+      if (isLoginRequired()) redirect('/login')
+    }
   }
 
   const flags = await readModuleFlags()
