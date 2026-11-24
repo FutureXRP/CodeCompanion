@@ -215,7 +215,8 @@ test('createTebraSource defaults to mock and gates the real client', () => {
     useMock: false, allowRealPhi: true, customerKey: 'k', user: 'u', password: 'p', practiceName: PRACTICE,
     transport: async () => ({ status: 200, text: '' }),
   })
-  assert.ok(real instanceof TebraClient)
+  // The live client, wrapped in the read-through cache (tests/tebra-cache.test.ts covers the wrapping).
+  assert.ok(!(real instanceof MockTebraSource) && typeof real.getCharges === 'function')
 })
 
 test('to-canonical helpers: dates, money, payer keys, names, statuses, reasons, filing codes', () => {

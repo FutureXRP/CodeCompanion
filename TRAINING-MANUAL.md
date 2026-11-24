@@ -23,7 +23,7 @@ Every page follows the visit from the schedule to the bank. Each page answers on
 For now the app opens at its address without a sign-in; staff accounts arrive with the new login provider, and the pages are the same either way. The left sidebar lists the pages above, plus EHR Pull, Admin and your account. Everything else that used to be in the sidebar (claims submission, clearinghouse, enrollments, eligibility, patient billing) is handled by Tebra and has been switched off.
 
 > [!TIP]
-> **The daily rhythm in one line.** Front desk opens Front Desk at 7:30. Providers finish notes and charges in Tebra. The biller opens Pre-approval Review before approving anything, then works the Posting Workbench top to bottom and marks tasks in the Follow-up Queue. The owner reads the Scorecard on the first of the month.
+> **The daily rhythm in one line.** Front desk opens Front Desk at 7:30. Providers finish notes and charges in Tebra. The biller opens Pre-approval Review before approving anything, posts the day's ERA batches in Tebra (a couple of clicks each), then works the Posting Workbench top to bottom and marks tasks in the Follow-up Queue. The owner reads the Scorecard on the first of the month.
 
 ## 2. How Tebra and CodeCompanion fit together
 
@@ -34,7 +34,7 @@ Tebra does the work of billing. CodeCompanion watches that work.
 | The schedule and each patient's insurance, authorizations and balance | **Front Desk** flags what is missing, expired or owed before the visit |
 | Charges entered on an encounter, in Draft or Review status | **Pre-approval Review** checks the coding against the clearinghouse edits and your contract rates |
 | The encounter is approved and Tebra sends the claim through its clearinghouse | CodeCompanion tracks it as pending, rejected, or awaiting a response |
-| The payer answers and Tebra auto-posts the ERA | **Found Money** compares billed, contract-expected and paid, line by line |
+| The payer answers and the biller posts the ERA batch in Tebra (a couple of clicks) | **Found Money** compares billed, contract-expected and paid, line by line |
 | Balances move to the secondary payer or the patient | **Posting Workbench** lists secondaries never billed and statements never sent |
 
 The connection is a nightly pull from Tebra's reporting API, around 1 to 2 am Central. It reads charges, adjudication, the schedule and coverage. It does not sit inside Tebra, and nothing in Tebra looks different because of it. The EHR Pull page has a button to refresh by hand during the day; staff rarely need it.
@@ -137,7 +137,7 @@ The badge next to the title says where the numbers came from: the Tebra pull, li
 
 ## 6. Posting Workbench
 
-The biller's daily list. Every claim line that needs a human, ranked by the dollars on it, with the exact next action written out. Tebra keeps auto-posting the clean remittances; this page is only the exceptions.
+The biller's daily list. Every claim line that needs a human, ranked by the dollars on it, with the exact next action written out. Posting the ERA batches themselves happens in Tebra, a couple of clicks per batch; this page is the exceptions that need judgment once they have posted.
 
 ![Posting Workbench: at stake, the seven kinds of work, and the ranked list with the action for each line.](docs/training/workbench.png)
 
@@ -212,7 +212,7 @@ Watch three lines month over month: gross collection up, denial rate down, unans
 
 - **Encounter.** One visit's charges in Tebra, with a status: Draft, Review, Approved, Rejected.
 - **Claim.** The encounter as sent to the payer. Tebra sends it through its clearinghouse.
-- **ERA (835).** The payer's electronic remittance: what they paid and why, line by line. Tebra posts it automatically.
+- **ERA (835).** The payer's electronic remittance: what they paid and why, line by line. Posted in Tebra, a couple of clicks per batch.
 - **Contract rate, allowed amount.** What your contract with the payer says they owe for a code. Loaded in Tebra's Contract Rates table.
 - **Underpayment.** Paid less than the contract rate, after patient responsibility is taken out.
 - **Denial.** The payer refused the line. The reason code (CARC) decides whether it is appealable or terminal.
@@ -240,4 +240,4 @@ Watch three lines month over month: gross collection up, denial rate down, unans
 
 **Republishing this manual.** Edit `TRAINING-MANUAL.md`. With the app running on the demo data, `npm run training:shots` retakes the screenshots; `npm run training:pdf` writes the PDF to `docs/training/`.
 
-**Still to confirm with Tebra** before the staff rely on specific screens: which adjudication fields come through on the API at the quoted tier, whether denial reason codes survive auto-posting, and how far back remittances are kept. The answers may change a sentence or two in sections 5 and 6, nothing in the workflow.
+**Confirmed by Tebra, November 2026.** The adjudication fields the pages depend on come through on the practice tier, denial reason codes stay on posted adjustments, raw remittance files stay downloadable for as long as the practice is a customer, and the API allows 10,000 calls a month, which the dashboard stays well under by caching what it reads. Clinical notes are not available through the API, so the Coding page stays off. Tebra migrates open balances only, so the practice's history comes from the athena files described in `FOUND-MONEY-FROM-FILES.md`.

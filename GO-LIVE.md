@@ -60,10 +60,14 @@ Stedi is used only if CodeCompanion submits claims itself.
    runtime role (`grant codecompanion_app to …`) in `DATABASE_URL`, and
    `npm run db:check` clean. The staff-login provider with two-factor (DEPLOY.md §2),
    and `REQUIRE_LOGIN=true`.
-4. **Tebra account** — the Customer Key (a System Administrator's Customer Care
-   case), a dedicated API user with the System Admin role, the practice's contract
-   rates loaded into *Contracts and Fees* (and exported to
-   `TEBRA_CONTRACT_EXPORT_PATH`), ERA enrollment through TriZetto for every payer.
+4. **Tebra account** — the API agreement signed with the order form (the Customer
+   Key is issued during onboarding; 10,000 calls a month on the tier), a dedicated
+   API user with the System Admin role, the practice's contract rates bulk-uploaded
+   via Excel into *Contracts and Fees* (the same sheet, saved as CSV, is
+   `TEBRA_CONTRACT_EXPORT_PATH`), ERA enrollment through TriZetto for every payer
+   (~2 weeks commercial, 3–4 government), and 12 months of athena 835 / claim
+   files exported **before the athena account closes** — Tebra migrates open
+   balances only (`FOUND-MONEY-FROM-FILES.md`).
 5. **Validate before trusting** — `npm run tebra-validate` clean on a real window;
    then `npm run tebra-backfill` for history; then `TEBRA_SYNC_ENABLED=true`.
 6. **Bootstrap a tenant** — first sign-in creates the practice

@@ -10,7 +10,7 @@ How CodeCompanion plugs into Tebra (formerly Kareo) if SquareOne moves off athen
 
 | Who does it | What |
 |---|---|
-| **Tebra** | Charge entry, claim submission (its clearinghouse, TriZetto), eligibility checks, ERA/EFT auto-posting, patient statements and card payments |
+| **Tebra** | Charge entry, claim submission (its clearinghouse, TriZetto), eligibility checks, ERA/EFT posting (a couple of clicks per batch on the base plan; automated only with its RPA bot), patient statements and card payments |
 | **CodeCompanion** | The found-money diff (underpayments, un-appealed denials, unanswered claims), the denial worklist, appeal drafting, coding suggestions, the pre-submission scrubber, the command center |
 
 So on Tebra the Stedi rails are switched **off** — one click: *Admin → Tebra (PM runs billing)* keeps the Tebra loop (Front Desk, Pre-approval Review, Found Money, Posting Workbench, Follow-up Queue, Scorecard, EHR Pull) and turns off Eligibility, Claims, Clearinghouse, Enrollments, Patient Billing and the modules still bound to the demo EHR — and Stedi drops out of the BAA list. The Found Money page, its CSV export and the appeal drafter read the Tebra pull (`FOUND_MONEY_SOURCE`, default `tebra` unless real 837/835 files are configured). The staff-facing walkthrough is `TRAINING-MANUAL.md` (`npm run training:pdf` renders the PDF).
@@ -158,7 +158,7 @@ Tebra quotes two add-ons: an **ERA Processing Bot** ($125/mo + $250 setup) and a
 
 | Half | What it is | Who does it on CodeCompanion |
 |---|---|---|
-| **Robotic posting** — applying every ERA line into Tebra by rule, handling recoupments, matching copays to balances | Screen automation of Tebra's own desktop app. The API has no operation for it (`CreatePayments` makes an *unapplied* payment record; nothing applies a payment to a charge or posts an adjustment), which is exactly why Tebra sells it as "RPA". | **Tebra** — the base plan's *A/R: Auto-Payment Posting* posts the clean ERAs; at ~250 visits a month the exceptions are a handful, worked by a human in Tebra. We do not build screen automation against a vendor's app for money postings. |
+| **Robotic posting** — applying every ERA line into Tebra by rule, handling recoupments, matching copays to balances | Screen automation of Tebra's own desktop app. The API has no operation for it (`CreatePayments` makes an *unapplied* payment record; nothing applies a payment to a charge or posts an adjustment), which is exactly why Tebra sells it as "RPA". | **Tebra, by hand** — Tebra confirmed (Nov 2026) that the base plan does *not* post ERAs automatically: each ERA batch takes a couple of clicks to post in Tebra, which at ~250 visits a month is an hour or two of staff time, and the exceptions are a handful. The bot ($125/mo + $250 setup, tied to the 12-month term, addable after go-live) is worth it only if that grows. We do not build screen automation against a vendor's app for money postings. |
 | **The workbench** — the consolidated view of claims that need a biller's attention | A ranked queue derived from what Tebra already tracks per charge | **CodeCompanion** — `/workbench` (`lib/found-money/workbench.ts`): appeals (denials, underpayments), fix-and-resubmit (rejected), status checks (no response), secondaries never billed, statements never sent — each with the dollars on it. Deterministic, read-only, from the same pull. |
 
 So: skip both bots at this size. If posting labor ever becomes the bottleneck (in-house billing at higher volume), buy the ERA bot then — nothing here conflicts with it. **If you do, require that posted adjustments keep the CARC/RARC codes** (CO-45, CO-197 …): the diff classifies denials from those codes; a rule that posts denials under a generic Tebra reason still gets flagged, but as "manual review" instead of "appealable — CARC 197".
@@ -169,6 +169,7 @@ Recoupments are detected by comparison — a claim whose posted payment went dow
 
 ## Behaving well on Tebra's API (guide §3)
 
+- **10,000 calls a month** is the practice tier's allowance (Tebra, Nov 2026). The live source is read through a cache (`lib/adapters/tebra/cache.ts`: charges and appointments for 20 minutes, patients for 4 hours, the practice for a day; concurrent identical reads share one request; a write drops the charge entries) and every attempt is counted by a monthly meter (`meter.ts`: pages stop at budget − a 1,000-call reserve, the sync may use the reserve). Expected use with staff refreshing through the day: roughly 100–150 calls a day, a third of the cap; the nightly sync is ~5. The EHR page shows the month's count for its instance.
 - **Rate limits are per account:** `GetCharges`, `GetPayments`, `GetTransactions` 1 call/s; `GetPractices` 1 per ½ s. The client spaces calls and backs off on 429 — calls are delayed, never dropped.
 - **Poll rarely, after hours.** Tebra asks for infrequent polling (every couple of hours, not minutes) and says performance is better outside business hours. The daily sync should run once, at night, over the last few days of posting dates.
 - **Filters are mandatory** and date filters need both ends; `PracticeName` is the recommended filter. The client always sends it.
@@ -211,10 +212,32 @@ Also feasible from the same API and not yet built: the unapplied-payment matcher
 
 ---
 
-## Questions to settle with Tebra before signing
+## Tebra's answers (24 November 2026) and what they change
 
-1. Is API access included at the quoted tier, and will Customer Care issue the Customer Key for a practice (not a billing company)?
-2. Is there a sandbox / test practice? (None is documented — we test mock-first, then read-only against the live account.)
-3. How far back do ERAs stay in *Clearinghouse Reports* (the Save-As-835 fallback and the audit trail)?
-4. Does the Insurance Collections report now include CARC/RARC from ERA files (promised Jan 2026, then marked pending)?
-5. API Terms of Use §4.4 forbids using the API to replicate or compete with Tebra's core products — internal analytics for the practice's own data is ordinary customer use; confirm in writing if CodeCompanion is ever offered to other practices.
+Every API question came back the way the build assumed, with one number that changed it and two facts that corrected the docs.
+
+| Topic | Tebra's answer | What it means here |
+|---|---|---|
+| API on the practice tier | Included, **up to 10,000 calls a month**; a dedicated System Admin API user at no extra fee; the Customer Key is issued during onboarding once the order form **and the API agreement** are signed; no sandbox | The cache + meter above keep usage at roughly a third of the cap. Day one: `npm run tebra-validate` against the new account |
+| Adjudication fields on `GetCharges` | Allowed, payment, contract adjustment + reason, `ExpectedAmount` — all on the tier | Found Money, the Workbench and the Scorecard work as built |
+| `IncludeUnapprovedCharges` / `EncounterStatus` | Works for a practice user | The Pre-approval Review works as built |
+| Internal analytics on the practice's own data | Confirmed as ordinary use | No terms problem |
+| ERA posting | **Not automatic on the base plan**; a couple of clicks per batch; the RPA bot automates it | The biller posts batches in Tebra daily; the Workbench is the exceptions. Docs and the training manual corrected |
+| CARC / RARC on posted adjustments | Retained from the payer | Denial classification and appeal drafting work from real reason codes |
+| Raw 835 files | Downloadable from Clearinghouse Reports for as long as the practice is a customer | The audit trail and the file path (`FOUND-MONEY-FROM-FILES.md`) stay available |
+| Contract rates | Standard fee schedules are imported at migration; **payer contract rates are not** — bulk-upload them via Excel in the PM | The practice builds the contract-rate sheet before go-live; saved as CSV it doubles as `TEBRA_CONTRACT_EXPORT_PATH` (columns are matched by meaning) |
+| Migration scope | 13 structured datasets (demographics, policies, appointments, meds, allergies, problems, procedures, immunizations, vitals, historical encounters, clinical notes); supporting documents as PDFs at extra cost; **only open balances** — no closed claims or payment history; a verified test sample before the full conversion; $2,000–2,500, negotiable by package | Tebra will hold no history: export 12 months of athena 835s and claim files **before athena access ends** — that is the baseline for the Scorecard's before/after and the first found-money number |
+| Enrollment | Onboarding handles TriZetto EDI/ERA paperwork: ~2 weeks commercial, 3–4 weeks government, varies by payer | Go-live is gated by SoonerCare and Medicare enrollment, not by the software |
+| FHIR / clinical notes | Very limited; only what the public API documents | Coding from the note stays off; the deterministic capture rules remain the coding suggestions; care gaps are built from claims history |
+| Contract terms | 12-month term, Year 1 fixed, 60-day renewal notice, 4.9% annual cap, no claim-volume repricing, termination export fees waivable in the agreement, no per-claim / per-ERA / clearinghouse fees (paper statements and claim attachments are the only usage fees) | Get each of these on the order form, not in email |
+| Packages | Practice Essentials $815.90/mo (1 physician + 1 low-volume non-physician) vs Practice Automation $1,065.90/mo — Automation adds the Patient Experience tools (online scheduling, custom reminders, reviews, broadcasts, web profiles) | $250/mo = $3,000/yr for scheduling and reminders; the migration-fee waiver is offered as the incentive to take it |
+| RPA bots | Tied to the contract term; addable after go-live | Skip both; revisit after 90 days if posting labor bites |
+| Clinical cutover | eRx 1–2 weeks, EPCS +1–2 ($75/provider), Quest eLabs 1–2 weeks; refills route to athena until Tebra eRx is on, then eFax if delayed; card processor can stay | Plan the overlap window with athena |
+
+**Decisions this drives**
+
+1. Package: Essentials unless online self-scheduling and custom reminders are worth $3,000 a year to the practice (they are if they save roughly one no-show a week). Ask for the migration fee waived or halved either way — the API agreement and a 12-month commitment are the leverage.
+2. No RPA bots. Posting is a couple of clicks per batch; the dashboard lists the exceptions.
+3. Sign the API agreement with the order form so the Customer Key arrives during onboarding; validate before anything else.
+4. Before athena closes: export the history files; build the contract-rate sheet from the payer contracts (Medicare's public schedule plus each commercial payer's percentage).
+5. The dashboard needs no change beyond the cache and meter; Coding waits.

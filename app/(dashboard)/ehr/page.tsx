@@ -9,7 +9,7 @@ import { DaySubmitPanel } from '@/components/ehr/DaySubmitPanel'
 import { createAthenaSource, athenaConfigFromEnv, pullAthenaEncounters } from '@/lib/adapters/athena'
 import { encounterToClaim } from '@/lib/adapters/ehr'
 import { AthenaPullButton } from '@/components/ehr/AthenaPullButton'
-import { createTebraSource, tebraConfigFromEnv } from '@/lib/adapters/tebra'
+import { createTebraSource, tebraConfigFromEnv, tebraCallMeter } from '@/lib/adapters/tebra'
 import { runTebraFoundMoney, type TebraFoundMoney } from '@/lib/found-money/tebra'
 import { TebraPullButton } from '@/components/ehr/TebraPullButton'
 
@@ -216,6 +216,10 @@ export default async function EhrPage() {
           found-money diff and the <a href="/workbench" style={{ color: '#34685a', fontWeight: 600 }}>Posting Workbench</a>
           {t ? ` (${t.workbench.items.length} items · ${formatCents(t.workbench.atStakeCents)} at stake)` : ''}. The same code path hits the real Tebra API when{' '}
           <code>TEBRA_USE_MOCK=false</code> (see <code>TEBRA-INTEGRATION.md</code>).
+          {!tebraCfg.useMock && (() => {
+            const m = tebraCallMeter.snapshot()
+            return <> API calls this month, this instance: <strong>{m.calls}</strong> of {m.budget} ({m.reserve} reserved for the nightly sync).</>
+          })()}
         </div>
       </div>
 

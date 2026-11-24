@@ -11,6 +11,8 @@ import {
 } from './to-canonical'
 import { encounterToClaim } from '../ehr'
 import { realPhiRefusal } from '../../compliance/gate'
+import { CachedTebraSource, cacheOptionsFromEnv, type TebraCacheOptions } from './cache'
+import { tebraCallMeter, type TebraCallMeter } from './meter'
 import type { TebraAppointmentQuery, TebraAppointmentRaw, TebraChargeQuery, TebraChargeRaw, TebraPatientRaw, TebraPracticeRaw, TebraSource } from './types'
 
 export * from './types'
@@ -19,6 +21,8 @@ export * from './mock'
 export * from './to-canonical'
 export * from './contract-export'
 export * from './validate'
+export * from './cache'
+export * from './meter'
 
 /**
  * The Tebra (Kareo) adapter — pull charges + their adjudication from Tebra's
@@ -44,6 +48,11 @@ export interface TebraConfig {
   requestOrder?: RequestElementOrder
   /** Injectable for tests. */
   transport?: SoapTransport
+  /** Read-through cache in front of the live client (default on; TEBRA_CACHE=false). The mock is never cached. */
+  cache?: boolean
+  cacheOptions?: TebraCacheOptions
+  /** The monthly call meter (default: the process-wide one). */
+  meter?: TebraCallMeter
 }
 
 export function createTebraSource(config: TebraConfig = {}): TebraSource {
@@ -58,7 +67,7 @@ export function createTebraSource(config: TebraConfig = {}): TebraSource {
   if (!config.customerKey || !config.user || !config.password || !config.practiceName) {
     throw new Error('Tebra live integration requires TEBRA_CUSTOMER_KEY, TEBRA_USER, TEBRA_PASSWORD, and TEBRA_PRACTICE_NAME.')
   }
-  return new TebraClient({
+  const client = new TebraClient({
     customerKey: config.customerKey,
     user: config.user,
     password: config.password,
@@ -67,7 +76,10 @@ export function createTebraSource(config: TebraConfig = {}): TebraSource {
     maxWindowDays: config.maxWindowDays,
     requestOrder: config.requestOrder,
     transport: config.transport,
+    meter: config.meter ?? tebraCallMeter,
   })
+  // 10,000 calls a month on the practice tier: the pages read through a cache.
+  return config.cache === false ? client : new CachedTebraSource(client, config.cacheOptions ?? cacheOptionsFromEnv())
 }
 
 export function tebraConfigFromEnv(): TebraConfig {
@@ -87,6 +99,7 @@ export function tebraConfigFromEnv(): TebraConfig {
     endpoint: process.env.TEBRA_ENDPOINT || undefined,
     maxWindowDays: Number.isFinite(windowDays) && windowDays > 0 ? windowDays : undefined,
     requestOrder: order === 'alphabetical' || order === 'header-first' ? order : undefined,
+    cache: process.env.TEBRA_CACHE !== 'false',
   }
 }
 

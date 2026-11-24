@@ -9,6 +9,7 @@ import type {
   TebraSource,
 } from './types'
 import { escapeXml, extractFirst, extractFirstAny, extractRecords, extractRecordsAny, extractStringList } from './xml'
+import type { TebraCallMeter } from './meter'
 
 /**
  * Tebra Web Services API 2.1 client (SOAP). Builds the envelopes from the
@@ -77,6 +78,8 @@ export interface TebraClientConfig {
   /** Injectable backoff sleep (tests pass a recorder). Default real setTimeout. */
   sleep?: (ms: number) => Promise<void>
   now?: () => number
+  /** Counts every attempt against the account's monthly call budget (meter.ts); refuses when spent. */
+  meter?: TebraCallMeter
 }
 
 type Scalar = string | number | boolean | null | undefined
@@ -268,6 +271,7 @@ export class TebraClient implements TebraSource {
     for (let attempt = 0; ; attempt++) {
       const canRetry = attempt < this.maxAttempts - 1
       await this.pace()
+      this.cfg.meter?.record(operation) // every attempt counts against the monthly cap
       const res = await this.transport({
         url: this.endpoint,
         // Quoted, and with the contract segment — WCF answers "ContractFilter mismatch" (HTTP 500) without it.

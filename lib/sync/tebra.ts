@@ -1,6 +1,6 @@
 import type { FeeScheduleLine } from '../canonical'
 import type { TebraChargeQuery, TebraSource } from '../adapters/tebra'
-import { createTebraSource, fallbackRatesFromEnv, tebraConfigFromEnv } from '../adapters/tebra'
+import { createTebraSource, fallbackRatesFromEnv, tebraConfigFromEnv, withEssentialCalls } from '../adapters/tebra'
 import { isNeonConfigured } from '../db/config'
 import { writeAudit } from '../db/audit'
 import { loadPaidByControl, replaceRun, type PersistResult } from '../db/repository'
@@ -59,7 +59,12 @@ export interface TebraSyncSummary {
   generatedAt: string
 }
 
-export async function syncTebraWindow(opts: TebraSyncOptions): Promise<TebraSyncSummary> {
+/** The sync is essential work: it may use the call reserve the pages cannot (lib/adapters/tebra/meter.ts). */
+export function syncTebraWindow(opts: TebraSyncOptions): Promise<TebraSyncSummary> {
+  return withEssentialCalls(() => runSyncWindow(opts))
+}
+
+async function runSyncWindow(opts: TebraSyncOptions): Promise<TebraSyncSummary> {
   const now = opts.now ?? new Date()
   const result = await runTebraFoundMoney(opts.source, opts.query, opts.fallbackRates ?? [], now)
   const { claims, remittances, feeSchedule, report, tracking } = result
